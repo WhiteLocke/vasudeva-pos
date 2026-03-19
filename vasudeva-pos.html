@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Vasudeva Shop</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Noto+Sans+Devanagari:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #FBF4EB;
+            --bg-card: #FFFFFF;
+            --primary: #C4601D;
+            --primary-dark: #963F0E;
+            --primary-light: #F5E6D8;
+            --secondary: #1B3A4B;
+            --accent: #D4930A;
+            --text: #1C0E08;
+            --text-mid: #5C3D2E;
+            --text-light: #9B7B6A;
+            --border: #E8D4C0;
+            --success: #2D6A4F;
+            --success-light: #D8F3DC;
+            --danger: #B5311B;
+            --disabled: #C5B5A8;
+            --shadow: 0 2px 20px rgba(28,14,8,0.08);
+            --shadow-lg: 0 8px 40px rgba(28,14,8,0.15);
+            --radius: 16px;
+            --radius-sm: 10px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+        html, body {
+            height: 100%; overflow: hidden;
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg); color: var(--text);
+        }
+
+        /* ── SCREENS ── */
+        .screen {
+            position: fixed; inset: 0;
+            display: flex; flex-direction: column;
+            opacity: 0; pointer-events: none;
+            transform: translateX(30px);
+            transition: opacity 0.28s ease, transform 0.28s ease;
+        }
+        .screen.active { opacity: 1; pointer-events: all; transform: translateX(0); }
+        .screen.exit   { opacity: 0; transform: translateX(-30px); }
+
+        /* ── ENTRY ── */
+        #screen-entry {
+            align-items: center; justify-content: center;
+            background: var(--secondary);
+            background-image: radial-gradient(ellipse at 70% 20%, rgba(196,96,29,0.18) 0%, transparent 60%),
+                              radial-gradient(ellipse at 20% 80%, rgba(212,147,10,0.12) 0%, transparent 50%);
+        }
+        .entry-brand { text-align: center; margin-bottom: 56px; }
+        .entry-brand h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 58px; font-weight: 700;
+            color: #FBF4EB; letter-spacing: 0.03em; line-height: 1;
+        }
+        .entry-brand .hindi-brand {
+            font-family: 'Noto Sans Devanagari', sans-serif;
+            font-size: 20px; color: rgba(251,244,235,0.5); margin-top: 6px;
+        }
+        .entry-brand .tagline {
+            font-size: 11px; color: rgba(251,244,235,0.3);
+            letter-spacing: 0.16em; text-transform: uppercase; margin-top: 14px;
+        }
+        .entry-buttons { display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 380px; padding: 0 28px; }
+        .entry-btn {
+            width: 100%; padding: 26px 28px; border: none; border-radius: var(--radius);
+            cursor: pointer; display: flex; align-items: center; gap: 18px;
+            transition: transform 0.15s, box-shadow 0.15s; text-align: left;
+        }
+        .entry-btn:active { transform: scale(0.97); }
+        .entry-btn.btn-sell    { background: var(--primary); box-shadow: 0 4px 28px rgba(196,96,29,0.45); }
+        .entry-btn.btn-stock   { background: rgba(251,244,235,0.1); border: 1.5px solid rgba(251,244,235,0.2); }
+        .entry-btn.btn-adjust  { background: rgba(251,244,235,0.04); border: 1.5px solid rgba(251,244,235,0.08); cursor: not-allowed; opacity: 0.45; }
+        .entry-btn-icon  { font-size: 30px; flex-shrink: 0; }
+        .entry-btn-label { font-size: 21px; font-weight: 600; color: #FBF4EB; line-height: 1; }
+        .entry-btn-hindi { font-family: 'Noto Sans Devanagari', sans-serif; font-size: 13px; color: rgba(251,244,235,0.55); margin-top: 3px; }
+        .entry-btn-badge { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(251,244,235,0.35); background: rgba(251,244,235,0.08); padding: 3px 8px; border-radius: 20px; margin-left: auto; }
+
+        /* ── PIN ENTRY SCREEN ── */
+        #screen-pin {
+            align-items: center; justify-content: center;
+            background: var(--secondary);
+            background-image: radial-gradient(ellipse at 70% 20%, rgba(196,96,29,0.18) 0%, transparent 60%),
+                              radial-gradient(ellipse at 20% 80%, rgba(212,147,10,0.12) 0%, transparent 50%);
+        }
+        .pin-screen-brand { text-align: center; margin-bottom: 44px; }
+        .pin-screen-brand h1 { font-family: 'Cormorant Garamond', serif; font-size: 42px; font-weight: 700; color: #FBF4EB; letter-spacing: 0.03em; }
+        .pin-screen-brand .hindi { font-family: 'Noto Sans Devanagari', sans-serif; font-size: 16px; color: rgba(251,244,235,0.45); margin-top: 4px; }
+        .pin-prompt { font-size: 13px; color: rgba(251,244,235,0.6); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 22px; text-align: center; }
+        .pin-screen-dots { display: flex; justify-content: center; gap: 16px; margin-bottom: 28px; }
+        .pin-screen-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(251,244,235,0.3); background: none; transition: all 0.15s; }
+        .pin-screen-dot.filled { background: var(--primary); border-color: var(--primary); transform: scale(1.15); }
+        .pin-screen-numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; max-width: 320px; padding: 0 28px; }
+        .pin-screen-key { padding: 20px; border: none; background: rgba(251,244,235,0.08); border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 22px; font-weight: 500; color: #FBF4EB; cursor: pointer; transition: background 0.12s; text-align: center; border: 1px solid rgba(251,244,235,0.1); }
+        .pin-screen-key:active { background: rgba(251,244,235,0.18); }
+        .pin-screen-key.del { font-size: 16px; color: rgba(251,244,235,0.6); }
+        .pin-error { font-size: 12px; color: var(--primary); text-align: center; margin-top: 16px; min-height: 18px; font-weight: 500; }
+
+        /* ── HEADER ── */
+        .screen-header {
+            display: flex; align-items: center; gap: 14px;
+            padding: 18px 22px 14px; background: var(--bg-card);
+            border-bottom: 1px solid var(--border); flex-shrink: 0;
+            box-shadow: 0 1px 12px rgba(28,14,8,0.06);
+        }
+        .back-btn {
+            width: 42px; height: 42px; border: none; background: var(--bg);
+            border-radius: var(--radius-sm); cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; color: var(--text); transition: background 0.15s; flex-shrink: 0;
+        }
+        .back-btn:active { background: var(--border); }
+        .screen-title h2 { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 600; line-height: 1; }
+        .screen-title .hindi-title { font-family: 'Noto Sans Devanagari', sans-serif; font-size: 12px; color: var(--text-light); margin-top: 2px; }
+
+        /* ── SELL TABS ── */
+        .sell-tabs { display: flex; background: var(--bg-card); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+        .sell-tab {
+            flex: 1; padding: 13px; border: none; background: none; cursor: pointer;
+            font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500;
+            color: var(--text-light); border-bottom: 2.5px solid transparent;
+            transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 7px;
+        }
+        .sell-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .basket-count {
+            background: var(--primary); color: white; border-radius: 50%;
+            width: 19px; height: 19px; font-size: 10px; font-weight: 700;
+            display: none; align-items: center; justify-content: center;
+        }
+        .basket-count.visible { display: flex; }
+
+        /* ── SCROLL AREA ── */
+        .screen-content {
+            flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
+            padding: 18px 22px; display: flex; flex-direction: column; gap: 14px;
+        }
+
+        /* ── BARCODE FIELD ── */
+        .barcode-field {
+            background: var(--bg-card); border: 2px solid var(--border);
+            border-radius: var(--radius); padding: 14px 18px;
+            display: flex; align-items: center; gap: 12px;
+            cursor: text; transition: border-color 0.2s; flex-shrink: 0;
+        }
+        .barcode-field:focus-within { border-color: var(--primary); }
+        .barcode-field-icon { font-size: 22px; flex-shrink: 0; }
+        .barcode-field-input-wrap { flex: 1; }
+        .barcode-label { font-size: 10px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-light); }
+        .barcode-label-hindi { font-family: 'Noto Sans Devanagari', sans-serif; font-size: 9px; color: var(--text-light); opacity: 0.65; margin-left: 4px; }
+        .barcode-input {
+            width: 100%; border: none; background: none;
+            font-family: 'DM Sans', sans-serif; font-size: 17px; font-weight: 500;
+            color: var(--text); outline: none; padding: 2px 0;
+        }
+        .barcode-input::placeholder { color: var(--disabled); font-size: 14px; font-weight: 400; }
+        .camera-btn {
+            width: 42px; height: 42px; border: none; background: var(--primary-light);
+            border-radius: var(--radius-sm); cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 19px; flex-shrink: 0; transition: background 0.15s;
+        }
+        .camera-btn:active { background: var(--border); }
+
+        /* ── PRODUCT CARD ── */
+        .product-card { background: var(--bg-card); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); display: none; }
+        .product-card.visible { display: block; }
+        .product-card-header { padding: 18px 18px 14px; border-bottom: 1px solid var(--border); }
+        .product-name-en { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 600; color: var(--text); line-height: 1.2; }
+        .product-sku-badge { display: inline-block; margin-top: 8px; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; color: var(--text-light); background: var(--bg); padding: 2px 10px; border-radius: 20px; border: 1px solid var(--border); }
+        .stock-status { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 20px; margin-top: 8px; letter-spacing: 0.04em; }
+        .stock-status.in-stock  { background: var(--success-light); color: var(--success); }
+        .stock-status.low-stock { background: #FFF3CD; color: #856404; }
+        .stock-status.out-stock { background: #FEE2E2; color: var(--danger); }
+
+        /* ── PRICE ROW ── */
+        .info-row { display: flex; align-items: center; justify-content: space-between; padding: 15px 18px; border-bottom: 1px solid var(--border); }
+        .row-label { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-light); }
+        .row-label-hindi { font-family: 'Noto Sans Devanagari', sans-serif; font-size: 9px; color: var(--text-light); opacity: 0.65; }
+        .price-amount { font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 600; color: var(--text); }
+        .original-price { font-family: 'Cormorant Garamond', serif; font-size: 18px; text-decoration: line-through; color: var(--text-light); margin-right: 6px; display: none; }
+        .discount-badge { font-size: 10px; font-weight: 700; color: var(--success); background: var(--success-light); padding: 2px 8px; border-radius: 20px; display: none; margin-left: 6px; }
+        .edit-hint { font-size: 11px; color: var(--text-light); }
+
+        /* ── QUANTITY ROW ── */
+        .quantity-controls { display: flex; align-items: center; background: var(--bg); border-radius: var(--radius-sm); overflow: hidden; border: 1.5px solid var(--border); }
+        .qty-btn { width: 48px; height: 48px; border: none; background: none; cursor: pointer; font-size: 22px; font-weight: 300; color: var(--primary); display: flex; align-items: center; justify-content: center; transition: background 0.12s; }
+        .qty-btn:active { background: var(--primary-light); }
+        .qty-value { min-width: 56px; text-align: center; font-size: 20px; font-weight: 600; color: var(--text); cursor: pointer; padding: 0 8px; border-left: 1px solid var(--border); border-right: 1px solid var(--border); line-height: 48px; }
+
+        /* ── ACCORDION ── */
+        .accordion { border-bottom: 1px solid var(--border); }
+        .accordion-header { display: flex; align-items: center; justify-content: space-between; padding: 13px 18px; cursor: pointer; user-select: none; }
+        .accordion-title { font-size: 12px; font-weight: 600; color: var(--text-mid); display: flex; align-items: center; gap: 6px; letter-spacing: 0.04em; }
+        .accordion-arrow { font-size: 11px; color: var(--text-light); transition: transform 0.2s; }
+        .accordion.open .accordion-arrow { transform: rotate(180deg); }
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+        .accordion.open .accordion-content { max-height: 300px; }
+        .detail-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 18px; border-top: 1px solid var(--border); }
+        .detail-key { font-size: 11px; color: var(--text-light); }
+        .detail-val { font-size: 13px; font-weight: 500; color: var(--text); text-align: right; max-width: 200px; }
+
+        /* ── ADD TO BASKET BTN ── */
+        .add-basket-btn {
+            width: 100%; padding: 17px; border: none; background: var(--primary); color: white;
+            border-radius: var(--radius); font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600;
+            cursor: pointer; transition: background 0.15s, transform 0.1s;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .add-basket-btn:active { background: var(--primary-dark); transform: scale(0.98); }
+
+        /* ── EMPTY / NOT FOUND ── */
+        .empty-state { text-align: center; padding: 60px 28px; color: var(--text-light); }
+        .empty-state-icon { font-size: 44px; margin-bottom: 14px; opacity: 0.35; }
+        .empty-state-text { font-size: 15px; font-weight: 500; }
+        .empty-state-sub { font-family: 'Noto Sans Devanagari', sans-serif; font-size: 12px; margin-top: 4px; opacity: 0.65; }
+        .not-found { background: var(--bg-card); border-radius: var(--radius); padding: 28px; text-align: center; display: none; border: 2px dashed var(--border); }
+        .not-found.visible { display: block; }
+        .not-found-text { font-size: 15px; font-weight: 500; color: var(--text); }
+        .not-found-sub { font-size: 12px; color: var(--text-light); margin-top: 4px; }
+        .add-new-btn { margin-top: 16px; padding: 11px 22px; border: 1.5px solid var(--primary); background: none; color: var(--primary); border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; }
+
+        /* ── BASKET ── */
+        .basket-item { background: var(--bg-card); border-radius: var(--radius-sm); padding: 14px 16px; display: flex; align-items: center; gap: 12px; box-shadow: var(--shadow); }
+        .basket-item-info { flex: 1; }
+        .basket-item-name { font-size: 14px; font-weight: 500; color: var(--text); }
+        .basket-item-meta { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+        .basket-item-price { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 600; color: var(--text); white-space: nowrap; text-align: right; }
+        .basket-item-unit { font-size: 10px; color: var(--text-light); text-align: right; }
+        .basket-remove { width: 30px; height: 30px; border: none; background: #FEE2E2; color: var(--danger); border-radius: 8px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .basket-summary { background: var(--bg-card); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); }
+        .summary-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; }
+        .summary-row.total { border-top: 1.5px solid var(--border); margin-top: 8px; padding-top: 14px; }
+        .summary-label { font-size: 13px; color: var(--text-light); }
+        .summary-value { font-size: 13px; font-weight: 500; color: var(--text); }
+        .total-label { font-size: 15px; font-weight: 600; color: var(--text); }
+        .total-value { font-family: 'Cormorant Garamond', serif; font-size: 34px; font-weight: 700; color: var(--primary); }
+        .finalize-btn {
+            width: 100%; padding: 19px; border: none; background: var(--secondary); color: #FBF4EB;
+            border-radius: var(--radius); font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 600;
+            cursor: pointer; margin-top: 14px; transition: opacity 0.2s, transform 0.1s;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        .finalize-btn:active { opacity: 0.85; transform: scale(0.98); }
+        .basket-empty { text-align: center; padding: 80px 28px; }
+
+        /* ── ADD STOCK FORM ── */
+        .form-section { background: var(--bg-card); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+        .form-field { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 14px; }
+        .form-field:last-child { border-bottom: none; }
+        .field-label-wrap { width: 100px; flex-shrink: 0; }
+        .field-label { font-size: 10px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-light); line-height: 1; }
+        .field-label-hindi { font-family: 'Noto Sans Devanagari', sans-serif; font-size: 9px; color: var(--text-light); opacity: 0.65; margin-top: 3px; }
+        .field-input { flex: 1; border: none; background: none; font-family: 'DM Sans', sans-serif; font-size: 15px; color: var(--text); outline: none; text-align: right; }
+        .field-input::placeholder { color: var(--disabled); }
+        .submit-btn {
+            width: 100%; padding: 19px; border: none; background: var(--primary); color: white;
+            border-radius: var(--radius); font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600;
+            cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+            transition: background 0.15s, transform 0.1s;
+        }
+        .submit-btn:active { background: var(--primary-dark); transform: scale(0.98); }
+        .restock-banner { background: var(--success-light); border-radius: var(--radius-sm); padding: 13px 16px; border-left: 3px solid var(--success); display: none; }
+        .restock-found { font-size: 12px; font-weight: 700; color: var(--success); }
+        .restock-name { font-size: 13px; color: var(--text-mid); margin-top: 2px; }
+
+        /* ── MODALS ── */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(27,58,75,0.65);
+            backdrop-filter: blur(4px); display: flex; align-items: flex-end; justify-content: center;
+            z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.25s;
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: all; }
+        .modal-sheet {
+            background: var(--bg-card); border-radius: var(--radius) var(--radius) 0 0;
+            padding: 20px 22px 32px; width: 100%; max-width: 480px;
+            transform: translateY(100%);
+            transition: transform 0.32s cubic-bezier(0.34, 1.4, 0.64, 1);
+        }
+        .modal-overlay.active .modal-sheet { transform: translateY(0); }
+        .modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 18px; }
+        .modal-title { font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+        .modal-subtitle { font-size: 12px; color: var(--text-light); margin-bottom: 18px; }
+
+        /* ── NUMPAD ── */
+        .numpad-display {
+            background: var(--bg); border-radius: var(--radius-sm); padding: 14px 18px;
+            font-family: 'Cormorant Garamond', serif; font-size: 38px; font-weight: 600;
+            color: var(--text); text-align: right; margin-bottom: 14px; min-height: 70px;
+            display: flex; align-items: center; justify-content: flex-end;
+        }
+        .numpad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .numpad-key { padding: 17px; border: none; background: var(--bg); border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 21px; font-weight: 500; color: var(--text); cursor: pointer; transition: background 0.1s; text-align: center; }
+        .numpad-key:active { background: var(--border); }
+        .numpad-key.action  { background: var(--primary-light); color: var(--primary); }
+        .numpad-key.confirm { background: var(--primary); color: white; font-size: 15px; font-weight: 600; }
+        .numpad-key.confirm:active { background: var(--primary-dark); }
+
+        /* ── CAMERA ── */
+        .camera-modal { position: fixed; inset: 0; background: #000; z-index: 200; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+        .camera-modal.active { opacity: 1; pointer-events: all; }
+        #camera-video { flex: 1; width: 100%; object-fit: cover; }
+        .camera-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+        .scan-frame { width: 240px; height: 140px; border: 2.5px solid var(--primary); border-radius: 12px; box-shadow: 0 0 0 9999px rgba(0,0,0,0.52); position: relative; }
+        .scan-line { position: absolute; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--primary), transparent); animation: scanline 1.8s ease-in-out infinite; }
+        @keyframes scanline { 0%,100% { top: 0; opacity: 0.6; } 50% { top: calc(100% - 2px); opacity: 1; } }
+        .scan-hint { color: rgba(255,255,255,0.75); font-size: 13px; margin-top: 20px; text-align: center; line-height: 1.6; }
+        .camera-close { position: absolute; top: 20px; right: 20px; width: 42px; height: 42px; border: none; background: rgba(255,255,255,0.18); color: white; border-radius: 50%; font-size: 18px; cursor: pointer; pointer-events: all; display: flex; align-items: center; justify-content: center; }
+
+        /* ── PIN ── */
+        .pin-dots { display: flex; justify-content: center; gap: 14px; margin: 14px 0 20px; }
+        .pin-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--border); background: none; transition: all 0.15s; }
+        .pin-dot.filled { background: var(--primary); border-color: var(--primary); transform: scale(1.1); }
+        .pin-shake { animation: shake 0.4s ease; }
+        @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(6px)} }
+
+        /* ── TOAST ── */
+        .toast {
+            position: fixed; bottom: 28px; left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: var(--text); color: #FBF4EB;
+            padding: 12px 22px; border-radius: 100px;
+            font-size: 13px; font-weight: 500; z-index: 300;
+            transition: transform 0.28s cubic-bezier(0.34, 1.4, 0.64, 1);
+            white-space: nowrap; max-width: 90vw; text-align: center;
+            pointer-events: none;
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+        .toast.success { background: var(--success); }
+        .toast.error   { background: var(--danger); }
+
+        @media (min-width: 500px) {
+            .screen-content { padding: 22px 28px; }
+            .entry-btn { padding: 30px 32px; }
+            .entry-brand h1 { font-size: 68px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════ PIN ═══ -->
+<div id="screen-pin" class="screen active">
+    <div class="pin-screen-brand">
+        <h1>Vasudeva</h1>
+        <div class="hindi">वासुदेव शॉप</div>
+    </div>
+    <div class="pin-prompt">Enter PIN to continue</div>
+    <div class="pin-screen-dots" id="pin-screen-dots">
+        <div class="pin-screen-dot" id="spd0"></div>
+        <div class="pin-screen-dot" id="spd1"></div>
+        <div class="pin-screen-dot" id="spd2"></div>
+        <div class="pin-screen-dot" id="spd3"></div>
+    </div>
+    <div class="pin-screen-numpad">
+        <button class="pin-screen-key" onclick="entryPinPress('7')">7</button>
+        <button class="pin-screen-key" onclick="entryPinPress('8')">8</button>
+        <button class="pin-screen-key" onclick="entryPinPress('9')">9</button>
+        <button class="pin-screen-key" onclick="entryPinPress('4')">4</button>
+        <button class="pin-screen-key" onclick="entryPinPress('5')">5</button>
+        <button class="pin-screen-key" onclick="entryPinPress('6')">6</button>
+        <button class="pin-screen-key" onclick="entryPinPress('1')">1</button>
+        <button class="pin-screen-key" onclick="entryPinPress('2')">2</button>
+        <button class="pin-screen-key" onclick="entryPinPress('3')">3</button>
+        <button class="pin-screen-key" style="visibility:hidden"></button>
+        <button class="pin-screen-key" onclick="entryPinPress('0')">0</button>
+        <button class="pin-screen-key del" onclick="entryPinPress('⌫')">⌫</button>
+    </div>
+    <div class="pin-error" id="pin-screen-error"></div>
+</div>
+
+<!-- ═══════════════════════════════════ ENTRY ═══ -->
+<div id="screen-entry" class="screen">
+    <div class="entry-brand">
+        <h1>Vasudeva</h1>
+        <div class="hindi-brand">वासुदेव शॉप</div>
+        <div class="tagline">Inventory &amp; Point of Sale</div>
+    </div>
+    <div class="entry-buttons">
+        <button class="entry-btn btn-sell" onclick="goTo('sell')">
+            <span class="entry-btn-icon">🛍️</span>
+            <div>
+                <div class="entry-btn-label">Sell</div>
+                <div class="entry-btn-hindi">बेचें</div>
+            </div>
+        </button>
+        <button class="entry-btn btn-stock" onclick="goTo('addstock')">
+            <span class="entry-btn-icon">📦</span>
+            <div>
+                <div class="entry-btn-label">Add Stock</div>
+                <div class="entry-btn-hindi">स्टॉक जोड़ें</div>
+            </div>
+        </button>
+        <button class="entry-btn btn-adjust" disabled>
+            <span class="entry-btn-icon">⚖️</span>
+            <div>
+                <div class="entry-btn-label">Adjust Stock</div>
+                <div class="entry-btn-hindi">स्टॉक समायोजित करें</div>
+            </div>
+            <span class="entry-btn-badge">Soon</span>
+        </button>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════ SELL ═══ -->
+<div id="screen-sell" class="screen">
+    <div class="screen-header">
+        <button class="back-btn" onclick="goBack()">←</button>
+        <div class="screen-title">
+            <h2>Sell</h2>
+            <div class="hindi-title">बेचें</div>
+        </div>
+    </div>
+    <div class="sell-tabs">
+        <button class="sell-tab active" id="tab-product" onclick="switchTab('product')">🔍 Product</button>
+        <button class="sell-tab" id="tab-basket" onclick="switchTab('basket')">
+            🧺 Basket
+            <span class="basket-count" id="basket-count">0</span>
+        </button>
+    </div>
+
+    <!-- Product panel -->
+    <div id="panel-product" class="screen-content">
+        <div class="barcode-field" onclick="document.getElementById('bc-sell').focus()">
+            <span class="barcode-field-icon">⬛</span>
+            <div class="barcode-field-input-wrap">
+                <div class="barcode-label">Barcode <span class="barcode-label-hindi">/ बारकोड</span></div>
+                <input id="bc-sell" class="barcode-input" type="text" inputmode="numeric"
+                    placeholder="Scan or enter barcode…" autocomplete="off"
+                    onkeydown="handleBarcodeKey(event,'sell')">
+            </div>
+            <button class="camera-btn" onclick="openCamera('sell');event.stopPropagation()">📷</button>
+        </div>
+
+        <div class="not-found" id="not-found-sell">
+            <div style="font-size:30px;margin-bottom:8px">🔍</div>
+            <div class="not-found-text">Product not found</div>
+            <div class="not-found-sub">This barcode isn't in your inventory yet</div>
+            <button class="add-new-btn" onclick="goTo('addstock')">+ Add New Product</button>
+        </div>
+
+        <div class="product-card" id="product-card">
+            <div class="product-card-header">
+                <div class="product-name-en" id="prod-name">—</div>
+                <div><span class="product-sku-badge" id="prod-sku">SKU</span></div>
+                <div><span class="stock-status in-stock" id="prod-stock-status">✓ In Stock</span></div>
+            </div>
+            <!-- Price -->
+            <div class="info-row" style="cursor:pointer" onclick="openDiscount()">
+                <div>
+                    <div class="row-label">Price <span class="row-label-hindi">/ कीमत</span></div>
+                </div>
+                <div style="display:flex;align-items:center">
+                    <span class="original-price" id="orig-price"></span>
+                    <span class="price-amount" id="prod-price">₹0</span>
+                    <span class="discount-badge" id="disc-badge"></span>
+                    <span class="edit-hint" style="margin-left:8px">✏️</span>
+                </div>
+            </div>
+            <!-- Quantity -->
+            <div class="info-row">
+                <div>
+                    <div class="row-label">Qty <span class="row-label-hindi">/ मात्रा</span></div>
+                </div>
+                <div class="quantity-controls">
+                    <button class="qty-btn" onclick="changeQty(-1)">−</button>
+                    <div class="qty-value" id="qty-display" onclick="openNumpad('qty')">1</div>
+                    <button class="qty-btn" onclick="changeQty(1)">+</button>
+                </div>
+            </div>
+            <!-- Details accordion -->
+            <div class="accordion" id="acc-details">
+                <div class="accordion-header" onclick="toggleAcc('acc-details')">
+                    <span class="accordion-title">⚙ Details / विवरण</span>
+                    <span class="accordion-arrow">▼</span>
+                </div>
+                <div class="accordion-content">
+                    <div class="detail-row"><span class="detail-key">Category / श्रेणी</span><span class="detail-val" id="prod-cat">—</span></div>
+                    <div class="detail-row"><span class="detail-key">SKU</span><span class="detail-val" id="prod-sku-d">—</span></div>
+                    <div class="detail-row"><span class="detail-key">Stock / स्टॉक</span><span class="detail-val" id="prod-stock-n">—</span></div>
+                    <div class="detail-row"><span class="detail-key">Cost / लागत</span><span class="detail-val" id="prod-cost">—</span></div>
+                </div>
+            </div>
+            <div style="padding:14px 18px">
+                <button class="add-basket-btn" onclick="addToBasket()">🧺 Add to Basket</button>
+            </div>
+        </div>
+
+        <div class="empty-state" id="sell-empty">
+            <div class="empty-state-icon">⬛</div>
+            <div class="empty-state-text">Scan a product to begin</div>
+            <div class="empty-state-sub">स्कैन करें या बारकोड दर्ज करें</div>
+        </div>
+    </div>
+
+    <!-- Basket panel -->
+    <div id="panel-basket" class="screen-content" style="display:none">
+        <div class="basket-list" id="basket-list" style="display:flex;flex-direction:column;gap:10px"></div>
+        <div id="basket-summary-wrap" style="display:none">
+            <div class="basket-summary">
+                <div class="summary-row"><span class="summary-label">Items</span><span class="summary-value" id="sum-items">0</span></div>
+                <div class="summary-row total">
+                    <span class="total-label">Total / कुल</span>
+                    <span class="total-value" id="sum-total">₹0</span>
+                </div>
+            </div>
+            <button class="finalize-btn" onclick="finalizeOrder()">✓ Finalize Order / ऑर्डर पूरा करें</button>
+        </div>
+        <div class="basket-empty" id="basket-empty">
+            <div style="font-size:44px;opacity:0.25">🧺</div>
+            <div style="margin-top:14px;font-size:14px;color:var(--text-light)">Basket is empty</div>
+            <div style="font-family:'Noto Sans Devanagari';font-size:12px;color:var(--text-light);opacity:0.65;margin-top:4px">टोकरी खाली है</div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════ ADD STOCK ═══ -->
+<div id="screen-addstock" class="screen">
+    <div class="screen-header">
+        <button class="back-btn" onclick="goBack()">←</button>
+        <div class="screen-title">
+            <h2>Add Stock</h2>
+            <div class="hindi-title">स्टॉक जोड़ें</div>
+        </div>
+    </div>
+    <div class="screen-content">
+        <div class="barcode-field" onclick="document.getElementById('bc-stock').focus()">
+            <span class="barcode-field-icon">⬛</span>
+            <div class="barcode-field-input-wrap">
+                <div class="barcode-label">Barcode <span class="barcode-label-hindi">/ बारकोड</span></div>
+                <input id="bc-stock" class="barcode-input" type="text" inputmode="numeric"
+                    placeholder="Scan or enter barcode…" autocomplete="off"
+                    onkeydown="handleBarcodeKey(event,'stock')" oninput="onStockInput()">
+            </div>
+            <button class="camera-btn" onclick="openCamera('stock');event.stopPropagation()">📷</button>
+        </div>
+
+        <div class="restock-banner" id="restock-banner">
+            <div class="restock-found">✓ Existing product found — restocking</div>
+            <div class="restock-name" id="restock-name">—</div>
+        </div>
+
+        <div class="form-section">
+            <div class="form-field">
+                <div class="field-label-wrap"><div class="field-label">SKU</div><div class="field-label-hindi">कोड</div></div>
+                <input class="field-input" id="f-sku" type="text" placeholder="Supplier code" autocomplete="off">
+            </div>
+            <div class="form-field">
+                <div class="field-label-wrap"><div class="field-label">Name</div><div class="field-label-hindi">नाम</div></div>
+                <input class="field-input" id="f-name" type="text" placeholder="Product name" autocomplete="off">
+            </div>
+            <div class="form-field">
+                <div class="field-label-wrap"><div class="field-label">Category</div><div class="field-label-hindi">श्रेणी</div></div>
+                <input class="field-input" id="f-cat" type="text" placeholder="e.g. Skincare" autocomplete="off">
+            </div>
+            <div class="form-field">
+                <div class="field-label-wrap"><div class="field-label">MRP</div><div class="field-label-hindi">अधिकतम मूल्य</div></div>
+                <input class="field-input" id="f-mrp" type="text" inputmode="decimal" placeholder="₹ 0" autocomplete="off">
+            </div>
+            <div class="form-field">
+                <div class="field-label-wrap"><div class="field-label">Cost</div><div class="field-label-hindi">लागत</div></div>
+                <input class="field-input" id="f-cost" type="text" inputmode="decimal" placeholder="₹ 0" autocomplete="off">
+            </div>
+            <div class="form-field">
+                <div class="field-label-wrap"><div class="field-label">Quantity</div><div class="field-label-hindi">मात्रा</div></div>
+                <input class="field-input" id="f-qty" type="text" inputmode="numeric" placeholder="0" autocomplete="off">
+            </div>
+            <div class="form-field">
+                <div class="field-label-wrap"><div class="field-label">Min Stock</div><div class="field-label-hindi">न्यूनतम</div></div>
+                <input class="field-input" id="f-min" type="text" inputmode="numeric" placeholder="10" autocomplete="off">
+            </div>
+            <div class="form-field">
+                <div class="field-label-wrap"><div class="field-label">Expiry</div><div class="field-label-hindi">समाप्ति</div></div>
+                <input class="field-input" id="f-exp" type="date" autocomplete="off">
+            </div>
+            <div class="form-field">
+                <div class="field-label-wrap"><div class="field-label">Supplier</div><div class="field-label-hindi">आपूर्तिकर्ता</div></div>
+                <input class="field-input" id="f-sup" type="text" placeholder="Supplier name" autocomplete="off">
+            </div>
+        </div>
+
+        <button class="submit-btn" onclick="submitStock()">✓ Save Product / सहेजें</button>
+        <div style="height:28px"></div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════ CAMERA ═══ -->
+<div class="camera-modal" id="camera-modal">
+    <video id="camera-video" class="camera-video" autoplay playsinline muted></video>
+    <div class="camera-overlay">
+        <div class="scan-frame"><div class="scan-line"></div></div>
+        <div class="scan-hint">Point camera at barcode<br>बारकोड पर कैमरा लगाएं</div>
+    </div>
+    <button class="camera-close" onclick="closeCamera()">✕</button>
+</div>
+
+<!-- ═══════════════════════════════════ NUMPAD ═══ -->
+<div class="modal-overlay" id="numpad-modal" onclick="if(event.target===this)closeNumpad()">
+    <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-title" id="np-title">Quantity</div>
+        <div class="modal-subtitle" id="np-sub">मात्रा दर्ज करें</div>
+        <div class="numpad-display" id="np-display">1</div>
+        <div class="numpad-grid">
+            <button class="numpad-key" onclick="npPress('7')">7</button>
+            <button class="numpad-key" onclick="npPress('8')">8</button>
+            <button class="numpad-key" onclick="npPress('9')">9</button>
+            <button class="numpad-key" onclick="npPress('4')">4</button>
+            <button class="numpad-key" onclick="npPress('5')">5</button>
+            <button class="numpad-key" onclick="npPress('6')">6</button>
+            <button class="numpad-key" onclick="npPress('1')">1</button>
+            <button class="numpad-key" onclick="npPress('2')">2</button>
+            <button class="numpad-key" onclick="npPress('3')">3</button>
+            <button class="numpad-key action" onclick="npPress('.')">.</button>
+            <button class="numpad-key" onclick="npPress('0')">0</button>
+            <button class="numpad-key action" onclick="npPress('⌫')">⌫</button>
+            <button class="numpad-key confirm" style="grid-column:span 3" onclick="npConfirm()">Confirm ✓</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════ DISCOUNT ═══ -->
+<div class="modal-overlay" id="disc-modal" onclick="if(event.target===this)closeDiscount()">
+    <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-title">Apply Discount</div>
+        <div class="modal-subtitle" id="disc-subtitle">Enter owner PIN / मालिक का PIN दर्ज करें</div>
+        <div class="pin-dots" id="pin-dots">
+            <div class="pin-dot" id="pd0"></div>
+            <div class="pin-dot" id="pd1"></div>
+            <div class="pin-dot" id="pd2"></div>
+            <div class="pin-dot" id="pd3"></div>
+        </div>
+        <div id="disc-amount-wrap" style="display:none;margin-bottom:14px">
+            <div class="numpad-display" id="disc-display">0</div>
+            <div style="font-size:11px;color:var(--text-light);text-align:center;margin-top:6px">% discount off MRP</div>
+        </div>
+        <div class="numpad-grid">
+            <button class="numpad-key" onclick="pinPress('7')">7</button>
+            <button class="numpad-key" onclick="pinPress('8')">8</button>
+            <button class="numpad-key" onclick="pinPress('9')">9</button>
+            <button class="numpad-key" onclick="pinPress('4')">4</button>
+            <button class="numpad-key" onclick="pinPress('5')">5</button>
+            <button class="numpad-key" onclick="pinPress('6')">6</button>
+            <button class="numpad-key" onclick="pinPress('1')">1</button>
+            <button class="numpad-key" onclick="pinPress('2')">2</button>
+            <button class="numpad-key" onclick="pinPress('3')">3</button>
+            <button class="numpad-key action" onclick="pinPress('C')">C</button>
+            <button class="numpad-key" onclick="pinPress('0')">0</button>
+            <button class="numpad-key action" onclick="pinPress('⌫')">⌫</button>
+            <button class="numpad-key confirm" style="grid-column:span 3" onclick="pinConfirm()">Confirm ✓</button>
+        </div>
+        <button onclick="closeDiscount()" style="width:100%;margin-top:10px;padding:13px;border:none;background:none;color:var(--text-light);font-family:'DM Sans';font-size:13px;cursor:pointer">Cancel / रद्द करें</button>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── CONFIG ──────────────────────────────────────────────────────────
+const CONFIG = {
+    N8N_LOOKUP:    'YOUR_N8N_LOOKUP_WEBHOOK_URL',
+    N8N_SELL:      'YOUR_N8N_SELL_WEBHOOK_URL',
+    N8N_ADD_STOCK: 'YOUR_N8N_ADD_STOCK_WEBHOOK_URL',
+    OWNER_PIN:     '1234',
+    CURRENCY:      '₹'
+};
+
+// ─── STATE ───────────────────────────────────────────────────────────
+let currentScreen = 'entry';
+let currentProduct = null;
+let currentQty = 1;
+let currentPrice = 0;
+let basket = [];
+let npTarget = null;
+let npVal = '';
+let pinVal = '';
+let pinUnlocked = false;
+let camCtx = null;
+let camStream = null;
+let camDetector = null;
+let camFrame = null;
+
+// ─── ENTRY PIN ───────────────────────────────────────────────────────
+let entryPinVal = '';
+function entryPinPress(k) {
+    if (k === '⌫') entryPinVal = entryPinVal.slice(0, -1);
+    else if (entryPinVal.length < 4) entryPinVal += k;
+    updateEntryPinDots();
+    document.getElementById('pin-screen-error').textContent = '';
+    if (entryPinVal.length === 4) {
+        if (entryPinVal === CONFIG.OWNER_PIN) {
+            const pinScreen = document.getElementById('screen-pin');
+            pinScreen.classList.add('exit');
+            setTimeout(() => pinScreen.classList.remove('active', 'exit'), 280);
+            document.getElementById('screen-entry').classList.add('active');
+            currentScreen = 'entry';
+            entryPinVal = '';
+            updateEntryPinDots();
+        } else {
+            entryPinVal = '';
+            updateEntryPinDots();
+            document.getElementById('pin-screen-dots').classList.add('pin-shake');
+            setTimeout(() => document.getElementById('pin-screen-dots').classList.remove('pin-shake'), 400);
+            document.getElementById('pin-screen-error').textContent = 'Incorrect PIN — try again';
+        }
+    }
+}
+function updateEntryPinDots() {
+    for (let i = 0; i < 4; i++)
+        document.getElementById('spd' + i).classList.toggle('filled', i < entryPinVal.length);
+}
+
+// ─── NAVIGATION ──────────────────────────────────────────────────────
+function goTo(screen) {
+    const cur = document.getElementById('screen-' + currentScreen);
+    const nxt = document.getElementById('screen-' + screen);
+    cur.classList.add('exit');
+    setTimeout(() => cur.classList.remove('active','exit'), 280);
+    nxt.classList.add('active');
+    currentScreen = screen;
+    if (screen === 'sell') {
+        setTimeout(() => document.getElementById('bc-sell').focus(), 350);
+        resetSell();
+    }
+    if (screen === 'addstock') {
+        setTimeout(() => document.getElementById('bc-stock').focus(), 350);
+    }
+}
+
+function goBack() {
+    const cur = document.getElementById('screen-' + currentScreen);
+    cur.classList.remove('active');
+    cur.style.cssText = 'transform:translateX(30px);opacity:0';
+    setTimeout(() => cur.style.cssText = '', 300);
+    document.getElementById('screen-entry').classList.add('active');
+    currentScreen = 'entry';
+}
+
+// ─── TABS ─────────────────────────────────────────────────────────────
+function switchTab(tab) {
+    document.getElementById('tab-product').classList.toggle('active', tab === 'product');
+    document.getElementById('tab-basket').classList.toggle('active', tab === 'basket');
+    document.getElementById('panel-product').style.display = tab === 'product' ? 'flex' : 'none';
+    document.getElementById('panel-basket').style.display  = tab === 'basket'  ? 'flex' : 'none';
+}
+
+// ─── BARCODE ─────────────────────────────────────────────────────────
+let scanBuf = '', scanTimer = null;
+document.addEventListener('keydown', e => {
+    const active = document.activeElement;
+    if (active && active.tagName === 'INPUT') return;
+    if (e.key === 'Enter' && scanBuf.length > 3) {
+        handleBarcodeScan(scanBuf, currentScreen === 'addstock' ? 'stock' : 'sell');
+        scanBuf = ''; clearTimeout(scanTimer); return;
+    }
+    if (e.key.length === 1) {
+        scanBuf += e.key;
+        clearTimeout(scanTimer);
+        scanTimer = setTimeout(() => scanBuf = '', 100);
+    }
+});
+
+function handleBarcodeKey(e, ctx) {
+    if (e.key === 'Enter') {
+        const v = e.target.value.trim();
+        if (v) handleBarcodeScan(v, ctx);
+    }
+}
+
+async function handleBarcodeScan(barcode, ctx) {
+    if (!barcode) return;
+    showToast('Looking up product…');
+    try {
+        const p = await lookupProduct(barcode);
+        if (ctx === 'sell') displayProduct(p);
+        else displayRestock(p, barcode);
+    } catch(_) {
+        if (ctx === 'sell') showNotFound();
+        showToast('Not found: ' + barcode, 'error');
+    }
+}
+
+// ─── PRODUCT LOOKUP (replace with n8n webhook) ───────────────────────
+async function lookupProduct(barcode) {
+    // Live: const r = await fetch(CONFIG.N8N_LOOKUP + '?barcode=' + barcode);
+    //       if (!r.ok) throw new Error(); return r.json();
+    await new Promise(r => setTimeout(r, 380));
+    const mock = {
+        '1234567890': { name:'Beet Red Lipstick', sku:'1723-0105-BTRED-B', category:'Cosmetics', mrp:450, cost:388, stock:4, minStock:10 },
+        '9876543210': { name:'White Skin Cream',  sku:'1722-0105-WSKIN-C', category:'Skincare',  mrp:520, cost:388, stock:15, minStock:10 },
+        '1111111111': { name:'Angel Fleece Innerwear', sku:'1722-0105-ANGFL-C', category:'Innerwear', mrp:550, cost:388, stock:2, minStock:5 }
+    };
+    const p = mock[barcode]; if (!p) throw new Error();
+    return { ...p, barcode };
+}
+
+// ─── SELL SCREEN ──────────────────────────────────────────────────────
+function resetSell() {
+    currentProduct = null; currentQty = 1; currentPrice = 0;
+    document.getElementById('product-card').classList.remove('visible');
+    document.getElementById('not-found-sell').classList.remove('visible');
+    document.getElementById('sell-empty').style.display = '';
+    document.getElementById('bc-sell').value = '';
+    updateQtyDisplay();
+}
+
+function displayProduct(p) {
+    currentProduct = p; currentPrice = p.mrp; currentQty = 1;
+    document.getElementById('sell-empty').style.display = 'none';
+    document.getElementById('not-found-sell').classList.remove('visible');
+    document.getElementById('product-card').classList.add('visible');
+    document.getElementById('prod-name').textContent  = p.name;
+    document.getElementById('prod-sku').textContent   = p.sku;
+    document.getElementById('prod-sku-d').textContent = p.sku;
+    document.getElementById('prod-cat').textContent   = p.category || '—';
+    document.getElementById('prod-stock-n').textContent = p.stock + ' units';
+    document.getElementById('prod-cost').textContent  = CONFIG.CURRENCY + p.cost;
+    document.getElementById('prod-price').textContent = CONFIG.CURRENCY + p.mrp;
+    document.getElementById('orig-price').style.display = 'none';
+    document.getElementById('disc-badge').style.display = 'none';
+    const ss = document.getElementById('prod-stock-status');
+    if (p.stock <= 0)           { ss.className='stock-status out-stock'; ss.textContent='✕ Out of Stock'; }
+    else if (p.stock<=p.minStock){ ss.className='stock-status low-stock'; ss.textContent=`⚠ Low Stock (${p.stock})`; }
+    else                         { ss.className='stock-status in-stock';  ss.textContent=`✓ In Stock (${p.stock})`; }
+    updateQtyDisplay();
+    showToast(p.name + ' found', 'success');
+}
+
+function showNotFound() {
+    document.getElementById('sell-empty').style.display = 'none';
+    document.getElementById('product-card').classList.remove('visible');
+    document.getElementById('not-found-sell').classList.add('visible');
+}
+
+// ─── QUANTITY ─────────────────────────────────────────────────────────
+function changeQty(d) { currentQty = Math.max(1, currentQty + d); updateQtyDisplay(); }
+function updateQtyDisplay() { document.getElementById('qty-display').textContent = currentQty; }
+
+// ─── BASKET ───────────────────────────────────────────────────────────
+function addToBasket() {
+    if (!currentProduct) return;
+    const ex = basket.find(i => i.sku === currentProduct.sku && i.price === currentPrice);
+    if (ex) { ex.qty += currentQty; ex.total = ex.qty * ex.price; }
+    else basket.push({ name:currentProduct.name, sku:currentProduct.sku, barcode:currentProduct.barcode, price:currentPrice, qty:currentQty, total:currentPrice*currentQty });
+    updateBasketUI();
+    showToast(`Added ${currentQty}× ${currentProduct.name}`, 'success');
+    resetSell();
+}
+
+function updateBasketUI() {
+    const count = basket.reduce((s,i)=>s+i.qty, 0);
+    const total = basket.reduce((s,i)=>s+i.total, 0);
+    const ce = document.getElementById('basket-count');
+    ce.textContent = count; ce.classList.toggle('visible', count > 0);
+    const list = document.getElementById('basket-list');
+    const empty = document.getElementById('basket-empty');
+    const sumW = document.getElementById('basket-summary-wrap');
+    if (!basket.length) { list.innerHTML=''; empty.style.display='block'; sumW.style.display='none'; return; }
+    empty.style.display='none'; sumW.style.display='block';
+    list.innerHTML = basket.map((item,i) => `
+        <div class="basket-item">
+            <div class="basket-item-info">
+                <div class="basket-item-name">${item.name}</div>
+                <div class="basket-item-meta">${item.sku} &nbsp;·&nbsp; ${item.qty}×</div>
+            </div>
+            <div style="text-align:right">
+                <div class="basket-item-price">${CONFIG.CURRENCY}${item.total}</div>
+                <div class="basket-item-unit">@ ${CONFIG.CURRENCY}${item.price}</div>
+            </div>
+            <button class="basket-remove" onclick="removeFromBasket(${i})">✕</button>
+        </div>`).join('');
+    document.getElementById('sum-items').textContent = count + ' item' + (count!==1?'s':'');
+    document.getElementById('sum-total').textContent = CONFIG.CURRENCY + total;
+}
+
+function removeFromBasket(i) { basket.splice(i,1); updateBasketUI(); }
+
+async function finalizeOrder() {
+    if (!basket.length) return;
+    showToast('Processing order…');
+    try {
+        // Live: await fetch(CONFIG.N8N_SELL, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({items:basket,timestamp:new Date().toISOString()}) });
+        await new Promise(r=>setTimeout(r,600));
+        basket=[]; updateBasketUI(); switchTab('product');
+        showToast('Order complete! स्टॉक अपडेट हो गया', 'success');
+    } catch(_) { showToast('Failed — try again', 'error'); }
+}
+
+// ─── ADD STOCK ────────────────────────────────────────────────────────
+function onStockInput() { document.getElementById('restock-banner').style.display='none'; }
+
+function displayRestock(p, barcode) {
+    if (p) {
+        document.getElementById('restock-banner').style.display='block';
+        document.getElementById('restock-name').textContent = p.name;
+        document.getElementById('f-sku').value  = p.sku;
+        document.getElementById('f-name').value = p.name;
+        document.getElementById('f-cat').value  = p.category||'';
+        document.getElementById('f-mrp').value  = p.mrp;
+        document.getElementById('f-cost').value = p.cost;
+        document.getElementById('f-qty').focus();
+        showToast(p.name + ' — enter new quantity', 'success');
+    }
+}
+
+async function submitStock() {
+    const barcode = document.getElementById('bc-stock').value.trim();
+    const qty  = document.getElementById('f-qty').value.trim();
+    const name = document.getElementById('f-name').value.trim();
+    if (!barcode||!qty||!name) { showToast('Barcode, name and quantity required', 'error'); return; }
+    const payload = {
+        barcode, sku:document.getElementById('f-sku').value, name,
+        category:document.getElementById('f-cat').value, mrp:document.getElementById('f-mrp').value,
+        cost:document.getElementById('f-cost').value, quantity:qty,
+        minStock:document.getElementById('f-min').value||10,
+        expiry:document.getElementById('f-exp').value,
+        supplier:document.getElementById('f-sup').value,
+        timestamp: new Date().toISOString()
+    };
+    showToast('Saving…');
+    try {
+        // Live: await fetch(CONFIG.N8N_ADD_STOCK, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+        await new Promise(r=>setTimeout(r,600));
+        ['bc-stock','f-sku','f-name','f-cat','f-mrp','f-cost','f-qty','f-min','f-exp','f-sup'].forEach(id=>document.getElementById(id).value='');
+        document.getElementById('restock-banner').style.display='none';
+        showToast('Saved! उत्पाद सहेजा गया', 'success');
+        document.getElementById('bc-stock').focus();
+    } catch(_) { showToast('Failed — try again', 'error'); }
+}
+
+// ─── ACCORDION ───────────────────────────────────────────────────────
+function toggleAcc(id) { document.getElementById(id).classList.toggle('open'); }
+
+// ─── NUMPAD ──────────────────────────────────────────────────────────
+function openNumpad(target) {
+    npTarget = target;
+    npVal = target==='qty' ? String(currentQty) : String(currentPrice);
+    document.getElementById('np-display').textContent = npVal;
+    document.getElementById('np-title').textContent   = target==='qty' ? 'Quantity' : 'Price';
+    document.getElementById('np-sub').textContent     = target==='qty' ? 'मात्रा दर्ज करें' : 'कीमत दर्ज करें';
+    document.getElementById('numpad-modal').classList.add('active');
+}
+function closeNumpad() { document.getElementById('numpad-modal').classList.remove('active'); }
+function npPress(k) {
+    if (k==='⌫') npVal = npVal.slice(0,-1)||'0';
+    else if (k==='.' && npVal.includes('.')) return;
+    else npVal = (npVal==='0' && k!=='.') ? k : npVal+k;
+    document.getElementById('np-display').textContent = npVal;
+}
+function npConfirm() {
+    const v = parseFloat(npVal)||0;
+    if (npTarget==='qty') { currentQty=Math.max(1,Math.round(v)); updateQtyDisplay(); }
+    else { currentPrice=v; document.getElementById('prod-price').textContent=CONFIG.CURRENCY+v; }
+    closeNumpad();
+}
+
+// ─── DISCOUNT / PIN ──────────────────────────────────────────────────
+function openDiscount() {
+    if (!currentProduct) return;
+    pinVal=''; pinUnlocked=false;
+    document.getElementById('disc-amount-wrap').style.display='none';
+    document.getElementById('disc-subtitle').textContent='Enter owner PIN / मालिक का PIN दर्ज करें';
+    updatePinDots();
+    document.getElementById('disc-modal').classList.add('active');
+}
+function closeDiscount() { document.getElementById('disc-modal').classList.remove('active'); pinVal=''; pinUnlocked=false; }
+
+function pinPress(k) {
+    if (pinUnlocked) {
+        const d = document.getElementById('disc-display');
+        if (k==='⌫') d.textContent=d.textContent.slice(0,-1)||'0';
+        else if (k==='C') d.textContent='0';
+        else if (/\d/.test(k)) d.textContent=d.textContent==='0'?k:d.textContent+k;
+        return;
+    }
+    if (k==='⌫')  pinVal=pinVal.slice(0,-1);
+    else if (k==='C') pinVal='';
+    else if (/\d/.test(k) && pinVal.length<4) pinVal+=k;
+    updatePinDots();
+    if (pinVal.length===4) {
+        if (pinVal===CONFIG.OWNER_PIN) {
+            pinUnlocked=true;
+            document.getElementById('disc-amount-wrap').style.display='block';
+            document.getElementById('disc-display').textContent='0';
+            document.getElementById('disc-subtitle').textContent='Enter discount % / छूट % दर्ज करें';
+            showToast('PIN accepted ✓', 'success');
+        } else {
+            pinVal=''; updatePinDots();
+            document.getElementById('pin-dots').classList.add('pin-shake');
+            setTimeout(()=>document.getElementById('pin-dots').classList.remove('pin-shake'),400);
+            showToast('Incorrect PIN', 'error');
+        }
+    }
+}
+function updatePinDots() { for(let i=0;i<4;i++) document.getElementById('pd'+i).classList.toggle('filled',i<pinVal.length); }
+function pinConfirm() {
+    if (!pinUnlocked) return;
+    const pct = parseFloat(document.getElementById('disc-display').textContent)||0;
+    if (pct>0 && pct<100) {
+        const orig = currentProduct.mrp;
+        currentPrice = Math.round(orig*(1-pct/100));
+        document.getElementById('prod-price').textContent = CONFIG.CURRENCY+currentPrice;
+        document.getElementById('orig-price').textContent = CONFIG.CURRENCY+orig;
+        document.getElementById('orig-price').style.display='inline';
+        document.getElementById('disc-badge').textContent='-'+pct+'%';
+        document.getElementById('disc-badge').style.display='inline-flex';
+        showToast(pct+'% discount applied', 'success');
+    }
+    closeDiscount();
+}
+
+// ─── CAMERA ──────────────────────────────────────────────────────────
+async function openCamera(ctx) {
+    camCtx = ctx;
+    document.getElementById('camera-modal').classList.add('active');
+    try {
+        camStream = await navigator.mediaDevices.getUserMedia({ video:{facingMode:'environment', width:{ideal:1280}} });
+        const v = document.getElementById('camera-video');
+        v.srcObject = camStream; await v.play();
+        if ('BarcodeDetector' in window) {
+            camDetector = new BarcodeDetector({ formats:['ean_13','ean_8','code_128','qr_code','upc_a','upc_e'] });
+            scanFrame();
+        } else { showToast('Camera scan unsupported — enter manually', 'error'); closeCamera(); }
+    } catch(_) { showToast('Camera access denied', 'error'); closeCamera(); }
+}
+async function scanFrame() {
+    if (!camStream) return;
+    try {
+        const codes = await camDetector.detect(document.getElementById('camera-video'));
+        if (codes.length) { closeCamera(); handleBarcodeScan(codes[0].rawValue, camCtx); return; }
+    } catch(_) {}
+    camFrame = requestAnimationFrame(scanFrame);
+}
+function closeCamera() {
+    if (camFrame) cancelAnimationFrame(camFrame);
+    if (camStream) { camStream.getTracks().forEach(t=>t.stop()); camStream=null; }
+    document.getElementById('camera-modal').classList.remove('active');
+    document.getElementById('camera-video').srcObject=null;
+}
+
+// ─── TOAST ───────────────────────────────────────────────────────────
+let toastT=null;
+function showToast(msg, type='') {
+    const t=document.getElementById('toast');
+    t.textContent=msg; t.className='toast '+type+' show';
+    clearTimeout(toastT);
+    toastT=setTimeout(()=>t.classList.remove('show'),2600);
+}
+</script>
+</body>
+</html>
