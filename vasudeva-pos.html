@@ -665,7 +665,7 @@
 <script>
 // ─── CONFIG ──────────────────────────────────────────────────────────
 const CONFIG = {
-    N8N_LOOKUP:    'YOUR_N8N_LOOKUP_WEBHOOK_URL',
+    N8N_LOOKUP:    'N8N_LOOKUP: 'https://whitelockemedia.app.n8n.cloud/webhook/vasudeva-lookup',
     N8N_SELL:      'YOUR_N8N_SELL_WEBHOOK_URL',
     N8N_ADD_STOCK: 'YOUR_N8N_ADD_STOCK_WEBHOOK_URL',
     OWNER_PIN:     '1234',
@@ -789,16 +789,11 @@ async function handleBarcodeScan(barcode, ctx) {
 
 // ─── PRODUCT LOOKUP (replace with n8n webhook) ───────────────────────
 async function lookupProduct(barcode) {
-    // Live: const r = await fetch(CONFIG.N8N_LOOKUP + '?barcode=' + barcode);
-    //       if (!r.ok) throw new Error(); return r.json();
-    await new Promise(r => setTimeout(r, 380));
-    const mock = {
-        '1234567890': { name:'Beet Red Lipstick', sku:'1723-0105-BTRED-B', category:'Cosmetics', mrp:450, cost:388, stock:4, minStock:10 },
-        '9876543210': { name:'White Skin Cream',  sku:'1722-0105-WSKIN-C', category:'Skincare',  mrp:520, cost:388, stock:15, minStock:10 },
-        '1111111111': { name:'Angel Fleece Innerwear', sku:'1722-0105-ANGFL-C', category:'Innerwear', mrp:550, cost:388, stock:2, minStock:5 }
-    };
-    const p = mock[barcode]; if (!p) throw new Error();
-    return { ...p, barcode };
+    const r = await fetch(CONFIG.N8N_LOOKUP + '?barcode=' + barcode);
+    if (!r.ok) throw new Error('Network error');
+    const data = await r.json();
+    if (!data.found) throw new Error('Not found');
+    return data;
 }
 
 // ─── SELL SCREEN ──────────────────────────────────────────────────────
