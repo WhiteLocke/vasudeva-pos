@@ -770,7 +770,10 @@ document.addEventListener('keydown', e => {
 function handleBarcodeKey(e, ctx) {
     if (e.key === 'Enter') {
         const v = e.target.value.trim();
-        if (v) handleBarcodeScan(v, ctx);
+        if (v) {
+            e.target.blur();
+            handleBarcodeScan(v, ctx);
+        }
     }
 }
 
