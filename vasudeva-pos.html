@@ -667,7 +667,7 @@
 const CONFIG = {
     N8N_LOOKUP:    'https://whitelockemedia.app.n8n.cloud/webhook/vasudeva-lookup',
     N8N_SELL: 'https://whitelockemedia.app.n8n.cloud/webhook/vasudeva-sell',
-    N8N_ADD_STOCK: 'YOUR_N8N_ADD_STOCK_WEBHOOK_URL',
+    N8N_ADD_STOCK: 'https://whitelockemedia.app.n8n.cloud/webhook/vasudeva-addstock',
     OWNER_PIN:     '1234',
     CURRENCY:      '₹'
 };
@@ -930,8 +930,11 @@ async function submitStock() {
     };
     showToast('Saving…');
     try {
-        // Live: await fetch(CONFIG.N8N_ADD_STOCK, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
-        await new Promise(r=>setTimeout(r,600));
+        await fetch(CONFIG.N8N_ADD_STOCK, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
         ['bc-stock','f-sku','f-name','f-cat','f-mrp','f-cost','f-qty','f-min','f-exp','f-sup'].forEach(id=>document.getElementById(id).value='');
         document.getElementById('restock-banner').style.display='none';
         showToast('Saved! उत्पाद सहेजा गया', 'success');
