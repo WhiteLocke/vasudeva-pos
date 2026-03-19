@@ -666,7 +666,7 @@
 // ─── CONFIG ──────────────────────────────────────────────────────────
 const CONFIG = {
     N8N_LOOKUP:    'https://whitelockemedia.app.n8n.cloud/webhook/vasudeva-lookup',
-    N8N_SELL:      'YOUR_N8N_SELL_WEBHOOK_URL',
+    N8N_SELL: 'https://whitelockemedia.app.n8n.cloud/webhook/vasudeva-sell',
     N8N_ADD_STOCK: 'YOUR_N8N_ADD_STOCK_WEBHOOK_URL',
     OWNER_PIN:     '1234',
     CURRENCY:      '₹'
@@ -884,9 +884,15 @@ async function finalizeOrder() {
     if (!basket.length) return;
     showToast('Processing order…');
     try {
-        // Live: await fetch(CONFIG.N8N_SELL, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({items:basket,timestamp:new Date().toISOString()}) });
-        await new Promise(r=>setTimeout(r,600));
-        basket=[]; updateBasketUI(); switchTab('product');
+        await fetch(CONFIG.N8N_SELL, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                items: basket,
+                timestamp: new Date().toISOString()
+            })
+        });
+        basket = []; updateBasketUI(); switchTab('product');
         showToast('Order complete! स्टॉक अपडेट हो गया', 'success');
     } catch(_) { showToast('Failed — try again', 'error'); }
 }
