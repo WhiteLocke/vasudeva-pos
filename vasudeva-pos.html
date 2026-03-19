@@ -787,7 +787,7 @@ async function handleBarcodeScan(barcode, ctx) {
     }
 }
 
-// ─── PRODUCT LOOKUP (replace with n8n webhook) ───────────────────────
+// ─── PRODUCT LOOKUP ──────────────────────────────────────────────────
 async function lookupProduct(barcode) {
     const r = await fetch(CONFIG.N8N_LOOKUP + '?barcode=' + barcode);
     if (!r.ok) throw new Error('Network error');
