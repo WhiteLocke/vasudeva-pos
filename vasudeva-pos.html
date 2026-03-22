@@ -528,6 +528,7 @@
             <h2>Add Stock</h2>
             <div class="hindi-title">स्टॉक जोड़ें</div>
         </div>
+        <button onclick="clearStockForm()" style="margin-left:auto;padding:8px 16px;border:1.5px solid var(--border);background:none;border-radius:var(--radius-sm);font-family:'DM Sans';font-size:12px;font-weight:600;color:var(--text-light);cursor:pointer;">Clear</button>
     </div>
     <div class="screen-content">
         <div class="barcode-field" onclick="document.getElementById('bc-stock').focus()">
@@ -929,6 +930,14 @@ async function finalizeOrder() {
 
 // ─── ADD STOCK ────────────────────────────────────────────────────────
 function onStockInput() { document.getElementById('restock-banner').style.display='none'; stockProductFound = false; }
+
+function clearStockForm() {
+    ['bc-stock','f-sku','f-name','f-cat','f-mrp','f-cost','f-qty','f-min','f-exp','f-sup'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('restock-banner').style.display='none';
+    stockProductFound = false;
+    document.getElementById('bc-stock').focus();
+    showToast('Form cleared', '');
+}
 
 function displayRestock(p, barcode) {
     if (p) autofillStock(p);
