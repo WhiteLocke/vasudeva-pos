@@ -842,12 +842,28 @@ function showGhosts(p) {
         const ghost = document.getElementById('ghost-' + id);
         if (!ghost) return;
         const val = fn(p) || '';
-        const hasValue = input.value.length > 0;
-        if (!hasValue) {
+        const typed = input.value;
+        const isFocused = document.activeElement === input;
+
+        if (!typed) {
+            // Empty field — show full ghost, hide placeholder
             ghost.textContent = val;
-            input.placeholder = ''; // hide placeholder when ghost is showing
+            input.placeholder = '';
+        } else if (isFocused && val.toLowerCase().startsWith(typed.toLowerCase())) {
+            // Focused field with matching prefix — show suffix ghost only
+            // We use a trick: ghost shows full value, input text covers the prefix
+            ghost.textContent = val;
+            ghost.style.color = 'transparent'; // hide the prefix part
+            // Actually show only suffix in a readable way
+            ghost.textContent = typed + val.slice(typed.length);
+            ghost.style.color = '';
+            input.placeholder = '';
+        } else if (!isFocused && !typed) {
+            ghost.textContent = val;
+            input.placeholder = '';
         } else {
             ghost.textContent = '';
+            if (FIELD_PLACEHOLDERS[id]) input.placeholder = FIELD_PLACEHOLDERS[id];
         }
     });
 }
@@ -1026,10 +1042,18 @@ async function finalizeOrder() {
 function onStockInput() { document.getElementById('restock-banner').style.display='none'; stockProductFound = false; }
 
 function clearStockForm() {
-    ['bc-stock','f-sku','f-name','f-cat','f-mrp','f-cost','f-qty','f-min','f-exp','f-sup'].forEach(id=>document.getElementById(id).value='');
-    document.getElementById('restock-banner').style.display='none';
     stockProductFound = false;
     clearGhosts();
+    ['bc-stock','f-sku','f-name','f-cat','f-mrp','f-cost','f-qty','f-min','f-exp','f-sup'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+    // Restore all placeholders
+    Object.entries(FIELD_PLACEHOLDERS).forEach(([id, ph]) => {
+        const el = document.getElementById(id);
+        if (el) el.placeholder = ph;
+    });
+    document.getElementById('restock-banner').style.display='none';
     document.getElementById('bc-stock').focus();
     showToast('Form cleared', '');
 }
