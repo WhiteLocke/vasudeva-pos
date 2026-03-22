@@ -258,7 +258,22 @@
         .field-label-wrap { width: 100px; flex-shrink: 0; }
         .field-label { font-size: 10px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-light); line-height: 1; }
         .field-label-hindi { font-family: 'Noto Sans Devanagari', sans-serif; font-size: 9px; color: var(--text-light); opacity: 0.65; margin-top: 3px; }
-        .field-input { flex: 1; border: none; background: none; font-family: 'DM Sans', sans-serif; font-size: 15px; color: var(--text); outline: none; text-align: right; }
+
+        /* ── GHOST AUTOCOMPLETE ── */
+        .form-field { position: relative; }
+        .field-input-wrap { flex: 1; position: relative; display: flex; align-items: center; }
+        .field-input {
+            flex: 1; border: none; background: transparent;
+            font-family: 'DM Sans', sans-serif; font-size: 15px; color: var(--text);
+            outline: none; text-align: right; position: relative; z-index: 1;
+        }
+        .field-ghost {
+            position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+            font-family: 'DM Sans', sans-serif; font-size: 15px;
+            color: var(--disabled); pointer-events: none; white-space: nowrap;
+            text-align: right; z-index: 0; width: 100%;
+        }
+
         .field-input::placeholder { color: var(--disabled); }
         .submit-btn {
             width: 100%; padding: 19px; border: none; background: var(--primary); color: white;
@@ -550,31 +565,31 @@
         <div class="form-section">
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">SKU</div><div class="field-label-hindi">कोड</div></div>
-                <input class="field-input" id="f-sku" type="text" placeholder="Supplier code" autocomplete="off" oninput="onSkuInput()">
+                <div class="field-input-wrap"><input class="field-input" id="f-sku" type="text" placeholder="Supplier code" autocomplete="off" oninput="onSkuInput()"><span class="field-ghost" id="ghost-f-sku"></span></div>
             </div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">Name</div><div class="field-label-hindi">नाम</div></div>
-                <input class="field-input" id="f-name" type="text" placeholder="Product name" autocomplete="off" oninput="onNameInput()">
+                <div class="field-input-wrap"><input class="field-input" id="f-name" type="text" placeholder="Product name" autocomplete="off" oninput="onNameInput()"><span class="field-ghost" id="ghost-f-name"></span></div>
             </div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">Category</div><div class="field-label-hindi">श्रेणी</div></div>
-                <input class="field-input" id="f-cat" type="text" placeholder="e.g. Skincare" autocomplete="off">
+                <div class="field-input-wrap"><input class="field-input" id="f-cat" type="text" placeholder="e.g. Skincare" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-cat')"><span class="field-ghost" id="ghost-f-cat"></span></div>
             </div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">MRP</div><div class="field-label-hindi">अधिकतम मूल्य</div></div>
-                <input class="field-input" id="f-mrp" type="text" inputmode="decimal" placeholder="₹ 0" autocomplete="off">
+                <div class="field-input-wrap"><input class="field-input" id="f-mrp" type="text" inputmode="decimal" placeholder="₹ 0" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-mrp')"><span class="field-ghost" id="ghost-f-mrp"></span></div>
             </div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">Cost</div><div class="field-label-hindi">लागत</div></div>
-                <input class="field-input" id="f-cost" type="text" inputmode="decimal" placeholder="₹ 0" autocomplete="off">
+                <div class="field-input-wrap"><input class="field-input" id="f-cost" type="text" inputmode="decimal" placeholder="₹ 0" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-cost')"><span class="field-ghost" id="ghost-f-cost"></span></div>
             </div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">Quantity</div><div class="field-label-hindi">मात्रा</div></div>
-                <input class="field-input" id="f-qty" type="text" inputmode="numeric" placeholder="0" autocomplete="off">
+                <div class="field-input-wrap"><input class="field-input" id="f-qty" type="text" inputmode="numeric" placeholder="0" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-qty')"><span class="field-ghost" id="ghost-f-qty"></span></div>
             </div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">Min Stock</div><div class="field-label-hindi">न्यूनतम</div></div>
-                <input class="field-input" id="f-min" type="text" inputmode="numeric" placeholder="10" autocomplete="off">
+                <div class="field-input-wrap"><input class="field-input" id="f-min" type="text" inputmode="numeric" placeholder="10" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-min')"><span class="field-ghost" id="ghost-f-min"></span></div>
             </div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">Expiry</div><div class="field-label-hindi">समाप्ति</div></div>
@@ -798,42 +813,108 @@ async function lookupProduct(barcode) {
     return data;
 }
 
-async function lookupBy(field, value) {
-    if (!value.trim() || stockProductFound) return;
-    try {
-        const r = await fetch(CONFIG.N8N_LOOKUP + '?' + field + '=' + encodeURIComponent(value.trim()));
-        if (!r.ok) return;
-        const data = await r.json();
-        if (data.found) autofillStock(data);
-    } catch(_) {}
-}
-
+// ─── GHOST AUTOCOMPLETE ─────────────────────────────────────────────
+let currentSuggestion = null;
 let skuTimer = null, nameTimer = null;
-function onSkuInput() {
-    document.getElementById('restock-banner').style.display = 'none';
-    if (stockProductFound) return;
-    clearTimeout(skuTimer);
-    skuTimer = setTimeout(() => lookupBy('sku', document.getElementById('f-sku').value), 600);
-}
-function onNameInput() {
-    if (stockProductFound) return;
-    clearTimeout(nameTimer);
-    nameTimer = setTimeout(() => lookupBy('name', document.getElementById('f-name').value), 600);
+
+const GHOST_FIELDS = {
+    'f-sku':  p => p.sku || '',
+    'f-name': p => p.name || '',
+    'f-cat':  p => p.category || '',
+    'f-mrp':  p => p.mrp ? String(p.mrp) : '',
+    'f-cost': p => p.cost ? String(p.cost) : '',
+};
+
+function showGhosts(p) {
+    currentSuggestion = p;
+    Object.entries(GHOST_FIELDS).forEach(([id, fn]) => {
+        const input = document.getElementById(id);
+        const ghost = document.getElementById('ghost-' + id);
+        if (!ghost) return;
+        const val = fn(p);
+        const typed = input.value;
+        // Show ghost as: typed portion in same color (hidden by input) + remaining suggestion
+        if (val && val.toLowerCase().startsWith(typed.toLowerCase()) && typed.length > 0) {
+            ghost.textContent = val;
+        } else if (!typed) {
+            ghost.textContent = val;
+        } else {
+            ghost.textContent = '';
+        }
+    });
+    // Show barcode ghost too
+    const bcInput = document.getElementById('bc-stock');
+    if (!bcInput.value && p.barcode) bcInput.placeholder = p.barcode + ' (suggestion)';
 }
 
-function autofillStock(p) {
-    if (stockProductFound) return;
-    stockProductFound = true;
-    if (!document.getElementById('f-sku').value)  document.getElementById('f-sku').value  = p.sku || '';
-    if (!document.getElementById('f-name').value) document.getElementById('f-name').value = p.name || '';
-    if (!document.getElementById('f-cat').value)  document.getElementById('f-cat').value  = p.category || '';
-    if (!document.getElementById('f-mrp').value)  document.getElementById('f-mrp').value  = p.mrp || '';
-    if (!document.getElementById('f-cost').value) document.getElementById('f-cost').value = p.cost || '';
+function clearGhosts() {
+    currentSuggestion = null;
+    Object.keys(GHOST_FIELDS).forEach(id => {
+        const ghost = document.getElementById('ghost-' + id);
+        if (ghost) ghost.textContent = '';
+    });
+    document.getElementById('bc-stock').placeholder = 'Scan or enter barcode…';
+}
+
+function acceptSuggestion() {
+    if (!currentSuggestion) return;
+    const p = currentSuggestion;
+    document.getElementById('f-sku').value  = p.sku || '';
+    document.getElementById('f-name').value = p.name || '';
+    document.getElementById('f-cat').value  = p.category || '';
+    document.getElementById('f-mrp').value  = p.mrp || '';
+    document.getElementById('f-cost').value = p.cost || '';
     if (!document.getElementById('bc-stock').value) document.getElementById('bc-stock').value = p.barcode || '';
+    stockProductFound = true;
+    clearGhosts();
     document.getElementById('restock-banner').style.display = 'block';
     document.getElementById('restock-name').textContent = p.name || '';
     document.getElementById('f-qty').focus();
     showToast(p.name + ' found — restocking', 'success');
+}
+
+function handleStockFieldKey(e, fieldId) {
+    if ((e.key === 'Enter' || e.key === 'Tab') && currentSuggestion) {
+        e.preventDefault();
+        acceptSuggestion();
+    } else if (e.key === 'Escape') {
+        clearGhosts();
+        stockProductFound = false;
+    }
+}
+
+async function lookupBy(field, value) {
+    if (!value || value.trim().length < 3 || stockProductFound) return;
+    try {
+        const r = await fetch(CONFIG.N8N_LOOKUP + '?' + field + '=' + encodeURIComponent(value.trim()));
+        if (!r.ok) return;
+        const data = await r.json();
+        if (data.found) showGhosts(data);
+        else clearGhosts();
+    } catch(_) {}
+}
+
+function onSkuInput() {
+    if (stockProductFound) { stockProductFound = false; clearGhosts(); }
+    document.getElementById('restock-banner').style.display = 'none';
+    clearTimeout(skuTimer);
+    const v = document.getElementById('f-sku').value;
+    if (v.length < 3) { clearGhosts(); return; }
+    skuTimer = setTimeout(() => lookupBy('sku', v), 500);
+}
+
+function onNameInput() {
+    if (stockProductFound) { stockProductFound = false; clearGhosts(); }
+    clearTimeout(nameTimer);
+    const v = document.getElementById('f-name').value;
+    if (v.length < 3) { clearGhosts(); return; }
+    nameTimer = setTimeout(() => lookupBy('name', v), 500);
+}
+
+function autofillStock(p) {
+    showGhosts(p);
+    // For barcode scan, auto-accept immediately
+    acceptSuggestion();
 }
 
 // ─── SELL SCREEN ──────────────────────────────────────────────────────
@@ -935,6 +1016,7 @@ function clearStockForm() {
     ['bc-stock','f-sku','f-name','f-cat','f-mrp','f-cost','f-qty','f-min','f-exp','f-sup'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('restock-banner').style.display='none';
     stockProductFound = false;
+    clearGhosts();
     document.getElementById('bc-stock').focus();
     showToast('Form cleared', '');
 }
