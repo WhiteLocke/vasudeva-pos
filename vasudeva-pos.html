@@ -269,15 +269,14 @@
         }
         .field-ghost { display: none; } /* ghost spans kept for compat but hidden */
         .field-hint {
-            width: 100%; padding: 4px 18px 8px;
-            font-size: 11px; color: var(--primary); font-style: italic;
+            width: 100%; padding: 2px 18px 8px;
+            font-size: 13px; color: var(--disabled);
             display: none; cursor: pointer; text-align: right;
+            font-family: 'DM Sans', sans-serif;
         }
         .field-hint.visible { display: block; }
         .field-hint span { 
-            background: var(--primary-light); padding: 2px 8px; 
-            border-radius: 20px; font-style: normal; font-weight: 500;
-            font-size: 11px;
+            font-weight: 400;
         }
 
         .field-input::placeholder { color: var(--disabled); }
@@ -571,23 +570,23 @@
         <div class="form-section">
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">SKU</div><div class="field-label-hindi">कोड</div></div>
-                <div class="field-input-wrap"><input class="field-input" id="f-sku" type="text" placeholder="Supplier code" autocomplete="off" oninput="onSkuInput()" onkeydown="handleStockFieldKey(event,'f-sku')"><span class="field-ghost" id="ghost-f-sku"></span></div><div class="field-hint" id="hint-f-sku" onclick="acceptSuggestion()"><span id="hint-val-f-sku"></span> ↵</div>
+                <div class="field-input-wrap"><input class="field-input" id="f-sku" type="text" placeholder="Supplier code" autocomplete="off" oninput="onSkuInput()" onkeydown="handleStockFieldKey(event,'f-sku')"><span class="field-ghost" id="ghost-f-sku"></span></div><div class="field-hint" id="hint-f-sku" onclick="acceptSuggestion()"><span id="hint-val-f-sku"></span> →</div>
             </div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">Name</div><div class="field-label-hindi">नाम</div></div>
-                <div class="field-input-wrap"><input class="field-input" id="f-name" type="text" placeholder="Product name" autocomplete="off" oninput="onNameInput()" onkeydown="handleStockFieldKey(event,'f-name')"><span class="field-ghost" id="ghost-f-name"></span></div><div class="field-hint" id="hint-f-name" onclick="acceptSuggestion()"><span id="hint-val-f-name"></span> ↵</div>
+                <div class="field-input-wrap"><input class="field-input" id="f-name" type="text" placeholder="Product name" autocomplete="off" oninput="onNameInput()" onkeydown="handleStockFieldKey(event,'f-name')"><span class="field-ghost" id="ghost-f-name"></span></div><div class="field-hint" id="hint-f-name" onclick="acceptSuggestion()"><span id="hint-val-f-name"></span> →</div>
             </div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">Category</div><div class="field-label-hindi">श्रेणी</div></div>
-                <div class="field-input-wrap"><input class="field-input" id="f-cat" onkeydown="handleStockFieldKey(event,'f-cat')" type="text" placeholder="e.g. Skincare" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-cat')"><span class="field-ghost" id="ghost-f-cat"></span></div><div class="field-hint" id="hint-f-cat" onclick="acceptSuggestion()"><span id="hint-val-f-cat"></span> ↵</div>
+                <div class="field-input-wrap"><input class="field-input" id="f-cat" onkeydown="handleStockFieldKey(event,'f-cat')" type="text" placeholder="e.g. Skincare" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-cat')"><span class="field-ghost" id="ghost-f-cat"></span></div><div class="field-hint" id="hint-f-cat" onclick="acceptSuggestion()"><span id="hint-val-f-cat"></span> →</div>
             </div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">MRP</div><div class="field-label-hindi">अधिकतम मूल्य</div></div>
-                <div class="field-input-wrap"><input class="field-input" id="f-mrp" onkeydown="handleStockFieldKey(event,'f-mrp')" type="text" inputmode="decimal" placeholder="₹ 0" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-mrp')"><span class="field-ghost" id="ghost-f-mrp"></span></div><div class="field-hint" id="hint-f-mrp" onclick="acceptSuggestion()"><span id="hint-val-f-mrp"></span> ↵</div>
+                <div class="field-input-wrap"><input class="field-input" id="f-mrp" onkeydown="handleStockFieldKey(event,'f-mrp')" type="text" inputmode="decimal" placeholder="₹ 0" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-mrp')"><span class="field-ghost" id="ghost-f-mrp"></span></div><div class="field-hint" id="hint-f-mrp" onclick="acceptSuggestion()"><span id="hint-val-f-mrp"></span> →</div>
             </div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">Cost</div><div class="field-label-hindi">लागत</div></div>
-                <div class="field-input-wrap"><input class="field-input" id="f-cost" onkeydown="handleStockFieldKey(event,'f-cost')" type="text" inputmode="decimal" placeholder="₹ 0" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-cost')"><span class="field-ghost" id="ghost-f-cost"></span></div><div class="field-hint" id="hint-f-cost" onclick="acceptSuggestion()"><span id="hint-val-f-cost"></span> ↵</div>
+                <div class="field-input-wrap"><input class="field-input" id="f-cost" onkeydown="handleStockFieldKey(event,'f-cost')" type="text" inputmode="decimal" placeholder="₹ 0" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-cost')"><span class="field-ghost" id="ghost-f-cost"></span></div><div class="field-hint" id="hint-f-cost" onclick="acceptSuggestion()"><span id="hint-val-f-cost"></span> →</div>
             </div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">Quantity</div><div class="field-label-hindi">मात्रा</div></div>
@@ -843,7 +842,7 @@ const FIELD_PLACEHOLDERS = {
 
 function showGhosts(p) {
     currentSuggestion = p;
-    const focusedId = document.activeElement ? document.activeElement.id : null;
+    const focusedEl = document.activeElement;
     Object.entries(GHOST_FIELDS).forEach(([id, fn]) => {
         const input = document.getElementById(id);
         const hint = document.getElementById('hint-' + id);
@@ -852,16 +851,18 @@ function showGhosts(p) {
         if (ghost) ghost.textContent = '';
         const val = fn(p) || '';
         const typed = input.value;
-        // Show hint below the focused field only, or on empty unfocused fields as ghost placeholder
-        if (id === focusedId && val && val !== typed) {
-            // Show hint line below this field
-            if (hint && hintVal) {
+        const isFocused = focusedEl === input;
+
+        if (isFocused) {
+            // Always show hint on focused field if suggestion differs from typed
+            if (hint && hintVal && val) {
                 hintVal.textContent = val;
                 hint.classList.add('visible');
             }
             input.placeholder = '';
         } else if (!typed && val) {
-            // Empty unfocused field — show as placeholder replacement
+            // Empty unfocused — show as muted placeholder
+            if (hint) hint.classList.remove('visible');
             input.placeholder = val;
         } else {
             if (hint) hint.classList.remove('visible');
