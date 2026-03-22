@@ -270,13 +270,19 @@
         .field-ghost { display: none; } /* ghost spans kept for compat but hidden */
         .field-hint {
             width: 100%; padding: 2px 18px 8px;
-            font-size: 13px; color: var(--disabled);
             display: none; cursor: pointer; text-align: right;
             font-family: 'DM Sans', sans-serif;
         }
         .field-hint.visible { display: block; }
-        .field-hint span { 
-            font-weight: 400;
+        .field-hint span {
+            font-size: 12px; font-weight: 500;
+            color: var(--text-mid);
+            border: 1.5px solid var(--border);
+            border-radius: 20px; padding: 2px 10px;
+            background: var(--bg);
+        }
+        .field-hint .hint-arrow {
+            font-size: 11px; color: var(--text-light); margin-left: 4px;
         }
 
         .field-input::placeholder { color: var(--disabled); }
@@ -570,23 +576,23 @@
         <div class="form-section">
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">SKU</div><div class="field-label-hindi">कोड</div></div>
-                <div class="field-input-wrap"><input class="field-input" id="f-sku" type="text" placeholder="Supplier code" autocomplete="off" oninput="onSkuInput()" onkeydown="handleStockFieldKey(event,'f-sku')"><span class="field-ghost" id="ghost-f-sku"></span></div><div class="field-hint" id="hint-f-sku" onclick="acceptSuggestion()"><span id="hint-val-f-sku"></span> →</div>
+                <div class="field-input-wrap"><input class="field-input" id="f-sku" type="text" placeholder="Supplier code" autocomplete="off" oninput="onSkuInput()" onkeydown="handleStockFieldKey(event,'f-sku')"><span class="field-ghost" id="ghost-f-sku"></span></div><div class="field-hint" id="hint-f-sku" onclick="acceptSuggestion()"><span id="hint-val-f-sku"></span><span class="hint-arrow">→</span></div>
             </div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">Name</div><div class="field-label-hindi">नाम</div></div>
-                <div class="field-input-wrap"><input class="field-input" id="f-name" type="text" placeholder="Product name" autocomplete="off" oninput="onNameInput()" onkeydown="handleStockFieldKey(event,'f-name')"><span class="field-ghost" id="ghost-f-name"></span></div><div class="field-hint" id="hint-f-name" onclick="acceptSuggestion()"><span id="hint-val-f-name"></span> →</div>
+                <div class="field-input-wrap"><input class="field-input" id="f-name" type="text" placeholder="Product name" autocomplete="off" oninput="onNameInput()" onkeydown="handleStockFieldKey(event,'f-name')"><span class="field-ghost" id="ghost-f-name"></span></div><div class="field-hint" id="hint-f-name" onclick="acceptSuggestion()"><span id="hint-val-f-name"></span><span class="hint-arrow">→</span></div>
             </div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">Category</div><div class="field-label-hindi">श्रेणी</div></div>
-                <div class="field-input-wrap"><input class="field-input" id="f-cat" onkeydown="handleStockFieldKey(event,'f-cat')" type="text" placeholder="e.g. Skincare" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-cat')"><span class="field-ghost" id="ghost-f-cat"></span></div><div class="field-hint" id="hint-f-cat" onclick="acceptSuggestion()"><span id="hint-val-f-cat"></span> →</div>
+                <div class="field-input-wrap"><input class="field-input" id="f-cat" onkeydown="handleStockFieldKey(event,'f-cat')" type="text" placeholder="e.g. Skincare" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-cat')"><span class="field-ghost" id="ghost-f-cat"></span></div><div class="field-hint" id="hint-f-cat" onclick="acceptSuggestion()"><span id="hint-val-f-cat"></span><span class="hint-arrow">→</span></div>
             </div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">MRP</div><div class="field-label-hindi">अधिकतम मूल्य</div></div>
-                <div class="field-input-wrap"><input class="field-input" id="f-mrp" onkeydown="handleStockFieldKey(event,'f-mrp')" type="text" inputmode="decimal" placeholder="₹ 0" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-mrp')"><span class="field-ghost" id="ghost-f-mrp"></span></div><div class="field-hint" id="hint-f-mrp" onclick="acceptSuggestion()"><span id="hint-val-f-mrp"></span> →</div>
+                <div class="field-input-wrap"><input class="field-input" id="f-mrp" onkeydown="handleStockFieldKey(event,'f-mrp')" type="text" inputmode="decimal" placeholder="₹ 0" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-mrp')"><span class="field-ghost" id="ghost-f-mrp"></span></div><div class="field-hint" id="hint-f-mrp" onclick="acceptSuggestion()"><span id="hint-val-f-mrp"></span><span class="hint-arrow">→</span></div>
             </div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">Cost</div><div class="field-label-hindi">लागत</div></div>
-                <div class="field-input-wrap"><input class="field-input" id="f-cost" onkeydown="handleStockFieldKey(event,'f-cost')" type="text" inputmode="decimal" placeholder="₹ 0" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-cost')"><span class="field-ghost" id="ghost-f-cost"></span></div><div class="field-hint" id="hint-f-cost" onclick="acceptSuggestion()"><span id="hint-val-f-cost"></span> →</div>
+                <div class="field-input-wrap"><input class="field-input" id="f-cost" onkeydown="handleStockFieldKey(event,'f-cost')" type="text" inputmode="decimal" placeholder="₹ 0" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-cost')"><span class="field-ghost" id="ghost-f-cost"></span></div><div class="field-hint" id="hint-f-cost" onclick="acceptSuggestion()"><span id="hint-val-f-cost"></span><span class="hint-arrow">→</span></div>
             </div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">Quantity</div><div class="field-label-hindi">मात्रा</div></div>
