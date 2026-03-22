@@ -565,31 +565,31 @@
         <div class="form-section">
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">SKU</div><div class="field-label-hindi">कोड</div></div>
-                <div class="field-input-wrap"><input class="field-input" id="f-sku" type="text" placeholder="Supplier code" autocomplete="off" oninput="onSkuInput()"><span class="field-ghost" id="ghost-f-sku"></span></div>
+                <div class="field-input-wrap"><input class="field-input" id="f-sku" type="text" placeholder="Supplier code" autocomplete="off" oninput="onSkuInput()" onkeydown="handleStockFieldKey(event,'f-sku')"><span class="field-ghost" id="ghost-f-sku"></span></div>
             </div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">Name</div><div class="field-label-hindi">नाम</div></div>
-                <div class="field-input-wrap"><input class="field-input" id="f-name" type="text" placeholder="Product name" autocomplete="off" oninput="onNameInput()"><span class="field-ghost" id="ghost-f-name"></span></div>
+                <div class="field-input-wrap"><input class="field-input" id="f-name" type="text" placeholder="Product name" autocomplete="off" oninput="onNameInput()" onkeydown="handleStockFieldKey(event,'f-name')"><span class="field-ghost" id="ghost-f-name"></span></div>
             </div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">Category</div><div class="field-label-hindi">श्रेणी</div></div>
-                <div class="field-input-wrap"><input class="field-input" id="f-cat" type="text" placeholder="e.g. Skincare" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-cat')"><span class="field-ghost" id="ghost-f-cat"></span></div>
+                <div class="field-input-wrap"><input class="field-input" id="f-cat" onkeydown="handleStockFieldKey(event,'f-cat')" type="text" placeholder="e.g. Skincare" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-cat')"><span class="field-ghost" id="ghost-f-cat"></span></div>
             </div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">MRP</div><div class="field-label-hindi">अधिकतम मूल्य</div></div>
-                <div class="field-input-wrap"><input class="field-input" id="f-mrp" type="text" inputmode="decimal" placeholder="₹ 0" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-mrp')"><span class="field-ghost" id="ghost-f-mrp"></span></div>
+                <div class="field-input-wrap"><input class="field-input" id="f-mrp" onkeydown="handleStockFieldKey(event,'f-mrp')" type="text" inputmode="decimal" placeholder="₹ 0" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-mrp')"><span class="field-ghost" id="ghost-f-mrp"></span></div>
             </div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">Cost</div><div class="field-label-hindi">लागत</div></div>
-                <div class="field-input-wrap"><input class="field-input" id="f-cost" type="text" inputmode="decimal" placeholder="₹ 0" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-cost')"><span class="field-ghost" id="ghost-f-cost"></span></div>
+                <div class="field-input-wrap"><input class="field-input" id="f-cost" onkeydown="handleStockFieldKey(event,'f-cost')" type="text" inputmode="decimal" placeholder="₹ 0" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-cost')"><span class="field-ghost" id="ghost-f-cost"></span></div>
             </div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">Quantity</div><div class="field-label-hindi">मात्रा</div></div>
-                <div class="field-input-wrap"><input class="field-input" id="f-qty" type="text" inputmode="numeric" placeholder="0" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-qty')"><span class="field-ghost" id="ghost-f-qty"></span></div>
+                <div class="field-input-wrap"><input class="field-input" id="f-qty" onkeydown="handleStockFieldKey(event,'f-qty')" type="text" inputmode="numeric" placeholder="0" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-qty')"><span class="field-ghost" id="ghost-f-qty"></span></div>
             </div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">Min Stock</div><div class="field-label-hindi">न्यूनतम</div></div>
-                <div class="field-input-wrap"><input class="field-input" id="f-min" type="text" inputmode="numeric" placeholder="10" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-min')"><span class="field-ghost" id="ghost-f-min"></span></div>
+                <div class="field-input-wrap"><input class="field-input" id="f-min" onkeydown="handleStockFieldKey(event,'f-min')" type="text" inputmode="numeric" placeholder="10" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-min')"><span class="field-ghost" id="ghost-f-min"></span></div>
             </div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">Expiry</div><div class="field-label-hindi">समाप्ति</div></div>
@@ -825,26 +825,31 @@ const GHOST_FIELDS = {
     'f-cost': p => p.cost ? String(p.cost) : '',
 };
 
+const FIELD_PLACEHOLDERS = {
+    'f-sku':  'Supplier code',
+    'f-name': 'Product name',
+    'f-cat':  'e.g. Skincare',
+    'f-mrp':  '₹ 0',
+    'f-cost': '₹ 0',
+    'f-qty':  '0',
+    'f-min':  '10',
+};
+
 function showGhosts(p) {
     currentSuggestion = p;
     Object.entries(GHOST_FIELDS).forEach(([id, fn]) => {
         const input = document.getElementById(id);
         const ghost = document.getElementById('ghost-' + id);
         if (!ghost) return;
-        const val = fn(p);
-        const typed = input.value;
-        // Show ghost as: typed portion in same color (hidden by input) + remaining suggestion
-        if (val && val.toLowerCase().startsWith(typed.toLowerCase()) && typed.length > 0) {
+        const val = fn(p) || '';
+        const hasValue = input.value.length > 0;
+        if (!hasValue) {
             ghost.textContent = val;
-        } else if (!typed) {
-            ghost.textContent = val;
+            input.placeholder = ''; // hide placeholder when ghost is showing
         } else {
             ghost.textContent = '';
         }
     });
-    // Show barcode ghost too
-    const bcInput = document.getElementById('bc-stock');
-    if (!bcInput.value && p.barcode) bcInput.placeholder = p.barcode + ' (suggestion)';
 }
 
 function clearGhosts() {
@@ -852,6 +857,8 @@ function clearGhosts() {
     Object.keys(GHOST_FIELDS).forEach(id => {
         const ghost = document.getElementById('ghost-' + id);
         if (ghost) ghost.textContent = '';
+        const input = document.getElementById(id);
+        if (input && FIELD_PLACEHOLDERS[id]) input.placeholder = FIELD_PLACEHOLDERS[id];
     });
     document.getElementById('bc-stock').placeholder = 'Scan or enter barcode…';
 }
@@ -874,9 +881,12 @@ function acceptSuggestion() {
 }
 
 function handleStockFieldKey(e, fieldId) {
-    if ((e.key === 'Enter' || e.key === 'Tab') && currentSuggestion) {
-        e.preventDefault();
-        acceptSuggestion();
+    if (e.key === 'Enter' || e.key === 'Tab') {
+        if (currentSuggestion) {
+            e.preventDefault();
+            acceptSuggestion();
+            return;
+        }
     } else if (e.key === 'Escape') {
         clearGhosts();
         stockProductFound = false;
@@ -900,6 +910,8 @@ function onSkuInput() {
     clearTimeout(skuTimer);
     const v = document.getElementById('f-sku').value;
     if (v.length < 3) { clearGhosts(); return; }
+    // Refresh ghost display immediately if we have a suggestion
+    if (currentSuggestion) showGhosts(currentSuggestion);
     skuTimer = setTimeout(() => lookupBy('sku', v), 500);
 }
 
@@ -908,6 +920,7 @@ function onNameInput() {
     clearTimeout(nameTimer);
     const v = document.getElementById('f-name').value;
     if (v.length < 3) { clearGhosts(); return; }
+    if (currentSuggestion) showGhosts(currentSuggestion);
     nameTimer = setTimeout(() => lookupBy('name', v), 500);
 }
 
