@@ -549,11 +549,11 @@
         <div class="form-section">
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">SKU</div><div class="field-label-hindi">कोड</div></div>
-                <input class="field-input" id="f-sku" type="text" placeholder="Supplier code" autocomplete="off">
+                <input class="field-input" id="f-sku" type="text" placeholder="Supplier code" autocomplete="off" oninput="onSkuInput()">
             </div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">Name</div><div class="field-label-hindi">नाम</div></div>
-                <input class="field-input" id="f-name" type="text" placeholder="Product name" autocomplete="off">
+                <input class="field-input" id="f-name" type="text" placeholder="Product name" autocomplete="off" oninput="onNameInput()">
             </div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">Category</div><div class="field-label-hindi">श्रेणी</div></div>
@@ -666,8 +666,8 @@
 // ─── CONFIG ──────────────────────────────────────────────────────────
 const CONFIG = {
     N8N_LOOKUP:    'https://whitelockemedia.app.n8n.cloud/webhook/vasudeva-lookup',
-    N8N_SELL: 'https://whitelockemedia.app.n8n.cloud/webhook/vasudeva-sell',
-    N8N_ADD_STOCK: 'https://whitelockemedia.app.n8n.cloud/webhook/vasudeva-addstock',
+    N8N_SELL:      'YOUR_N8N_SELL_WEBHOOK_URL',
+    N8N_ADD_STOCK: 'YOUR_N8N_ADD_STOCK_WEBHOOK_URL',
     OWNER_PIN:     '1234',
     CURRENCY:      '₹'
 };
@@ -682,6 +682,7 @@ let npTarget = null;
 let npVal = '';
 let pinVal = '';
 let pinUnlocked = false;
+let stockProductFound = false;
 let camCtx = null;
 let camStream = null;
 let camDetector = null;
@@ -770,10 +771,7 @@ document.addEventListener('keydown', e => {
 function handleBarcodeKey(e, ctx) {
     if (e.key === 'Enter') {
         const v = e.target.value.trim();
-        if (v) {
-            e.target.blur();
-            handleBarcodeScan(v, ctx);
-        }
+        if (v) handleBarcodeScan(v, ctx);
     }
 }
 
@@ -797,6 +795,44 @@ async function lookupProduct(barcode) {
     const data = await r.json();
     if (!data.found) throw new Error('Not found');
     return data;
+}
+
+async function lookupBy(field, value) {
+    if (!value.trim() || stockProductFound) return;
+    try {
+        const r = await fetch(CONFIG.N8N_LOOKUP + '?' + field + '=' + encodeURIComponent(value.trim()));
+        if (!r.ok) return;
+        const data = await r.json();
+        if (data.found) autofillStock(data);
+    } catch(_) {}
+}
+
+let skuTimer = null, nameTimer = null;
+function onSkuInput() {
+    document.getElementById('restock-banner').style.display = 'none';
+    if (stockProductFound) return;
+    clearTimeout(skuTimer);
+    skuTimer = setTimeout(() => lookupBy('sku', document.getElementById('f-sku').value), 600);
+}
+function onNameInput() {
+    if (stockProductFound) return;
+    clearTimeout(nameTimer);
+    nameTimer = setTimeout(() => lookupBy('name', document.getElementById('f-name').value), 600);
+}
+
+function autofillStock(p) {
+    if (stockProductFound) return;
+    stockProductFound = true;
+    if (!document.getElementById('f-sku').value)  document.getElementById('f-sku').value  = p.sku || '';
+    if (!document.getElementById('f-name').value) document.getElementById('f-name').value = p.name || '';
+    if (!document.getElementById('f-cat').value)  document.getElementById('f-cat').value  = p.category || '';
+    if (!document.getElementById('f-mrp').value)  document.getElementById('f-mrp').value  = p.mrp || '';
+    if (!document.getElementById('f-cost').value) document.getElementById('f-cost').value = p.cost || '';
+    if (!document.getElementById('bc-stock').value) document.getElementById('bc-stock').value = p.barcode || '';
+    document.getElementById('restock-banner').style.display = 'block';
+    document.getElementById('restock-name').textContent = p.name || '';
+    document.getElementById('f-qty').focus();
+    showToast(p.name + ' found — restocking', 'success');
 }
 
 // ─── SELL SCREEN ──────────────────────────────────────────────────────
@@ -884,34 +920,18 @@ async function finalizeOrder() {
     if (!basket.length) return;
     showToast('Processing order…');
     try {
-        await fetch(CONFIG.N8N_SELL, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                items: basket,
-                timestamp: new Date().toISOString()
-            })
-        });
-        basket = []; updateBasketUI(); switchTab('product');
+        // Live: await fetch(CONFIG.N8N_SELL, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({items:basket,timestamp:new Date().toISOString()}) });
+        await new Promise(r=>setTimeout(r,600));
+        basket=[]; updateBasketUI(); switchTab('product');
         showToast('Order complete! स्टॉक अपडेट हो गया', 'success');
     } catch(_) { showToast('Failed — try again', 'error'); }
 }
 
 // ─── ADD STOCK ────────────────────────────────────────────────────────
-function onStockInput() { document.getElementById('restock-banner').style.display='none'; }
+function onStockInput() { document.getElementById('restock-banner').style.display='none'; stockProductFound = false; }
 
 function displayRestock(p, barcode) {
-    if (p) {
-        document.getElementById('restock-banner').style.display='block';
-        document.getElementById('restock-name').textContent = p.name;
-        document.getElementById('f-sku').value  = p.sku;
-        document.getElementById('f-name').value = p.name;
-        document.getElementById('f-cat').value  = p.category||'';
-        document.getElementById('f-mrp').value  = p.mrp;
-        document.getElementById('f-cost').value = p.cost;
-        document.getElementById('f-qty').focus();
-        showToast(p.name + ' — enter new quantity', 'success');
-    }
+    if (p) autofillStock(p);
 }
 
 async function submitStock() {
@@ -930,12 +950,10 @@ async function submitStock() {
     };
     showToast('Saving…');
     try {
-        await fetch(CONFIG.N8N_ADD_STOCK, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(payload)
-        });
+        // Live: await fetch(CONFIG.N8N_ADD_STOCK, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+        await new Promise(r=>setTimeout(r,600));
         ['bc-stock','f-sku','f-name','f-cat','f-mrp','f-cost','f-qty','f-min','f-exp','f-sup'].forEach(id=>document.getElementById(id).value='');
+        stockProductFound = false;
         document.getElementById('restock-banner').style.display='none';
         showToast('Saved! उत्पाद सहेजा गया', 'success');
         document.getElementById('bc-stock').focus();
