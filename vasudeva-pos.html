@@ -554,7 +554,7 @@
             <h2>Add Stock</h2>
             <div class="hindi-title">स्टॉक जोड़ें</div>
         </div>
-        <button onclick="clearStockForm()" style="margin-left:auto;padding:8px 16px;border:1.5px solid var(--border);background:none;border-radius:var(--radius-sm);font-family:'DM Sans';font-size:12px;font-weight:600;color:var(--text-light);cursor:pointer;">Clear</button>
+        <button onmousedown="event.preventDefault();clearStockForm()" ontouchstart="event.preventDefault();clearStockForm()" style="margin-left:auto;padding:8px 16px;border:1.5px solid var(--border);background:none;border-radius:var(--radius-sm);font-family:'DM Sans';font-size:12px;font-weight:600;color:var(--text-light);cursor:pointer;">Clear</button>
     </div>
     <div class="screen-content">
         <div class="barcode-field" onclick="document.getElementById('bc-stock').focus()">
@@ -1076,11 +1076,11 @@ async function submitStock() {
     const barcode = document.getElementById('bc-stock').value.trim();
     const qty  = document.getElementById('f-qty').value.trim();
     const name = document.getElementById('f-name').value.trim();
-    if (!barcode||!qty||!name) { showToast('Barcode, name and quantity required', 'error'); return; }
+    if (!barcode||!name) { showToast('Barcode and name required', 'error'); return; }
     const payload = {
         barcode, sku:document.getElementById('f-sku').value, name,
         category:document.getElementById('f-cat').value, mrp:document.getElementById('f-mrp').value,
-        cost:document.getElementById('f-cost').value, quantity:qty,
+        cost:document.getElementById('f-cost').value, quantity: qty || '0',
         minStock:document.getElementById('f-min').value||10,
         expiry:document.getElementById('f-exp').value,
         supplier:document.getElementById('f-sup').value,
