@@ -260,18 +260,24 @@
         .field-label-hindi { font-family: 'Noto Sans Devanagari', sans-serif; font-size: 9px; color: var(--text-light); opacity: 0.65; margin-top: 3px; }
 
         /* ── GHOST AUTOCOMPLETE ── */
-        .form-field { position: relative; }
+        .form-field { position: relative; flex-wrap: wrap; }
         .field-input-wrap { flex: 1; position: relative; display: flex; align-items: center; }
         .field-input {
             flex: 1; border: none; background: transparent;
             font-family: 'DM Sans', sans-serif; font-size: 15px; color: var(--text);
-            outline: none; text-align: right; position: relative; z-index: 1;
+            outline: none; text-align: right;
         }
-        .field-ghost {
-            position: absolute; right: 0; top: 50%; transform: translateY(-50%);
-            font-family: 'DM Sans', sans-serif; font-size: 15px;
-            color: var(--disabled); pointer-events: none; white-space: nowrap;
-            text-align: right; z-index: 0; width: 100%;
+        .field-ghost { display: none; } /* ghost spans kept for compat but hidden */
+        .field-hint {
+            width: 100%; padding: 4px 18px 8px;
+            font-size: 11px; color: var(--primary); font-style: italic;
+            display: none; cursor: pointer; text-align: right;
+        }
+        .field-hint.visible { display: block; }
+        .field-hint span { 
+            background: var(--primary-light); padding: 2px 8px; 
+            border-radius: 20px; font-style: normal; font-weight: 500;
+            font-size: 11px;
         }
 
         .field-input::placeholder { color: var(--disabled); }
@@ -565,23 +571,23 @@
         <div class="form-section">
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">SKU</div><div class="field-label-hindi">कोड</div></div>
-                <div class="field-input-wrap"><input class="field-input" id="f-sku" type="text" placeholder="Supplier code" autocomplete="off" oninput="onSkuInput()" onkeydown="handleStockFieldKey(event,'f-sku')"><span class="field-ghost" id="ghost-f-sku"></span></div>
+                <div class="field-input-wrap"><input class="field-input" id="f-sku" type="text" placeholder="Supplier code" autocomplete="off" oninput="onSkuInput()" onkeydown="handleStockFieldKey(event,'f-sku')"><span class="field-ghost" id="ghost-f-sku"></span></div><div class="field-hint" id="hint-f-sku" onclick="acceptSuggestion()"><span id="hint-val-f-sku"></span> ↵</div>
             </div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">Name</div><div class="field-label-hindi">नाम</div></div>
-                <div class="field-input-wrap"><input class="field-input" id="f-name" type="text" placeholder="Product name" autocomplete="off" oninput="onNameInput()" onkeydown="handleStockFieldKey(event,'f-name')"><span class="field-ghost" id="ghost-f-name"></span></div>
+                <div class="field-input-wrap"><input class="field-input" id="f-name" type="text" placeholder="Product name" autocomplete="off" oninput="onNameInput()" onkeydown="handleStockFieldKey(event,'f-name')"><span class="field-ghost" id="ghost-f-name"></span></div><div class="field-hint" id="hint-f-name" onclick="acceptSuggestion()"><span id="hint-val-f-name"></span> ↵</div>
             </div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">Category</div><div class="field-label-hindi">श्रेणी</div></div>
-                <div class="field-input-wrap"><input class="field-input" id="f-cat" onkeydown="handleStockFieldKey(event,'f-cat')" type="text" placeholder="e.g. Skincare" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-cat')"><span class="field-ghost" id="ghost-f-cat"></span></div>
+                <div class="field-input-wrap"><input class="field-input" id="f-cat" onkeydown="handleStockFieldKey(event,'f-cat')" type="text" placeholder="e.g. Skincare" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-cat')"><span class="field-ghost" id="ghost-f-cat"></span></div><div class="field-hint" id="hint-f-cat" onclick="acceptSuggestion()"><span id="hint-val-f-cat"></span> ↵</div>
             </div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">MRP</div><div class="field-label-hindi">अधिकतम मूल्य</div></div>
-                <div class="field-input-wrap"><input class="field-input" id="f-mrp" onkeydown="handleStockFieldKey(event,'f-mrp')" type="text" inputmode="decimal" placeholder="₹ 0" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-mrp')"><span class="field-ghost" id="ghost-f-mrp"></span></div>
+                <div class="field-input-wrap"><input class="field-input" id="f-mrp" onkeydown="handleStockFieldKey(event,'f-mrp')" type="text" inputmode="decimal" placeholder="₹ 0" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-mrp')"><span class="field-ghost" id="ghost-f-mrp"></span></div><div class="field-hint" id="hint-f-mrp" onclick="acceptSuggestion()"><span id="hint-val-f-mrp"></span> ↵</div>
             </div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">Cost</div><div class="field-label-hindi">लागत</div></div>
-                <div class="field-input-wrap"><input class="field-input" id="f-cost" onkeydown="handleStockFieldKey(event,'f-cost')" type="text" inputmode="decimal" placeholder="₹ 0" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-cost')"><span class="field-ghost" id="ghost-f-cost"></span></div>
+                <div class="field-input-wrap"><input class="field-input" id="f-cost" onkeydown="handleStockFieldKey(event,'f-cost')" type="text" inputmode="decimal" placeholder="₹ 0" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-cost')"><span class="field-ghost" id="ghost-f-cost"></span></div><div class="field-hint" id="hint-f-cost" onclick="acceptSuggestion()"><span id="hint-val-f-cost"></span> ↵</div>
             </div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">Quantity</div><div class="field-label-hindi">मात्रा</div></div>
@@ -837,33 +843,29 @@ const FIELD_PLACEHOLDERS = {
 
 function showGhosts(p) {
     currentSuggestion = p;
+    const focusedId = document.activeElement ? document.activeElement.id : null;
     Object.entries(GHOST_FIELDS).forEach(([id, fn]) => {
         const input = document.getElementById(id);
+        const hint = document.getElementById('hint-' + id);
+        const hintVal = document.getElementById('hint-val-' + id);
         const ghost = document.getElementById('ghost-' + id);
-        if (!ghost) return;
+        if (ghost) ghost.textContent = '';
         const val = fn(p) || '';
         const typed = input.value;
-        const isFocused = document.activeElement === input;
-
-        if (!typed) {
-            // Empty field — show full ghost, hide placeholder
-            ghost.textContent = val;
+        // Show hint below the focused field only, or on empty unfocused fields as ghost placeholder
+        if (id === focusedId && val && val !== typed) {
+            // Show hint line below this field
+            if (hint && hintVal) {
+                hintVal.textContent = val;
+                hint.classList.add('visible');
+            }
             input.placeholder = '';
-        } else if (isFocused && val.toLowerCase().startsWith(typed.toLowerCase())) {
-            // Focused field with matching prefix — show suffix ghost only
-            // We use a trick: ghost shows full value, input text covers the prefix
-            ghost.textContent = val;
-            ghost.style.color = 'transparent'; // hide the prefix part
-            // Actually show only suffix in a readable way
-            ghost.textContent = typed + val.slice(typed.length);
-            ghost.style.color = '';
-            input.placeholder = '';
-        } else if (!isFocused && !typed) {
-            ghost.textContent = val;
-            input.placeholder = '';
+        } else if (!typed && val) {
+            // Empty unfocused field — show as placeholder replacement
+            input.placeholder = val;
         } else {
-            ghost.textContent = '';
-            if (FIELD_PLACEHOLDERS[id]) input.placeholder = FIELD_PLACEHOLDERS[id];
+            if (hint) hint.classList.remove('visible');
+            if (FIELD_PLACEHOLDERS[id] && !typed) input.placeholder = FIELD_PLACEHOLDERS[id];
         }
     });
 }
@@ -873,6 +875,8 @@ function clearGhosts() {
     Object.keys(GHOST_FIELDS).forEach(id => {
         const ghost = document.getElementById('ghost-' + id);
         if (ghost) ghost.textContent = '';
+        const hint = document.getElementById('hint-' + id);
+        if (hint) hint.classList.remove('visible');
         const input = document.getElementById(id);
         if (input && FIELD_PLACEHOLDERS[id]) input.placeholder = FIELD_PLACEHOLDERS[id];
     });
@@ -926,7 +930,6 @@ function onSkuInput() {
     clearTimeout(skuTimer);
     const v = document.getElementById('f-sku').value;
     if (v.length < 3) { clearGhosts(); return; }
-    // Refresh ghost display immediately if we have a suggestion
     if (currentSuggestion) showGhosts(currentSuggestion);
     skuTimer = setTimeout(() => lookupBy('sku', v), 500);
 }
