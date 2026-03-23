@@ -351,11 +351,15 @@
         .inv-edit-btn { width:100%; padding:11px; border:1.5px solid var(--primary); background:none; color:var(--primary); border-radius:var(--radius-sm); font-family:'DM Sans'; font-size:13px; font-weight:600; cursor:pointer; transition:background 0.15s; }
         .inv-edit-btn:active { background:var(--primary-light); }
 
-        .size-cell { background: var(--bg); border-radius: var(--radius-sm); padding: 8px 10px; border: 1.5px solid var(--border); transition: border-color 0.15s; }
-        .size-cell:focus-within { border-color: var(--primary); }
-        .size-label { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; color: var(--text-light); text-transform: uppercase; margin-bottom: 4px; }
-        .size-input { width: 100%; border: none; background: none; font-family: 'DM Sans', sans-serif; font-size: 18px; font-weight: 600; color: var(--text); outline: none; text-align: center; }
-        .size-input::placeholder { color: var(--disabled); font-size: 14px; font-weight: 400; }
+        /* ── SIZE BREAKDOWN ── */
+        .size-builder-row { display:flex; flex-wrap:wrap; gap:8px; padding:10px 18px 14px; }
+        .size-chip-add { display:flex; align-items:center; gap:6px; background:var(--bg); border:1.5px solid var(--border); border-radius:var(--radius-sm); padding:6px 8px; min-width:0; }
+        .size-chip-add select { border:none; background:none; font-family:'DM Sans'; font-size:13px; font-weight:700; color:var(--text); outline:none; width:68px; }
+        .size-chip-add input { border:none; background:none; font-family:'DM Sans'; font-size:15px; font-weight:600; color:var(--text); outline:none; width:48px; text-align:center; }
+        .size-chip-add input::placeholder { color:var(--disabled); font-size:12px; }
+        .size-chip-add button { border:none; background:var(--primary); color:white; border-radius:6px; width:28px; height:28px; font-size:13px; font-weight:700; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
+        .size-added-chip { display:inline-flex; align-items:center; gap:6px; background:var(--primary-light); border:1.5px solid var(--primary); border-radius:20px; padding:5px 10px; font-size:13px; font-weight:600; color:var(--primary-dark); }
+        .size-added-chip button { border:none; background:none; color:var(--primary-dark); cursor:pointer; font-size:13px; padding:0; line-height:1; }
 
         .name-search-toggle {
             display: block; width: 100%; padding: 9px 4px;
@@ -630,6 +634,24 @@
             <div class="restock-name" id="restock-name">—</div>
         </div>
 
+        <!-- Current stock sizes (read-only / edit mode) -->
+        <div id="current-stock-section" style="display:none;background:#F0FAF4;border-radius:var(--radius);padding:14px 18px;border-left:3px solid var(--success)">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+                <div>
+                    <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--success)">Current Stock Sizes</div>
+                    <div id="current-stock-total" style="font-size:11px;color:var(--success);opacity:0.8;margin-top:2px"></div>
+                </div>
+                <button id="current-stock-edit-btn" onclick="toggleCurrentStockEdit()" style="padding:5px 12px;border:1.5px solid var(--success);background:none;color:var(--success);border-radius:20px;font-family:'DM Sans';font-size:11px;font-weight:700;cursor:pointer">Edit</button>
+            </div>
+            <!-- Read-only chips -->
+            <div id="current-stock-readonly" class="inv-sizes" style="gap:6px"></div>
+            <!-- Editable chips (hidden by default) -->
+            <div id="current-stock-editable" style="display:none">
+                <div id="current-stock-rows" class="size-builder-row" style="padding:0 0 8px"></div>
+                <button onclick="saveCurrentStockSizes()" style="width:100%;padding:10px;border:none;background:var(--success);color:white;border-radius:var(--radius-sm);font-family:'DM Sans';font-size:13px;font-weight:600;cursor:pointer;margin-top:4px">✓ Save Stock Sizes</button>
+            </div>
+        </div>
+
         <div class="form-section">
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">SKU</div><div class="field-label-hindi">कोड</div></div>
@@ -662,23 +684,24 @@
                     <span class="accordion-arrow" id="size-accordion-arrow">▼</span>
                 </div>
                 <div class="accordion-content" id="size-accordion-content" style="max-height:0;overflow:hidden;transition:max-height 0.3s ease">
-                    <div id="size-rows" style="padding:12px 18px 0;display:flex;flex-direction:column;gap:8px"></div>
-                    <div style="padding:10px 18px 14px;display:flex;gap:8px;align-items:center">
-                        <select id="size-select" style="width:90px;flex-shrink:0;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:9px 6px;font-family:'DM Sans';font-size:14px;font-weight:600;color:var(--text);outline:none">
-                            <optgroup label="Letter">
-                                <option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>XXXL</option>
-                            </optgroup>
-                            <optgroup label="Numeric">
-                                <option>26</option><option>28</option><option>30</option><option>32</option><option>34</option><option>36</option><option>38</option><option>40</option><option>42</option><option>44</option><option>46</option><option>48</option>
-                            </optgroup>
-                            <optgroup label="Other">
-                                <option>Free Size</option><option>Other</option>
-                            </optgroup>
-                        </select>
-                        <input id="size-qty-input" type="text" inputmode="numeric" placeholder="Qty"
-                            style="flex:1;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;font-family:'DM Sans';font-size:15px;font-weight:600;color:var(--text);background:var(--bg);outline:none;text-align:center"
-                            onkeydown="if(event.key==='Enter'){event.preventDefault();addSizeRow()}">
-                        <button onclick="addSizeRow()" style="padding:9px 16px;border:none;background:var(--primary);color:white;border-radius:var(--radius-sm);font-family:'DM Sans';font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0">+ Add</button>
+                    <div id="size-rows" class="size-builder-row"></div>
+                    <div class="size-builder-row" style="padding-top:0">
+                        <div class="size-chip-add">
+                            <select id="size-select">
+                                <optgroup label="Letter">
+                                    <option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>XXXL</option>
+                                </optgroup>
+                                <optgroup label="Numeric">
+                                    <option>26</option><option>28</option><option>30</option><option>32</option><option>34</option><option>36</option><option>38</option><option>40</option><option>42</option><option>44</option><option>46</option><option>48</option>
+                                </optgroup>
+                                <optgroup label="Other">
+                                    <option>Free Size</option><option>Other</option>
+                                </optgroup>
+                            </select>
+                            <input id="size-qty-input" type="text" inputmode="numeric" placeholder="Qty"
+                                onkeydown="if(event.key==='Enter'){event.preventDefault();addSizeRow()}">
+                            <button onclick="addSizeRow()">+</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -697,7 +720,7 @@
         </div>
 
         <button class="submit-btn" onclick="submitStock()">✓ Save Product / सहेजें</button>
-        <div style="height:28px"></div>
+        <div style="height:48px"></div>
     </div>
 </div>
 
@@ -954,13 +977,13 @@ async function handleBarcodeScan(barcode, ctx) {
 
 // ─── PRODUCT CACHE ───────────────────────────────────────────────────
 async function loadProductCache(force) {
-    if ((productCache && !force) || cacheLoading) return;
+    if (productCache && !force) return;
+    if (cacheLoading) return new Promise(res => setTimeout(() => loadProductCache().then(res), 300));
     cacheLoading = true;
     try {
         const r = await fetch(CONFIG.N8N_ALL);
         if (!r.ok) throw new Error();
         const data = await r.json();
-        // n8n "All Incoming Items" wraps as [{products:[...]}]
         const rows = (Array.isArray(data) && data[0] && data[0].products)
             ? data[0].products
             : (data.products || (Array.isArray(data) ? data : []));
@@ -968,8 +991,8 @@ async function loadProductCache(force) {
             ...p,
             barcode: sanitizeBarcode(p.barcode)
         }));
-    } catch(_) {
-        productCache = null; // stay null so individual lookups still work
+    } catch(e) {
+        productCache = []; // empty array not null — prevents retry crash
     }
     cacheLoading = false;
 }
@@ -1390,6 +1413,7 @@ function clearStockForm() {
         if (el) el.placeholder = ph;
     });
     document.getElementById('restock-banner').style.display='none';
+    clearCurrentStockSection();
     clearSizeBreakdown();
     showToast('Form cleared', '');
 }
@@ -1410,7 +1434,8 @@ async function submitStock() {
         minStock:document.getElementById('f-min').value||10,
         expiry:document.getElementById('f-exp').value,
         supplier:document.getElementById('f-sup').value,
-        sizes: getSizeBreakdown(),
+        sizes: getSizeBreakdown() ? JSON.stringify(getSizeBreakdown()) : null,
+        sizesOverride: sizesOverride ? JSON.stringify(sizesOverride) : null,
         timestamp: new Date().toISOString()
     };
     showToast('Saving…');
@@ -1420,6 +1445,7 @@ async function submitStock() {
         loadProductCache(); // pre-warm in background
         ['bc-stock','f-sku','f-name','f-cat','f-mrp','f-cost','f-qty','f-min','f-exp','f-sup'].forEach(id=>document.getElementById(id).value='');
         clearSizeBreakdown();
+        clearCurrentStockSection();
         stockProductFound = false;
         clearGhosts();
         document.getElementById('restock-banner').style.display='none';
@@ -1428,7 +1454,102 @@ async function submitStock() {
     } catch(_) { showToast('Failed — try again', 'error'); }
 }
 
-// ─── SIZE BREAKDOWN ──────────────────────────────────────────────────
+// ─── CURRENT STOCK SIZES ─────────────────────────────────────────────
+let currentStockSizes = null; // existing sizes from sheet
+let currentStockEditRows = []; // editable rows state
+let currentStockEditing = false;
+let sizesOverride = null; // set when user saves edited current stock
+
+function showCurrentStockSizes(sizesObj) {
+    currentStockSizes = sizesObj;
+    sizesOverride = null;
+    currentStockEditing = false;
+    const section = document.getElementById('current-stock-section');
+    if (!sizesObj || Object.keys(sizesObj).length === 0) {
+        section.style.display = 'none';
+        return;
+    }
+    section.style.display = 'block';
+    renderCurrentStockReadonly();
+    document.getElementById('current-stock-readonly').style.display = 'flex';
+    document.getElementById('current-stock-editable').style.display = 'none';
+    document.getElementById('current-stock-edit-btn').textContent = 'Edit';
+    const total = Object.values(sizesObj).reduce((s, v) => s + (parseInt(v) || 0), 0);
+    document.getElementById('current-stock-total').textContent = total + ' units across ' + Object.keys(sizesObj).length + ' size' + (Object.keys(sizesObj).length !== 1 ? 's' : '');
+}
+
+function renderCurrentStockReadonly() {
+    const sizes = sizesOverride || currentStockSizes;
+    if (!sizes) return;
+    document.getElementById('current-stock-readonly').innerHTML =
+        Object.entries(sizes).map(([s, q]) =>
+            `<span class="inv-size-chip" style="background:#D8F3DC;border-color:#52B788;color:#1B4332">${q} × ${s}</span>`
+        ).join('');
+    const total = Object.values(sizes).reduce((s, v) => s + (parseInt(v) || 0), 0);
+    document.getElementById('current-stock-total').textContent = total + ' units across ' + Object.keys(sizes).length + ' size' + (Object.keys(sizes).length !== 1 ? 's' : '');
+}
+
+function toggleCurrentStockEdit() {
+    currentStockEditing = !currentStockEditing;
+    const ro = document.getElementById('current-stock-readonly');
+    const ed = document.getElementById('current-stock-editable');
+    const btn = document.getElementById('current-stock-edit-btn');
+    if (currentStockEditing) {
+        // Populate editable rows from current sizes
+        const sizes = sizesOverride || currentStockSizes || {};
+        currentStockEditRows = Object.entries(sizes).map(([size, qty]) => ({
+            id: 'csr-' + Date.now() + Math.random(), size, qty: parseInt(qty) || 0
+        }));
+        renderCurrentStockEditRows();
+        ro.style.display = 'none';
+        ed.style.display = 'block';
+        btn.textContent = 'Cancel';
+    } else {
+        ro.style.display = 'flex';
+        ed.style.display = 'none';
+        btn.textContent = 'Edit';
+        currentStockEditRows = [];
+    }
+}
+
+function renderCurrentStockEditRows() {
+    document.getElementById('current-stock-rows').innerHTML =
+        currentStockEditRows.map(row => `
+        <div class="size-added-chip" id="${row.id}" style="background:#D8F3DC;border-color:#52B788;color:#1B4332">
+            <span>${row.size}</span>
+            <input type="text" inputmode="numeric" value="${row.qty || ''}" placeholder="0"
+                style="width:36px;border:none;background:none;font-family:'DM Sans';font-size:13px;font-weight:700;color:#1B4332;outline:none;text-align:center;padding:0"
+                oninput="updateCurrentStockRow('${row.id}', this.value)">
+            <button onclick="removeCurrentStockRow('${row.id}')" style="color:#1B4332">✕</button>
+        </div>`).join('');
+}
+
+function updateCurrentStockRow(id, val) {
+    const row = currentStockEditRows.find(r => r.id === id);
+    if (row) row.qty = parseInt(val) || 0;
+}
+
+function removeCurrentStockRow(id) {
+    currentStockEditRows = currentStockEditRows.filter(r => r.id !== id);
+    renderCurrentStockEditRows();
+}
+
+function saveCurrentStockSizes() {
+    const obj = {};
+    currentStockEditRows.forEach(r => { if (r.qty > 0) obj[r.size] = r.qty; });
+    sizesOverride = Object.keys(obj).length > 0 ? obj : null;
+    renderCurrentStockReadonly();
+    toggleCurrentStockEdit();
+    showToast('Stock sizes updated — save product to apply', '');
+}
+
+function clearCurrentStockSection() {
+    currentStockSizes = null;
+    currentStockEditRows = [];
+    currentStockEditing = false;
+    sizesOverride = null;
+    document.getElementById('current-stock-section').style.display = 'none';
+}
 let sizeBreakdownOpen = false;
 let sizeRows = []; // [{size, qty}]
 
@@ -1458,15 +1579,15 @@ function addSizeRow(sizeVal, qtyVal) {
 
 function renderSizeRows() {
     const container = document.getElementById('size-rows');
+    if (!sizeRows.length) { container.innerHTML = ''; return; }
     container.innerHTML = sizeRows.map(row => `
-        <div style="display:flex;align-items:center;gap:8px" id="${row.id}">
-            <div style="width:64px;font-size:13px;font-weight:700;color:var(--text-mid);background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;text-align:center">${row.size}</div>
+        <div class="size-added-chip" id="${row.id}">
+            <span>${row.size}</span>
             <input type="text" inputmode="numeric" value="${row.qty || ''}" placeholder="0"
-                style="flex:1;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;font-family:'DM Sans';font-size:16px;font-weight:600;color:var(--text);background:var(--bg);outline:none;text-align:center"
+                style="width:36px;border:none;background:none;font-family:'DM Sans';font-size:13px;font-weight:700;color:var(--primary-dark);outline:none;text-align:center;padding:0"
                 oninput="updateSizeRowQty('${row.id}', this.value)">
-            <button onclick="removeSizeRow('${row.id}')" style="width:36px;height:36px;border:none;background:#FEE2E2;color:var(--danger);border-radius:var(--radius-sm);cursor:pointer;font-size:14px;flex-shrink:0">✕</button>
-        </div>
-    `).join('');
+            <button onclick="removeSizeRow('${row.id}')">✕</button>
+        </div>`).join('');
 }
 
 function updateSizeRowQty(id, val) {
@@ -1664,7 +1785,11 @@ function editProductFromInventory(sku) {
         document.getElementById('f-exp').value   = p.expiry || '';
         document.getElementById('f-sup').value   = p.supplier || '';
         const sizes = parseSizes(p.sizes);
-        if (sizes) loadSizeBreakdown(sizes);
+        if (sizes) {
+            showCurrentStockSizes(sizes);
+        } else if (p.stock > 0) {
+            showCurrentStockSizes({ 'Free Size': p.stock });
+        }
         stockProductFound = true;
         document.getElementById('restock-banner').style.display = 'block';
         document.getElementById('restock-name').textContent = p.name || p.sku || '';
