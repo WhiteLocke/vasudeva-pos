@@ -868,8 +868,10 @@ async function loadProductCache(force) {
         const r = await fetch(CONFIG.N8N_ALL);
         if (!r.ok) throw new Error();
         const data = await r.json();
-        // n8n returns { products: [...] } from the all-products workflow
-        const rows = Array.isArray(data) ? data : (data.products || []);
+        // n8n "All Incoming Items" wraps as [{products:[...]}]
+        const rows = (Array.isArray(data) && data[0] && data[0].products)
+            ? data[0].products
+            : (data.products || (Array.isArray(data) ? data : []));
         productCache = rows.map(p => ({
             ...p,
             barcode: sanitizeBarcode(p.barcode)
