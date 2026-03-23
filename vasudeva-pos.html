@@ -675,6 +675,19 @@
                         <div id="current-stock-readonly" class="inv-sizes" style="gap:6px"></div>
                         <div id="current-stock-editable" style="display:none">
                             <div id="current-stock-rows" class="size-builder-row" style="padding:0 0 8px 0"></div>
+                            <div class="size-builder-row" style="padding-top:0;padding-bottom:8px">
+                                <div class="size-chip-add" style="border-color:#52B788">
+                                    <select id="cstock-size-select" style="color:#1B4332">
+                                        <optgroup label="Letter"><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>XXXL</option></optgroup>
+                                        <optgroup label="Numeric"><option>26</option><option>28</option><option>30</option><option>32</option><option>34</option><option>36</option><option>38</option><option>40</option><option>42</option><option>44</option><option>46</option><option>48</option></optgroup>
+                                        <optgroup label="Other"><option>Free Size</option><option>Other</option></optgroup>
+                                    </select>
+                                    <input id="cstock-qty-input" type="text" inputmode="numeric" placeholder="Qty"
+                                        style="color:#1B4332"
+                                        onkeydown="if(event.key==='Enter'){event.preventDefault();addCurrentStockRow()}">
+                                    <button onclick="addCurrentStockRow()" style="background:#52B788">+</button>
+                                </div>
+                            </div>
                             <button onclick="saveCurrentStockSizes()" style="width:100%;padding:9px;border:none;background:var(--success);color:white;border-radius:var(--radius-sm);font-family:'DM Sans';font-size:13px;font-weight:600;cursor:pointer">✓ Save Stock Sizes</button>
                         </div>
                     </div>
@@ -1423,7 +1436,8 @@ async function submitStock() {
     const barcode = sanitizeBarcode(document.getElementById('bc-stock').value);
     const qty  = document.getElementById('f-qty').value.trim();
     const name = document.getElementById('f-name').value.trim();
-    if (!barcode||!name) { showToast('Barcode and name required', 'error'); return; }
+    const sku  = document.getElementById('f-sku').value.trim();
+    if (!barcode && !name && !sku) { showToast('Barcode, name or SKU required', 'error'); return; }
     const payload = {
         barcode, sku:document.getElementById('f-sku').value, name,
         category:document.getElementById('f-cat').value, mrp:document.getElementById('f-mrp').value,
@@ -1526,6 +1540,16 @@ function renderCurrentStockEditRows() {
         </div>`).join('');
 }
 
+function addCurrentStockRow() {
+    const size = document.getElementById('cstock-size-select').value;
+    const qty = parseInt(document.getElementById('cstock-qty-input').value) || 0;
+    const id = 'csr-' + Date.now() + Math.random();
+    currentStockEditRows.push({ id, size, qty });
+    renderCurrentStockEditRows();
+    document.getElementById('cstock-qty-input').value = '';
+    document.getElementById('cstock-qty-input').focus();
+}
+
 function updateCurrentStockRow(id, val) {
     const row = currentStockEditRows.find(r => r.id === id);
     if (row) row.qty = parseInt(val) || 0;
@@ -1565,7 +1589,7 @@ function toggleSizeBreakdown() {
     sizeBreakdownOpen = !sizeBreakdownOpen;
     const content = document.getElementById('size-accordion-content');
     const arrow = document.getElementById('size-accordion-arrow');
-    content.style.maxHeight = sizeBreakdownOpen ? '600px' : '0';
+    content.style.maxHeight = sizeBreakdownOpen ? '9999px' : '0';
     arrow.style.transform = sizeBreakdownOpen ? 'rotate(180deg)' : '';
     // If opened on an existing product with no sizes yet, offer Free Size as starting point
     if (sizeBreakdownOpen && stockProductFound && !currentStockSizes) {
