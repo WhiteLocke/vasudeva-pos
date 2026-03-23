@@ -1580,11 +1580,11 @@ function renderInventory() {
         return;
     }
 
-    // Store in map keyed by sku for safe retrieval
+    // Store in map keyed by index for safe DOM referencing
     invProductMap = {};
     products.forEach(p => { invProductMap[p.sku] = p; });
 
-    list.innerHTML = products.map(p => {
+    list.innerHTML = products.map((p, idx) => {
         const stock = p.stock || 0;
         const min = p.minStock || 10;
         const dotColor = stock <= 0 ? 'var(--danger)' : stock <= min ? '#D4930A' : 'var(--success)';
@@ -1592,10 +1592,9 @@ function renderInventory() {
         const sizeSummary = sizes ? Object.entries(sizes).map(([s,q]) => `${q}×${s}`).join(' · ') : '';
         const subLine = [p.category, sizeSummary].filter(Boolean).join(' · ') || p.sku || '';
         const isOpen = invExpandedSku === p.sku;
-        const safeKey = CSS.escape(p.sku);
         return `
-        <div class="inv-item" id="invitem-${safeKey}">
-            <div class="inv-item-row" onclick="toggleInvItem('${p.sku.replace(/'/g,"\\'")}')">
+        <div class="inv-item" id="invitem-${idx}">
+            <div class="inv-item-row" onclick="toggleInvItem(${idx})">
                 <div class="inv-status-dot" style="background:${dotColor}"></div>
                 <div class="inv-item-main">
                     <div class="inv-item-name">${p.name || p.sku}</div>
@@ -1606,7 +1605,7 @@ function renderInventory() {
                     <div class="inv-item-mrp">${p.mrp ? '₹' + p.mrp : ''}</div>
                 </div>
             </div>
-            <div class="inv-expand ${isOpen ? 'open' : ''}" id="invexp-${safeKey}">
+            <div class="inv-expand ${isOpen ? 'open' : ''}" id="invexp-${idx}">
                 <div class="inv-expand-inner">
                     ${sizes ? `<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--text-light);margin-bottom:6px">Sizes</div><div class="inv-sizes">${Object.entries(sizes).map(([s,q]) => `<span class="inv-size-chip">${q} × ${s}</span>`).join('')}</div></div>` : ''}
                     <div class="inv-detail-grid">
@@ -1617,22 +1616,30 @@ function renderInventory() {
                         ${p.expiry ? `<div class="inv-detail-item"><div class="inv-detail-label">Expiry</div><div class="inv-detail-val">${p.expiry}</div></div>` : ''}
                         ${p.supplier ? `<div class="inv-detail-item"><div class="inv-detail-label">Supplier</div><div class="inv-detail-val">${p.supplier}</div></div>` : ''}
                     </div>
-                    <button class="inv-edit-btn" onclick="editProductFromInventory('${p.sku.replace(/'/g,"\\'")}')">✏️ Edit Product</button>
+                    <button class="inv-edit-btn" onclick="invEdit(${idx})">✏️ Edit Product</button>
                 </div>
             </div>
         </div>`;
     }).join('');
+    // store index→sku mapping for edit/toggle
+    window._invProducts = products;
 }
 
-function toggleInvItem(sku) {
+function toggleInvItem(idx) {
+    const p = window._invProducts && window._invProducts[idx];
+    const sku = p ? p.sku : null;
     const prev = invExpandedSku;
     invExpandedSku = prev === sku ? null : sku;
-    if (prev && prev !== sku) {
-        const el = document.getElementById('invexp-' + prev);
-        if (el) el.classList.remove('open');
+    document.querySelectorAll('.inv-expand.open').forEach(el => el.classList.remove('open'));
+    if (invExpandedSku) {
+        const el = document.getElementById('invexp-' + idx);
+        if (el) el.classList.add('open');
     }
-    const el = document.getElementById('invexp-' + sku);
-    if (el) el.classList.toggle('open', invExpandedSku === sku);
+}
+
+function invEdit(idx) {
+    const p = window._invProducts && window._invProducts[idx];
+    if (p) editProductFromInventory(p.sku);
 }
 
 function parseSizes(val) {
