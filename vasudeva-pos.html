@@ -576,7 +576,7 @@
             <h2>Add Stock</h2>
             <div class="hindi-title">स्टॉक जोड़ें</div>
         </div>
-        <button onclick="document.activeElement?.blur(); setTimeout(clearStockForm, 0)" style="margin-left:auto;padding:8px 16px;border:1.5px solid var(--border);background:none;border-radius:var(--radius-sm);font-family:'DM Sans';font-size:12px;font-weight:600;color:var(--text-light);cursor:pointer;">Clear</button>
+        <button onclick="clearStockForm()" style="margin-left:auto;padding:8px 16px;border:1.5px solid var(--border);background:none;border-radius:var(--radius-sm);font-family:'DM Sans';font-size:12px;font-weight:600;color:var(--text-light);cursor:pointer;">Clear</button>
     </div>
     <div class="screen-content">
         <div class="barcode-field" onclick="document.getElementById('bc-stock').focus()">
@@ -1300,7 +1300,6 @@ function clearStockForm() {
         if (el) el.placeholder = ph;
     });
     document.getElementById('restock-banner').style.display='none';
-    document.getElementById('bc-stock').focus();
     showToast('Form cleared', '');
 }
 
