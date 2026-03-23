@@ -1148,11 +1148,11 @@ function hideSellNameSuggestion() {
 
 function acceptSellNameSuggestion() {
     if (!sellNameSuggestion) return;
+    const p = { ...sellNameSuggestion, found: true }; // capture before any clearing
     clearSellNameSearch();
     hideSellNameSuggestion();
-    displayProduct({ ...sellNameSuggestion, found: true });
+    displayProduct(p);
     document.getElementById('not-found-sell').classList.remove('visible');
-    sellNameSuggestion = null;
 }
 
 function goToAddStockUnregistered() {
