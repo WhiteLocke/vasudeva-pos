@@ -575,7 +575,7 @@
             <h2>Add Stock</h2>
             <div class="hindi-title">स्टॉक जोड़ें</div>
         </div>
-        <button onmousedown="event.preventDefault();clearStockForm()" ontouchstart="event.preventDefault();clearStockForm()" style="margin-left:auto;padding:8px 16px;border:1.5px solid var(--border);background:none;border-radius:var(--radius-sm);font-family:'DM Sans';font-size:12px;font-weight:600;color:var(--text-light);cursor:pointer;">Clear</button>
+        <button onpointerdown="event.preventDefault();clearStockForm()" style="margin-left:auto;padding:8px 16px;border:1.5px solid var(--border);background:none;border-radius:var(--radius-sm);font-family:'DM Sans';font-size:12px;font-weight:600;color:var(--text-light);cursor:pointer;">Clear</button>
     </div>
     <div class="screen-content">
         <div class="barcode-field" onclick="document.getElementById('bc-stock').focus()">
@@ -887,10 +887,20 @@ function invalidateCache() { productCache = null; }
 function searchCache(field, value) {
     if (!productCache) return null;
     const v = String(value).toLowerCase().trim();
+    if (!v) return null;
     return productCache.find(p => {
-        if (field === 'barcode') return sanitizeBarcode(p.barcode) === sanitizeBarcode(value);
-        if (field === 'sku')     return (p.sku || '').toLowerCase() === v;
-        if (field === 'name')    return (p.name || '').toLowerCase().includes(v) || v.includes((p.name || '').toLowerCase());
+        if (field === 'barcode') {
+            const bc = sanitizeBarcode(p.barcode);
+            return bc && bc === sanitizeBarcode(value);
+        }
+        if (field === 'sku') {
+            const s = (p.sku || '').toLowerCase();
+            return s && s === v;
+        }
+        if (field === 'name') {
+            const n = (p.name || '').toLowerCase();
+            return n && (n.includes(v) || v.includes(n));
+        }
         return false;
     }) || null;
 }
@@ -1078,10 +1088,11 @@ function clearSellNameSearch() {
 function onSellNameInput() {
     clearTimeout(sellNameTimer);
     const v = document.getElementById('sell-name-input').value.trim();
-    if (v.length < 3) return;
-    showToast('Searching…');
+    if (v.length < 3) {
+        hideSellNameSuggestion();
+        return;
+    }
     sellNameTimer = setTimeout(async () => {
-        // Try SKU first for short alphanumeric, otherwise name
         const firstField = v.match(/^[A-Z0-9\-]+$/i) && v.length <= 12 ? 'sku' : 'name';
         const secondField = firstField === 'name' ? 'sku' : 'name';
 
@@ -1092,25 +1103,56 @@ function onSellNameInput() {
             try {
                 const r = await fetch(CONFIG.N8N_LOOKUP + '?' + firstField + '=' + encodeURIComponent(v));
                 const d = await r.json();
-                if (d.found) found = d;
+                if (d.found && (d.name || d.sku)) found = d;
             } catch(_) {}
             if (!found) {
                 try {
                     const r2 = await fetch(CONFIG.N8N_LOOKUP + '?' + secondField + '=' + encodeURIComponent(v));
                     const d2 = await r2.json();
-                    if (d2.found) found = d2;
+                    if (d2.found && (d2.name || d2.sku)) found = d2;
                 } catch(_) {}
             }
         }
 
         if (found) {
-            clearSellNameSearch();
-            displayProduct({ ...found, found: true });
-            document.getElementById('not-found-sell').classList.remove('visible');
+            showSellNameSuggestion(found);
         } else {
-            showNotFound();
+            hideSellNameSuggestion();
+            showToast('No match found', 'error');
         }
     }, 350);
+}
+
+let sellNameSuggestion = null;
+
+function showSellNameSuggestion(p) {
+    sellNameSuggestion = p;
+    const label = p.name || p.sku || 'Unknown';
+    let pill = document.getElementById('sell-name-pill');
+    if (!pill) {
+        pill = document.createElement('div');
+        pill.id = 'sell-name-pill';
+        pill.style.cssText = 'padding:6px 18px 10px;cursor:pointer;text-align:right';
+        pill.onclick = acceptSellNameSuggestion;
+        document.getElementById('sell-name-field').after(pill);
+    }
+    pill.innerHTML = `<span style="font-size:12px;font-weight:500;color:var(--text-mid);border:1.5px solid var(--border);border-radius:20px;padding:3px 12px;background:var(--bg)">${label} <span style="color:var(--text-light);font-size:11px">→ tap to confirm</span></span>`;
+    pill.style.display = 'block';
+}
+
+function hideSellNameSuggestion() {
+    sellNameSuggestion = null;
+    const pill = document.getElementById('sell-name-pill');
+    if (pill) pill.style.display = 'none';
+}
+
+function acceptSellNameSuggestion() {
+    if (!sellNameSuggestion) return;
+    clearSellNameSearch();
+    hideSellNameSuggestion();
+    displayProduct({ ...sellNameSuggestion, found: true });
+    document.getElementById('not-found-sell').classList.remove('visible');
+    sellNameSuggestion = null;
 }
 
 function goToAddStockUnregistered() {
@@ -1134,6 +1176,7 @@ function resetSell() {
     document.getElementById('sell-empty').style.display = '';
     document.getElementById('bc-sell').value = '';
     clearSellNameSearch();
+    hideSellNameSuggestion();
     updateQtyDisplay();
 }
 
