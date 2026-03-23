@@ -480,7 +480,8 @@
                 <div class="barcode-label">Name / SKU <span class="barcode-label-hindi">/ नाम या कोड</span></div>
                 <input id="sell-name-input" class="barcode-input" type="text"
                     placeholder="Type product name or SKU…" autocomplete="off"
-                    oninput="onSellNameInput()">
+                    oninput="onSellNameInput()"
+                    onkeydown="if(event.key==='Enter' && sellNameSuggestion) acceptSellNameSuggestion()">
             </div>
             <button class="camera-btn" style="background:var(--bg);color:var(--text-light);font-size:14px;cursor:pointer" onclick="clearSellNameSearch();event.stopPropagation()">✕</button>
         </div>
@@ -1286,12 +1287,14 @@ function onStockInput() {
 
 function clearStockForm() {
     stockProductFound = false;
+    currentSuggestion = null;
+    clearTimeout(skuTimer);
+    clearTimeout(nameTimer);
     clearGhosts();
     ['bc-stock','f-sku','f-name','f-cat','f-mrp','f-cost','f-qty','f-min','f-exp','f-sup'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = '';
     });
-    // Restore all placeholders
     Object.entries(FIELD_PLACEHOLDERS).forEach(([id, ph]) => {
         const el = document.getElementById(id);
         if (el) el.placeholder = ph;
