@@ -1286,6 +1286,7 @@ function onStockInput() {
 }
 
 function clearStockForm() {
+    document.activeElement?.blur();
     stockProductFound = false;
     currentSuggestion = null;
     clearTimeout(skuTimer);
