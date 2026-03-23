@@ -1024,7 +1024,7 @@ function acceptSuggestion() {
     clearGhosts();
     document.getElementById('restock-banner').style.display = 'block';
     document.getElementById('restock-name').textContent = p.name || '';
-    document.getElementById('f-qty').focus();
+    document.activeElement?.blur(); // dismiss keyboard without moving focus to a field
     showToast(p.name + ' found — restocking', 'success');
 }
 
