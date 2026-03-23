@@ -462,13 +462,26 @@
                     onkeydown="handleBarcodeKey(event,'sell')">
             </div>
             <button class="camera-btn" onclick="openCamera('sell');event.stopPropagation()">📷</button>
+            <button class="camera-btn" style="margin-left:6px;font-size:14px;color:var(--text-mid)" title="Search by name or SKU" onclick="toggleSellNameSearch();event.stopPropagation()">🔎</button>
+        </div>
+
+        <!-- Name / SKU search fallback -->
+        <div class="barcode-field" id="sell-name-field" onclick="document.getElementById('sell-name-input').focus()" style="display:none">
+            <span class="barcode-field-icon">🔎</span>
+            <div class="barcode-field-input-wrap">
+                <div class="barcode-label">Name / SKU <span class="barcode-label-hindi">/ नाम या कोड</span></div>
+                <input id="sell-name-input" class="barcode-input" type="text"
+                    placeholder="Type product name or SKU…" autocomplete="off"
+                    oninput="onSellNameInput()">
+            </div>
+            <button class="camera-btn" style="background:var(--bg);color:var(--text-light);font-size:14px;cursor:pointer" onclick="clearSellNameSearch();event.stopPropagation()">✕</button>
         </div>
 
         <div class="not-found" id="not-found-sell">
             <div style="font-size:30px;margin-bottom:8px">🔍</div>
             <div class="not-found-text">Product not found</div>
-            <div class="not-found-sub">This barcode isn't in your inventory yet</div>
-            <button class="add-new-btn" onclick="goTo('addstock')">+ Add New Product</button>
+            <div class="not-found-sub" id="not-found-sub">This barcode isn't in your inventory yet</div>
+            <button class="add-new-btn" onclick="goToAddStockUnregistered()">+ Add New Product</button>
         </div>
 
         <div class="product-card" id="product-card">
@@ -714,6 +727,8 @@ let camCtx = null;
 let camStream = null;
 let camDetector = null;
 let camFrame = null;
+let lastFailedBarcode = '';
+let sellNameTimer = null;
 
 // ─── ENTRY PIN ───────────────────────────────────────────────────────
 let entryPinVal = '';
@@ -780,12 +795,20 @@ function switchTab(tab) {
 }
 
 // ─── BARCODE ─────────────────────────────────────────────────────────
+// Always treat barcodes as strings — never coerce to number.
+// Sheets may return them as numbers (losing leading zeros); we can't
+// recover already-stripped zeros, but we prevent further corruption.
+function sanitizeBarcode(v) {
+    if (v === null || v === undefined) return '';
+    return String(v).trim(); // keep leading zeros, strip whitespace only
+}
+
 let scanBuf = '', scanTimer = null;
 document.addEventListener('keydown', e => {
     const active = document.activeElement;
     if (active && active.tagName === 'INPUT') return;
     if (e.key === 'Enter' && scanBuf.length > 3) {
-        handleBarcodeScan(scanBuf, currentScreen === 'addstock' ? 'stock' : 'sell');
+        handleBarcodeScan(sanitizeBarcode(scanBuf), currentScreen === 'addstock' ? 'stock' : 'sell');
         scanBuf = ''; clearTimeout(scanTimer); return;
     }
     if (e.key.length === 1) {
@@ -797,7 +820,8 @@ document.addEventListener('keydown', e => {
 
 function handleBarcodeKey(e, ctx) {
     if (e.key === 'Enter') {
-        const v = e.target.value.trim();
+        if (ctx === 'stock' && stockProductFound) return;
+        const v = sanitizeBarcode(e.target.value);
         if (v) handleBarcodeScan(v, ctx);
     }
 }
@@ -810,17 +834,19 @@ async function handleBarcodeScan(barcode, ctx) {
         if (ctx === 'sell') displayProduct(p);
         else displayRestock(p, barcode);
     } catch(_) {
-        if (ctx === 'sell') showNotFound();
+        if (ctx === 'sell') showNotFound(barcode);
         showToast('Not found: ' + barcode, 'error');
     }
 }
 
 // ─── PRODUCT LOOKUP ──────────────────────────────────────────────────
 async function lookupProduct(barcode) {
-    const r = await fetch(CONFIG.N8N_LOOKUP + '?barcode=' + barcode);
+    const r = await fetch(CONFIG.N8N_LOOKUP + '?barcode=' + encodeURIComponent(sanitizeBarcode(barcode)));
     if (!r.ok) throw new Error('Network error');
     const data = await r.json();
     if (!data.found) throw new Error('Not found');
+    // Ensure barcode returned from API is always a string (Sheets may return number)
+    if (data.barcode !== undefined) data.barcode = sanitizeBarcode(data.barcode);
     return data;
 }
 
@@ -898,7 +924,7 @@ function acceptSuggestion() {
     document.getElementById('f-cat').value  = p.category || '';
     document.getElementById('f-mrp').value  = p.mrp || '';
     document.getElementById('f-cost').value = p.cost || '';
-    if (!document.getElementById('bc-stock').value) document.getElementById('bc-stock').value = p.barcode || '';
+    if (!document.getElementById('bc-stock').value) document.getElementById('bc-stock').value = sanitizeBarcode(p.barcode);
     stockProductFound = true;
     clearGhosts();
     document.getElementById('restock-banner').style.display = 'block';
@@ -926,8 +952,10 @@ async function lookupBy(field, value) {
         const r = await fetch(CONFIG.N8N_LOOKUP + '?' + field + '=' + encodeURIComponent(value.trim()));
         if (!r.ok) return;
         const data = await r.json();
-        if (data.found) showGhosts(data);
-        else clearGhosts();
+        if (data.found) {
+            if (data.barcode !== undefined) data.barcode = sanitizeBarcode(data.barcode);
+            showGhosts(data);
+        } else clearGhosts();
     } catch(_) {}
 }
 
@@ -956,13 +984,80 @@ function autofillStock(p) {
     acceptSuggestion();
 }
 
+// ─── SELL NAME/SKU SEARCH ────────────────────────────────────────────
+function toggleSellNameSearch() {
+    const field = document.getElementById('sell-name-field');
+    const isVisible = field.style.display !== 'none';
+    if (isVisible) {
+        clearSellNameSearch();
+    } else {
+        field.style.display = 'flex';
+        setTimeout(() => document.getElementById('sell-name-input').focus(), 50);
+    }
+}
+
+function clearSellNameSearch() {
+    document.getElementById('sell-name-input').value = '';
+    document.getElementById('sell-name-field').style.display = 'none';
+}
+
+function onSellNameInput() {
+    clearTimeout(sellNameTimer);
+    const v = document.getElementById('sell-name-input').value.trim();
+    if (v.length < 3) return;
+    showToast('Searching…');
+    sellNameTimer = setTimeout(async () => {
+        // Try name first, then SKU
+        const field = v.match(/^[A-Z0-9\-]+$/i) && v.length <= 12 ? 'sku' : 'name';
+        try {
+            const r = await fetch(CONFIG.N8N_LOOKUP + '?' + field + '=' + encodeURIComponent(v));
+            if (!r.ok) throw new Error();
+            const data = await r.json();
+            if (data.found) {
+                clearSellNameSearch();
+                displayProduct(data);
+                document.getElementById('not-found-sell').classList.remove('visible');
+            } else {
+                throw new Error();
+            }
+        } catch(_) {
+            // try the other field
+            const altField = field === 'name' ? 'sku' : 'name';
+            try {
+                const r2 = await fetch(CONFIG.N8N_LOOKUP + '?' + altField + '=' + encodeURIComponent(v));
+                if (!r2.ok) throw new Error();
+                const data2 = await r2.json();
+                if (data2.found) {
+                    clearSellNameSearch();
+                    displayProduct(data2);
+                    document.getElementById('not-found-sell').classList.remove('visible');
+                } else { showNotFound(); }
+            } catch(_) { showNotFound(); }
+        }
+    }, 450);
+}
+
+function goToAddStockUnregistered() {
+    const bc = lastFailedBarcode;
+    goTo('addstock');
+    if (bc) {
+        setTimeout(() => {
+            document.getElementById('bc-stock').value = bc;
+            showToast('Barcode pre-filled — add product details', '');
+            document.getElementById('f-name').focus();
+        }, 400);
+    }
+}
+
 // ─── SELL SCREEN ──────────────────────────────────────────────────────
 function resetSell() {
     currentProduct = null; currentQty = 1; currentPrice = 0;
+    lastFailedBarcode = '';
     document.getElementById('product-card').classList.remove('visible');
     document.getElementById('not-found-sell').classList.remove('visible');
     document.getElementById('sell-empty').style.display = '';
     document.getElementById('bc-sell').value = '';
+    clearSellNameSearch();
     updateQtyDisplay();
 }
 
@@ -988,10 +1083,21 @@ function displayProduct(p) {
     showToast(p.name + ' found', 'success');
 }
 
-function showNotFound() {
+function showNotFound(barcode) {
+    lastFailedBarcode = barcode || '';
     document.getElementById('sell-empty').style.display = 'none';
     document.getElementById('product-card').classList.remove('visible');
-    document.getElementById('not-found-sell').classList.add('visible');
+    const nf = document.getElementById('not-found-sell');
+    nf.classList.add('visible');
+    const sub = document.getElementById('not-found-sub');
+    if (barcode) {
+        sub.textContent = `"${barcode}" isn't in your inventory yet`;
+    } else {
+        sub.textContent = 'No product matched your search';
+    }
+    // Show name search field as alternative
+    document.getElementById('sell-name-field').style.display = 'flex';
+    document.getElementById('sell-name-input').placeholder = 'Try searching by name or SKU…';
 }
 
 // ─── QUANTITY ─────────────────────────────────────────────────────────
@@ -1080,7 +1186,7 @@ function displayRestock(p, barcode) {
 }
 
 async function submitStock() {
-    const barcode = document.getElementById('bc-stock').value.trim();
+    const barcode = sanitizeBarcode(document.getElementById('bc-stock').value);
     const qty  = document.getElementById('f-qty').value.trim();
     const name = document.getElementById('f-name').value.trim();
     if (!barcode||!name) { showToast('Barcode and name required', 'error'); return; }
