@@ -329,7 +329,14 @@
         .numpad-key.confirm { background: var(--primary); color: white; font-size: 15px; font-weight: 600; }
         .numpad-key.confirm:active { background: var(--primary-dark); }
 
-        /* ── CAMERA ── */
+        .name-search-toggle {
+            display: block; width: 100%; padding: 9px 4px;
+            border: none; background: none; cursor: pointer;
+            font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500;
+            color: var(--text-light); text-align: left;
+            transition: color 0.15s;
+        }
+        .name-search-toggle:active { color: var(--primary); }
         .camera-modal { position: fixed; inset: 0; background: #000; z-index: 200; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
         .camera-modal.active { opacity: 1; pointer-events: all; }
         #camera-video { flex: 1; width: 100%; object-fit: cover; }
@@ -462,7 +469,8 @@
                     onkeydown="handleBarcodeKey(event,'sell')">
             </div>
             <button class="camera-btn" onclick="openCamera('sell');event.stopPropagation()">📷</button>
-            <button class="camera-btn" style="margin-left:6px;font-size:14px;color:var(--text-mid)" title="Search by name or SKU" onclick="toggleSellNameSearch();event.stopPropagation()">🔎</button>
+        </div>
+        <button class="name-search-toggle" id="sell-name-toggle" onclick="toggleSellNameSearch()">🔎 Search by name or SKU</button>
         </div>
 
         <!-- Name / SKU search fallback -->
@@ -706,6 +714,7 @@
 // ─── CONFIG ──────────────────────────────────────────────────────────
 const CONFIG = {
     N8N_LOOKUP:    'https://whitelockemedia.app.n8n.cloud/webhook/vasudeva-lookup',
+    N8N_ALL:       'https://whitelockemedia.app.n8n.cloud/webhook/vasudeva-all',
     N8N_SELL:      'https://whitelockemedia.app.n8n.cloud/webhook/vasudeva-sell',
     N8N_ADD_STOCK: 'https://whitelockemedia.app.n8n.cloud/webhook/vasudeva-addstock',
     OWNER_PIN:     '1234',
@@ -729,6 +738,8 @@ let camDetector = null;
 let camFrame = null;
 let lastFailedBarcode = '';
 let sellNameTimer = null;
+let productCache = null;
+let cacheLoading = false;
 
 // ─── ENTRY PIN ───────────────────────────────────────────────────────
 let entryPinVal = '';
@@ -746,6 +757,7 @@ function entryPinPress(k) {
             currentScreen = 'entry';
             entryPinVal = '';
             updateEntryPinDots();
+            loadProductCache(); // pre-warm cache in background
         } else {
             entryPinVal = '';
             updateEntryPinDots();
@@ -820,7 +832,16 @@ document.addEventListener('keydown', e => {
 
 function handleBarcodeKey(e, ctx) {
     if (e.key === 'Enter') {
-        if (ctx === 'stock' && stockProductFound) return;
+        if (ctx === 'stock') {
+            if (stockProductFound) return;
+            if (currentSuggestion) {
+                // Product found by name/SKU, user is entering the barcode manually
+                const bc = sanitizeBarcode(e.target.value);
+                acceptSuggestion();
+                if (bc) document.getElementById('bc-stock').value = bc;
+                return;
+            }
+        }
         const v = sanitizeBarcode(e.target.value);
         if (v) handleBarcodeScan(v, ctx);
     }
@@ -839,15 +860,76 @@ async function handleBarcodeScan(barcode, ctx) {
     }
 }
 
+// ─── PRODUCT CACHE ───────────────────────────────────────────────────
+async function loadProductCache(force) {
+    if ((productCache && !force) || cacheLoading) return;
+    cacheLoading = true;
+    try {
+        const r = await fetch(CONFIG.N8N_ALL);
+        if (!r.ok) throw new Error();
+        const data = await r.json();
+        // n8n returns { products: [...] } from the all-products workflow
+        const rows = Array.isArray(data) ? data : (data.products || []);
+        productCache = rows.map(p => ({
+            ...p,
+            barcode: sanitizeBarcode(p.barcode)
+        }));
+    } catch(_) {
+        productCache = null; // stay null so individual lookups still work
+    }
+    cacheLoading = false;
+}
+
+function invalidateCache() { productCache = null; }
+
+function searchCache(field, value) {
+    if (!productCache) return null;
+    const v = String(value).toLowerCase().trim();
+    return productCache.find(p => {
+        if (field === 'barcode') return sanitizeBarcode(p.barcode) === sanitizeBarcode(value);
+        if (field === 'sku')     return (p.sku || '').toLowerCase() === v;
+        if (field === 'name')    return (p.name || '').toLowerCase().includes(v) || v.includes((p.name || '').toLowerCase());
+        return false;
+    }) || null;
+}
+
 // ─── PRODUCT LOOKUP ──────────────────────────────────────────────────
 async function lookupProduct(barcode) {
-    const r = await fetch(CONFIG.N8N_LOOKUP + '?barcode=' + encodeURIComponent(sanitizeBarcode(barcode)));
+    const bc = sanitizeBarcode(barcode);
+    // Try cache first
+    if (productCache) {
+        const p = searchCache('barcode', bc);
+        if (!p) throw new Error('Not found');
+        return { ...p, found: true };
+    }
+    // Fallback to network
+    const r = await fetch(CONFIG.N8N_LOOKUP + '?barcode=' + encodeURIComponent(bc));
     if (!r.ok) throw new Error('Network error');
     const data = await r.json();
     if (!data.found) throw new Error('Not found');
-    // Ensure barcode returned from API is always a string (Sheets may return number)
     if (data.barcode !== undefined) data.barcode = sanitizeBarcode(data.barcode);
     return data;
+}
+
+async function lookupBy(field, value) {
+    if (!value || value.trim().length < 3 || stockProductFound) return;
+    // Try cache first
+    if (productCache) {
+        const p = searchCache(field, value.trim());
+        if (p) showGhosts({ ...p, found: true });
+        else clearGhosts();
+        return;
+    }
+    // Fallback to network
+    try {
+        const r = await fetch(CONFIG.N8N_LOOKUP + '?' + field + '=' + encodeURIComponent(value.trim()));
+        if (!r.ok) return;
+        const data = await r.json();
+        if (data.found) {
+            if (data.barcode !== undefined) data.barcode = sanitizeBarcode(data.barcode);
+            showGhosts(data);
+        } else clearGhosts();
+    } catch(_) {}
 }
 
 // ─── GHOST AUTOCOMPLETE ─────────────────────────────────────────────
@@ -946,19 +1028,6 @@ function handleStockFieldKey(e, fieldId) {
     }
 }
 
-async function lookupBy(field, value) {
-    if (!value || value.trim().length < 3 || stockProductFound) return;
-    try {
-        const r = await fetch(CONFIG.N8N_LOOKUP + '?' + field + '=' + encodeURIComponent(value.trim()));
-        if (!r.ok) return;
-        const data = await r.json();
-        if (data.found) {
-            if (data.barcode !== undefined) data.barcode = sanitizeBarcode(data.barcode);
-            showGhosts(data);
-        } else clearGhosts();
-    } catch(_) {}
-}
-
 function onSkuInput() {
     if (stockProductFound) { stockProductFound = false; clearGhosts(); }
     document.getElementById('restock-banner').style.display = 'none';
@@ -987,11 +1056,13 @@ function autofillStock(p) {
 // ─── SELL NAME/SKU SEARCH ────────────────────────────────────────────
 function toggleSellNameSearch() {
     const field = document.getElementById('sell-name-field');
+    const toggle = document.getElementById('sell-name-toggle');
     const isVisible = field.style.display !== 'none';
     if (isVisible) {
         clearSellNameSearch();
     } else {
         field.style.display = 'flex';
+        toggle.textContent = '✕ Cancel name search';
         setTimeout(() => document.getElementById('sell-name-input').focus(), 50);
     }
 }
@@ -999,6 +1070,7 @@ function toggleSellNameSearch() {
 function clearSellNameSearch() {
     document.getElementById('sell-name-input').value = '';
     document.getElementById('sell-name-field').style.display = 'none';
+    document.getElementById('sell-name-toggle').textContent = '🔎 Search by name or SKU';
 }
 
 function onSellNameInput() {
@@ -1007,34 +1079,36 @@ function onSellNameInput() {
     if (v.length < 3) return;
     showToast('Searching…');
     sellNameTimer = setTimeout(async () => {
-        // Try name first, then SKU
-        const field = v.match(/^[A-Z0-9\-]+$/i) && v.length <= 12 ? 'sku' : 'name';
-        try {
-            const r = await fetch(CONFIG.N8N_LOOKUP + '?' + field + '=' + encodeURIComponent(v));
-            if (!r.ok) throw new Error();
-            const data = await r.json();
-            if (data.found) {
-                clearSellNameSearch();
-                displayProduct(data);
-                document.getElementById('not-found-sell').classList.remove('visible');
-            } else {
-                throw new Error();
-            }
-        } catch(_) {
-            // try the other field
-            const altField = field === 'name' ? 'sku' : 'name';
+        // Try SKU first for short alphanumeric, otherwise name
+        const firstField = v.match(/^[A-Z0-9\-]+$/i) && v.length <= 12 ? 'sku' : 'name';
+        const secondField = firstField === 'name' ? 'sku' : 'name';
+
+        let found = null;
+        if (productCache) {
+            found = searchCache(firstField, v) || searchCache(secondField, v);
+        } else {
             try {
-                const r2 = await fetch(CONFIG.N8N_LOOKUP + '?' + altField + '=' + encodeURIComponent(v));
-                if (!r2.ok) throw new Error();
-                const data2 = await r2.json();
-                if (data2.found) {
-                    clearSellNameSearch();
-                    displayProduct(data2);
-                    document.getElementById('not-found-sell').classList.remove('visible');
-                } else { showNotFound(); }
-            } catch(_) { showNotFound(); }
+                const r = await fetch(CONFIG.N8N_LOOKUP + '?' + firstField + '=' + encodeURIComponent(v));
+                const d = await r.json();
+                if (d.found) found = d;
+            } catch(_) {}
+            if (!found) {
+                try {
+                    const r2 = await fetch(CONFIG.N8N_LOOKUP + '?' + secondField + '=' + encodeURIComponent(v));
+                    const d2 = await r2.json();
+                    if (d2.found) found = d2;
+                } catch(_) {}
+            }
         }
-    }, 450);
+
+        if (found) {
+            clearSellNameSearch();
+            displayProduct({ ...found, found: true });
+            document.getElementById('not-found-sell').classList.remove('visible');
+        } else {
+            showNotFound();
+        }
+    }, 350);
 }
 
 function goToAddStockUnregistered() {
@@ -1148,6 +1222,7 @@ async function finalizeOrder() {
     showToast('Processing order…');
     try {
         await fetch(CONFIG.N8N_SELL, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({items:basket,timestamp:new Date().toISOString()}) });
+        invalidateCache();
         basket=[]; updateBasketUI(); switchTab('product');
         showToast('Order complete! स्टॉक अपडेट हो गया', 'success');
     } catch(_) { showToast('Failed — try again', 'error'); }
@@ -1202,6 +1277,8 @@ async function submitStock() {
     showToast('Saving…');
     try {
         await fetch(CONFIG.N8N_ADD_STOCK, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+        invalidateCache();
+        loadProductCache(); // pre-warm in background
         ['bc-stock','f-sku','f-name','f-cat','f-mrp','f-cost','f-qty','f-min','f-exp','f-sup'].forEach(id=>document.getElementById(id).value='');
         stockProductFound = false;
         clearGhosts();
