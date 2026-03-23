@@ -856,6 +856,18 @@ let sellNameTimer = null;
 let productCache = null;
 let cacheLoading = false;
 
+// ─── MOBILE KEYBOARD SCROLL ──────────────────────────────────────────
+// When an input is focused, scroll it into view so the keyboard doesn't cover it
+document.addEventListener('focusin', e => {
+    const el = e.target;
+    if (el.tagName !== 'INPUT' && el.tagName !== 'SELECT' && el.tagName !== 'TEXTAREA') return;
+    // Only apply on addstock screen
+    if (currentScreen !== 'addstock') return;
+    setTimeout(() => {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 300); // delay to let keyboard finish animating up
+});
+
 // ─── ENTRY PIN ───────────────────────────────────────────────────────
 let entryPinVal = '';
 function entryPinPress(k) {
@@ -1591,15 +1603,18 @@ function toggleSizeBreakdown() {
     const arrow = document.getElementById('size-accordion-arrow');
     content.style.maxHeight = sizeBreakdownOpen ? '9999px' : '0';
     arrow.style.transform = sizeBreakdownOpen ? 'rotate(180deg)' : '';
-    // If opened on an existing product with no sizes yet, offer Free Size as starting point
-    if (sizeBreakdownOpen && stockProductFound && !currentStockSizes) {
-        const qtyEl = document.getElementById('f-qty');
-        const existingQty = parseInt(qtyEl && qtyEl.value) || 0;
-        // Look up from invProductMap if available
-        const skuEl = document.getElementById('f-sku');
-        const p = skuEl && invProductMap[skuEl.value];
-        if (p && p.stock > 0 && !parseSizes(p.sizes)) {
-            showCurrentStockSizes({ 'Free Size': p.stock });
+    if (sizeBreakdownOpen) {
+        setTimeout(() => {
+            const el = document.getElementById('size-accordion-content');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 50);
+        // If opened on an existing product with no sizes yet, offer Free Size as starting point
+        if (stockProductFound && !currentStockSizes) {
+            const skuEl = document.getElementById('f-sku');
+            const p = skuEl && invProductMap[skuEl.value];
+            if (p && p.stock > 0 && !parseSizes(p.sizes)) {
+                showCurrentStockSizes({ 'Free Size': p.stock });
+            }
         }
     }
 }
