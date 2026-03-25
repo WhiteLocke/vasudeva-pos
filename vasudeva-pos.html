@@ -268,7 +268,7 @@
             font-family: 'DM Sans', sans-serif; font-size: 15px; color: var(--text);
             outline: none; text-align: right;
         }
-        .field-ghost { display: none; } /* ghost spans kept for compat but hidden */
+        .field-ghost { display: none; }
         .field-hint {
             width: 100%; padding: 2px 18px 8px;
             display: none; cursor: pointer; text-align: right;
@@ -646,15 +646,15 @@
             </div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">Category</div><div class="field-label-hindi">श्रेणी</div></div>
-                <div class="field-input-wrap"><input class="field-input" id="f-cat" onkeydown="handleStockFieldKey(event,'f-cat')" type="text" placeholder="e.g. Skincare" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-cat')"><span class="field-ghost" id="ghost-f-cat"></span></div><div class="field-hint" id="hint-f-cat" onclick="acceptSuggestion()"><span id="hint-val-f-cat"></span><span class="hint-arrow">→</span></div>
+                <div class="field-input-wrap"><input class="field-input" id="f-cat" onkeydown="handleStockFieldKey(event,'f-cat')" type="text" placeholder="e.g. Skincare" autocomplete="off"><span class="field-ghost" id="ghost-f-cat"></span></div><div class="field-hint" id="hint-f-cat" onclick="acceptSuggestion()"><span id="hint-val-f-cat"></span><span class="hint-arrow">→</span></div>
             </div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">MRP</div><div class="field-label-hindi">अधिकतम मूल्य</div></div>
-                <div class="field-input-wrap"><input class="field-input" id="f-mrp" onkeydown="handleStockFieldKey(event,'f-mrp')" type="text" inputmode="decimal" placeholder="₹ 0" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-mrp')"><span class="field-ghost" id="ghost-f-mrp"></span></div><div class="field-hint" id="hint-f-mrp" onclick="acceptSuggestion()"><span id="hint-val-f-mrp"></span><span class="hint-arrow">→</span></div>
+                <div class="field-input-wrap"><input class="field-input" id="f-mrp" onkeydown="handleStockFieldKey(event,'f-mrp')" type="text" inputmode="decimal" placeholder="₹ 0" autocomplete="off"><span class="field-ghost" id="ghost-f-mrp"></span></div><div class="field-hint" id="hint-f-mrp" onclick="acceptSuggestion()"><span id="hint-val-f-mrp"></span><span class="hint-arrow">→</span></div>
             </div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">Cost</div><div class="field-label-hindi">लागत</div></div>
-                <div class="field-input-wrap"><input class="field-input" id="f-cost" onkeydown="handleStockFieldKey(event,'f-cost')" type="text" inputmode="decimal" placeholder="₹ 0" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-cost')"><span class="field-ghost" id="ghost-f-cost"></span></div><div class="field-hint" id="hint-f-cost" onclick="acceptSuggestion()"><span id="hint-val-f-cost"></span><span class="hint-arrow">→</span></div>
+                <div class="field-input-wrap"><input class="field-input" id="f-cost" onkeydown="handleStockFieldKey(event,'f-cost')" type="text" inputmode="decimal" placeholder="₹ 0" autocomplete="off"><span class="field-ghost" id="ghost-f-cost"></span></div><div class="field-hint" id="hint-f-cost" onclick="acceptSuggestion()"><span id="hint-val-f-cost"></span><span class="hint-arrow">→</span></div>
             </div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">Quantity</div><div class="field-label-hindi">मात्रा</div></div>
@@ -662,7 +662,7 @@
             </div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">Min Stock</div><div class="field-label-hindi">न्यूनतम</div></div>
-                <div class="field-input-wrap"><input class="field-input" id="f-min" onkeydown="handleStockFieldKey(event,'f-min')" type="text" inputmode="numeric" placeholder="10" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-min')"><span class="field-ghost" id="ghost-f-min"></span></div>
+                <div class="field-input-wrap"><input class="field-input" id="f-min" onkeydown="handleStockFieldKey(event,'f-min')" type="text" inputmode="numeric" placeholder="10" autocomplete="off"><span class="field-ghost" id="ghost-f-min"></span></div>
             </div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">Expiry</div><div class="field-label-hindi">समाप्ति</div></div>
@@ -674,7 +674,7 @@
             </div>
         </div>
 
-        <!-- Size breakdown — outside form-section so it can expand freely -->
+        <!-- Size breakdown -->
         <div style="background:var(--bg-card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:visible">
             <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;cursor:pointer;user-select:none" onclick="toggleSizeBreakdown()">
                 <span style="font-size:12px;font-weight:600;color:var(--text-mid);display:flex;align-items:center;gap:6px">📐 Size Breakdown <span id="size-total-badge" style="display:none;font-size:10px;font-weight:700;color:var(--primary);background:var(--primary-light);padding:2px 8px;border-radius:20px"></span></span>
@@ -704,9 +704,7 @@
                         <button onclick="saveCurrentStockSizes()" style="width:100%;padding:9px;border:none;background:var(--success);color:white;border-radius:var(--radius-sm);font-family:'DM Sans';font-size:13px;font-weight:600;cursor:pointer">✓ Save Stock Sizes</button>
                     </div>
                 </div>
-                <!-- Divider between current stock and new stock -->
                 <div id="new-stock-label" style="display:none;padding:8px 18px 0;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-light)">Adding Now</div>
-                <!-- New stock being added -->
                 <div id="size-rows" class="size-builder-row" style="padding-bottom:0"></div>
                 <div class="size-builder-row" style="padding-top:8px;border-top:1px solid var(--border)">
                     <div class="size-chip-add">
@@ -828,10 +826,10 @@
 <script>
 // ─── CONFIG ──────────────────────────────────────────────────────────
 const CONFIG = {
-    N8N_LOOKUP:    'https://whitelockemedia.app.n8n.cloud/webhook/vasudeva-lookup',
-    N8N_ALL:       'https://whitelockemedia.app.n8n.cloud/webhook/vasudeva-all',
-    N8N_SELL:      'https://whitelockemedia.app.n8n.cloud/webhook/vasudeva-sell',
-    N8N_ADD_STOCK: 'https://whitelockemedia.app.n8n.cloud/webhook/vasudeva-addstock',
+    N8N_LOOKUP:    'https://n8n.whitelockemedia.com/webhook/vasudeva-lookup',
+    N8N_ALL:       'https://n8n.whitelockemedia.com/webhook/vasudeva-all',
+    N8N_SELL:      'https://n8n.whitelockemedia.com/webhook/vasudeva-sell',
+    N8N_ADD_STOCK: 'https://n8n.whitelockemedia.com/webhook/vasudeva-addstock',
     OWNER_PIN:     '1234',
     CURRENCY:      '₹'
 };
@@ -857,16 +855,14 @@ let productCache = null;
 let cacheLoading = false;
 
 // ─── MOBILE KEYBOARD SCROLL ──────────────────────────────────────────
-// When an input is focused, scroll it into view so the keyboard doesn't cover it
-document.addEventListener('focusin', e => {
-    const el = e.target;
-    if (el.tagName !== 'INPUT' && el.tagName !== 'SELECT' && el.tagName !== 'TEXTAREA') return;
-    // Only apply on addstock screen
-    if (currentScreen !== 'addstock') return;
-    setTimeout(() => {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 300); // delay to let keyboard finish animating up
-});
+if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => {
+        const focused = document.activeElement;
+        if (focused && (focused.tagName === 'INPUT' || focused.tagName === 'SELECT' || focused.tagName === 'TEXTAREA')) {
+            setTimeout(() => focused.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+        }
+    });
+}
 
 // ─── ENTRY PIN ───────────────────────────────────────────────────────
 let entryPinVal = '';
@@ -884,7 +880,7 @@ function entryPinPress(k) {
             currentScreen = 'entry';
             entryPinVal = '';
             updateEntryPinDots();
-            loadProductCache(); // pre-warm cache in background
+            loadProductCache();
         } else {
             entryPinVal = '';
             updateEntryPinDots();
@@ -939,12 +935,9 @@ function switchTab(tab) {
 }
 
 // ─── BARCODE ─────────────────────────────────────────────────────────
-// Always treat barcodes as strings — never coerce to number.
-// Sheets may return them as numbers (losing leading zeros); we can't
-// recover already-stripped zeros, but we prevent further corruption.
 function sanitizeBarcode(v) {
     if (v === null || v === undefined) return '';
-    return String(v).trim(); // keep leading zeros, strip whitespace only
+    return String(v).trim();
 }
 
 let scanBuf = '', scanTimer = null;
@@ -967,7 +960,6 @@ function handleBarcodeKey(e, ctx) {
         if (ctx === 'stock') {
             if (stockProductFound) return;
             if (currentSuggestion) {
-                // Product found by name/SKU, user is entering the barcode manually
                 const bc = sanitizeBarcode(e.target.value);
                 acceptSuggestion();
                 if (bc) document.getElementById('bc-stock').value = bc;
@@ -1009,7 +1001,7 @@ async function loadProductCache(force) {
             barcode: sanitizeBarcode(p.barcode)
         }));
     } catch(e) {
-        productCache = []; // empty array not null — prevents retry crash
+        productCache = [];
     }
     cacheLoading = false;
 }
@@ -1040,13 +1032,11 @@ function searchCache(field, value) {
 // ─── PRODUCT LOOKUP ──────────────────────────────────────────────────
 async function lookupProduct(barcode) {
     const bc = sanitizeBarcode(barcode);
-    // Try cache first
     if (productCache) {
         const p = searchCache('barcode', bc);
         if (!p) throw new Error('Not found');
         return { ...p, found: true };
     }
-    // Fallback to network
     const r = await fetch(CONFIG.N8N_LOOKUP + '?barcode=' + encodeURIComponent(bc));
     if (!r.ok) throw new Error('Network error');
     const data = await r.json();
@@ -1057,14 +1047,12 @@ async function lookupProduct(barcode) {
 
 async function lookupBy(field, value) {
     if (!value || value.trim().length < 3 || stockProductFound) return;
-    // Try cache first
     if (productCache) {
         const p = searchCache(field, value.trim());
         if (p) showGhosts({ ...p, found: true });
         else clearGhosts();
         return;
     }
-    // Fallback to network
     try {
         const r = await fetch(CONFIG.N8N_LOOKUP + '?' + field + '=' + encodeURIComponent(value.trim()));
         if (!r.ok) return;
@@ -1112,14 +1100,12 @@ function showGhosts(p) {
         const isFocused = focusedEl === input;
 
         if (isFocused) {
-            // Always show hint on focused field if suggestion differs from typed
             if (hint && hintVal && val) {
                 hintVal.textContent = val;
                 hint.classList.add('visible');
             }
             input.placeholder = '';
         } else if (!typed && val) {
-            // Empty unfocused — show as muted placeholder
             if (hint) hint.classList.remove('visible');
             input.placeholder = val;
         } else {
@@ -1192,7 +1178,6 @@ function onNameInput() {
 
 function autofillStock(p) {
     showGhosts(p);
-    // For barcode scan, auto-accept immediately
     acceptSuggestion();
 }
 
@@ -1279,7 +1264,7 @@ function hideSellNameSuggestion() {
 
 function acceptSellNameSuggestion() {
     if (!sellNameSuggestion) return;
-    const p = { ...sellNameSuggestion, found: true }; // capture before any clearing
+    const p = { ...sellNameSuggestion, found: true };
     clearSellNameSearch();
     hideSellNameSuggestion();
     displayProduct(p);
@@ -1345,7 +1330,6 @@ function showNotFound(barcode) {
     } else {
         sub.textContent = 'No product matched your search';
     }
-    // Show name search field as alternative
     document.getElementById('sell-name-field').style.display = 'flex';
     document.getElementById('sell-name-input').placeholder = 'Try searching by name or SKU…';
 }
@@ -1406,7 +1390,6 @@ async function finalizeOrder() {
 
 // ─── ADD STOCK ────────────────────────────────────────────────────────
 function onStockInput() {
-    // Only reset if barcode field is being cleared
     const bc = document.getElementById('bc-stock').value;
     if (!bc) {
         document.getElementById('restock-banner').style.display='none';
@@ -1460,7 +1443,7 @@ async function submitStock() {
     try {
         await fetch(CONFIG.N8N_ADD_STOCK, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
         invalidateCache();
-        loadProductCache(); // pre-warm in background
+        loadProductCache();
         ['bc-stock','f-sku','f-name','f-cat','f-mrp','f-cost','f-qty','f-min','f-exp','f-sup'].forEach(id=>document.getElementById(id).value='');
         clearSizeBreakdown();
         clearCurrentStockSection();
@@ -1473,10 +1456,10 @@ async function submitStock() {
 }
 
 // ─── CURRENT STOCK SIZES ─────────────────────────────────────────────
-let currentStockSizes = null; // existing sizes from sheet
-let currentStockEditRows = []; // editable rows state
+let currentStockSizes = null;
+let currentStockEditRows = [];
 let currentStockEditing = false;
-let sizesOverride = null; // set when user saves edited current stock
+let sizesOverride = null;
 
 function showCurrentStockSizes(sizesObj) {
     currentStockSizes = sizesObj;
@@ -1516,7 +1499,6 @@ function toggleCurrentStockEdit() {
     const ed = document.getElementById('current-stock-editable');
     const btn = document.getElementById('current-stock-edit-btn');
     if (currentStockEditing) {
-        // Populate editable rows from current sizes
         const sizes = sizesOverride || currentStockSizes || {};
         currentStockEditRows = Object.entries(sizes).map(([size, qty]) => ({
             id: 'csr-' + Date.now() + Math.random(), size, qty: parseInt(qty) || 0
@@ -1594,8 +1576,9 @@ function clearCurrentStockSection() {
     const lbl = document.getElementById('new-stock-label');
     if (lbl) lbl.style.display = 'none';
 }
+
 let sizeBreakdownOpen = false;
-let sizeRows = []; // [{size, qty}]
+let sizeRows = [];
 
 function toggleSizeBreakdown() {
     sizeBreakdownOpen = !sizeBreakdownOpen;
@@ -1608,7 +1591,6 @@ function toggleSizeBreakdown() {
             const el = document.getElementById('size-accordion-content');
             if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 50);
-        // If opened on an existing product with no sizes yet, offer Free Size as starting point
         if (stockProductFound && !currentStockSizes) {
             const skuEl = document.getElementById('f-sku');
             const p = skuEl && invProductMap[skuEl.value];
@@ -1669,8 +1651,6 @@ function updateSizeTotal() {
         document.getElementById('size-accordion-content').style.maxHeight = '500px';
     }
 }
-
-function onSizeInput() { updateSizeTotal(); }
 
 function onManualQtyInput() {
     if (sizeRows.length > 0) {
@@ -1759,7 +1739,6 @@ function renderInventory() {
         return;
     }
 
-    // Store in map keyed by index for safe DOM referencing
     invProductMap = {};
     products.forEach(p => { invProductMap[p.sku] = p; });
 
@@ -1803,7 +1782,6 @@ function renderInventory() {
             </div>
         </div>`;
     }).join('');
-    // store index→sku mapping for edit/toggle
     window._invProducts = products;
 }
 
@@ -1847,7 +1825,6 @@ function editProductFromInventory(sku) {
         document.getElementById('f-sup').value   = p.supplier || '';
         const sizes = parseSizes(p.sizes);
         if (sizes) showCurrentStockSizes(sizes);
-        // No auto-fill of Free Size here — user must open accordion to indicate sizing
         stockProductFound = true;
         document.getElementById('restock-banner').style.display = 'block';
         document.getElementById('restock-name').textContent = p.name || p.sku || '';
