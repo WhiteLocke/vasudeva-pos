@@ -990,13 +990,7 @@ async function loadProductCache(force) {
     if (cacheLoading) return new Promise(res => setTimeout(() => loadProductCache().then(res), 300));
     cacheLoading = true;
     try {
-        const r = await fetch(CONFIG.N8N_ALL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ action: 'get_all_data' }) // Send an empty object if you just need to trigger it
-        });
+        const r = await fetch(`${CONFIG.N8N_ALL}?action=get_all_data`, { method: 'GET' });
         if (!r.ok) throw new Error();
         const data = await r.json();
         const rows = (Array.isArray(data) && data[0] && data[0].products)
