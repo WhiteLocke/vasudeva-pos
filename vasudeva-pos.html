@@ -80,7 +80,7 @@
         .camera-btn { width: 42px; height: 42px; border: none; background: var(--primary-light); border-radius: var(--radius-sm); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 19px; flex-shrink: 0; transition: background 0.15s; }
         .camera-btn:active { background: var(--border); }
 
-        .product-card { background: var(--bg-card); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); display: none; }
+        .product-card { background: var(--bg-card); border-radius: var(--radius); box-shadow: var(--shadow); display: none; flex-shrink: 0; }
         .product-card.visible { display: block; }
         .product-card-header { padding: 18px 18px 14px; border-bottom: 1px solid var(--border); }
         .product-name-en { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 600; color: var(--text); line-height: 1.2; }
@@ -250,7 +250,23 @@
         .inv-edit-btn { width:100%; padding:11px; border:1.5px solid var(--primary); background:none; color:var(--primary); border-radius:var(--radius-sm); font-family:'DM Sans'; font-size:13px; font-weight:600; cursor:pointer; transition:background 0.15s; }
         .inv-edit-btn:active { background:var(--primary-light); }
 
-        .size-builder-row { display:flex; flex-wrap:wrap; gap:8px; padding:10px 18px 14px; }
+        /* ── ADD STOCK SIZE TAB GRID ── */
+        .stock-size-tab-row { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
+        .stock-size-tab { font-size: 12px; padding: 5px 12px; border-radius: 20px; border: 1.5px solid var(--border); background: var(--bg); color: var(--text-light); cursor: pointer; font-family: 'DM Sans', sans-serif; font-weight: 500; transition: all 0.15s; }
+        .stock-size-tab.active { border-color: var(--primary); background: var(--primary-light); color: var(--primary-dark); }
+        .stock-size-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 10px; }
+        .stock-size-cell { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+        .stock-size-cell-label { font-size: 11px; color: var(--text-light); text-align: center; line-height: 1.2; }
+        .stock-size-cell-input { width: 100%; font-size: 14px; font-weight: 600; padding: 7px 4px; border-radius: var(--radius-sm); border: 1.5px solid var(--border); background: var(--bg); color: var(--text); text-align: center; font-family: 'DM Sans', sans-serif; }
+        .stock-size-cell-input:focus { border-color: var(--primary); background: var(--bg-card); outline: none; }
+        .stock-size-cell-input.has-val { border-color: var(--success); color: var(--success); background: var(--success-light); }
+        /* current-stock version in green */
+        .stock-size-cell-input.cstock { border-color: #52B788; color: #1B4332; background: #D8F3DC; }
+        .stock-size-cell-input.cstock:focus { border-color: var(--success); background: #D8F3DC; }
+        /* Color picker button — replaces native input overlay */
+        .color-pick-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: var(--radius-sm); border: 1.5px solid var(--border); background: var(--bg); cursor: pointer; font-family: 'DM Sans'; font-size: 12px; font-weight: 500; color: var(--text-mid); position: relative; overflow: hidden; }
+        .color-pick-btn input[type=color] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: none; padding: 0; }
+        .color-pick-swatch { width: 18px; height: 18px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.12); flex-shrink: 0; }
         .size-chip-add { display:flex; align-items:center; gap:6px; background:var(--bg); border:1.5px solid var(--border); border-radius:var(--radius-sm); padding:6px 8px; min-width:0; }
         .size-chip-add select { border:none; background:none; font-family:'DM Sans'; font-size:13px; font-weight:700; color:var(--text); outline:none; width:76px; }
         .size-chip-add input { border:none; background:none; font-family:'DM Sans'; font-size:15px; font-weight:600; color:var(--text); outline:none; width:48px; text-align:center; }
@@ -489,10 +505,11 @@
                     <div class="cqp-form" id="cqp-form">
                         <div class="cqp-form-row">
                             <input class="cqp-input" id="cqp-name" placeholder="e.g. Beet Red, Dusty Rose…" />
-                            <div class="cqp-picker-wrap">
-                                <div class="cqp-picker-preview" id="cqp-preview">tap</div>
+                            <label class="color-pick-btn">
+                                <div class="color-pick-swatch" id="cqp-swatch" style="background:#E74C3C"></div>
+                                Pick color
                                 <input type="color" id="cqp-picker" value="#E74C3C" oninput="onCqpPicker(this.value)" />
-                            </div>
+                            </label>
                         </div>
                         <div class="cqp-form-btns">
                             <button class="cqp-btn cqp-btn-save" onclick="saveCqpColor()">Save color globally</button>
@@ -534,42 +551,34 @@
                 <span id="size-accordion-arrow" style="font-size:11px;color:var(--text-light);transition:transform 0.2s">▼</span>
             </div>
             <div id="size-accordion-content" style="max-height:0;overflow:hidden;transition:max-height 0.5s ease">
-                <div id="current-stock-section" style="display:none;padding:10px 18px 12px;border-top:1px solid var(--border);background:#F6FDF8">
-                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                <!-- CURRENT STOCK (shown when restocking existing product) -->
+                <div id="current-stock-section" style="display:none;padding:12px 14px 14px;border-top:1px solid var(--border);background:#F6FDF8">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
                         <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--success)">Current Stock <span id="current-stock-total" style="font-weight:400;opacity:0.8"></span></div>
                         <button id="current-stock-edit-btn" onclick="toggleCurrentStockEdit()" style="padding:3px 10px;border:1.5px solid var(--success);background:none;color:var(--success);border-radius:20px;font-family:'DM Sans';font-size:11px;font-weight:700;cursor:pointer">Edit</button>
                     </div>
                     <div id="current-stock-readonly" class="inv-sizes" style="gap:6px"></div>
-                    <div id="current-stock-editable" style="display:none;padding-top:8px">
-                        <div id="current-stock-rows" class="size-builder-row" style="padding:0 0 8px 0"></div>
-                        <div class="size-builder-row" style="padding-top:0;padding-bottom:8px">
-                            <div class="size-chip-add" style="border-color:#52B788">
-                                <select id="cstock-size-select" style="color:#1B4332">
-                                    <optgroup label="Letter"><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>XXXL</option></optgroup>
-                                    <optgroup label="Numeric"><option>26</option><option>28</option><option>30</option><option>32</option><option>34</option><option>36</option><option>38</option><option>40</option><option>42</option><option>44</option><option>46</option><option>48</option></optgroup>
-                                    <optgroup label="Bra"><option>28A</option><option>28B</option><option>30A</option><option>30B</option><option>32A</option><option>32B</option><option>32C</option><option>32D</option><option>34A</option><option>34B</option><option>34C</option><option>34D</option><option>34DD</option><option>36B</option><option>36C</option><option>36D</option><option>36DD</option><option>38B</option><option>38C</option><option>38D</option><option>40C</option><option>40D</option></optgroup>
-                                    <optgroup label="Other"><option>Free Size</option><option>Other</option></optgroup>
-                                </select>
-                                <input id="cstock-qty-input" type="text" inputmode="numeric" placeholder="Qty" style="color:#1B4332" onkeydown="if(event.key==='Enter'){event.preventDefault();addCurrentStockRow()}">
-                                <button onclick="addCurrentStockRow()" style="background:#52B788">+</button>
-                            </div>
+                    <div id="current-stock-editable" style="display:none">
+                        <div class="stock-size-tab-row" id="cstock-tab-row">
+                            <button class="stock-size-tab active" data-cstab="letter" onclick="switchCStockTab('letter')">Letter</button>
+                            <button class="stock-size-tab" data-cstab="numeric" onclick="switchCStockTab('numeric')">Numeric</button>
+                            <button class="stock-size-tab" data-cstab="bra" onclick="switchCStockTab('bra')">Bra</button>
+                            <button class="stock-size-tab" data-cstab="other" onclick="switchCStockTab('other')">Other</button>
                         </div>
-                        <button onclick="saveCurrentStockSizes()" style="width:100%;padding:9px;border:none;background:var(--success);color:white;border-radius:var(--radius-sm);font-family:'DM Sans';font-size:13px;font-weight:600;cursor:pointer">✓ Save Stock Sizes</button>
+                        <div class="stock-size-grid" id="cstock-size-grid"></div>
+                        <button onclick="saveCurrentStockSizes()" style="width:100%;padding:9px;border:none;background:var(--success);color:white;border-radius:var(--radius-sm);font-family:'DM Sans';font-size:13px;font-weight:600;cursor:pointer;margin-top:4px">✓ Save Stock Sizes</button>
                     </div>
                 </div>
-                <div id="new-stock-label" style="display:none;padding:8px 18px 0;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-light)">Adding Now</div>
-                <div id="size-rows" class="size-builder-row" style="padding-bottom:0"></div>
-                <div class="size-builder-row" style="padding-top:8px;border-top:1px solid var(--border)">
-                    <div class="size-chip-add">
-                        <select id="size-select">
-                            <optgroup label="Letter"><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>XXXL</option></optgroup>
-                            <optgroup label="Numeric"><option>26</option><option>28</option><option>30</option><option>32</option><option>34</option><option>36</option><option>38</option><option>40</option><option>42</option><option>44</option><option>46</option><option>48</option></optgroup>
-                            <optgroup label="Bra"><option>28A</option><option>28B</option><option>30A</option><option>30B</option><option>32A</option><option>32B</option><option>32C</option><option>32D</option><option>34A</option><option>34B</option><option>34C</option><option>34D</option><option>34DD</option><option>36B</option><option>36C</option><option>36D</option><option>36DD</option><option>38B</option><option>38C</option><option>38D</option><option>40C</option><option>40D</option></optgroup>
-                            <optgroup label="Other"><option>Free Size</option><option>Other</option></optgroup>
-                        </select>
-                        <input id="size-qty-input" type="text" inputmode="numeric" placeholder="Qty" onkeydown="if(event.key==='Enter'){event.preventDefault();addSizeRow()}">
-                        <button onclick="addSizeRow()">+</button>
+                <!-- ADDING NOW (new stock input) -->
+                <div style="padding:12px 14px 14px;border-top:1px solid var(--border)">
+                    <div id="new-stock-label" style="display:none;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-light);margin-bottom:8px">Adding Now</div>
+                    <div class="stock-size-tab-row" id="stock-tab-row">
+                        <button class="stock-size-tab active" data-stab="letter" onclick="switchStockSizeTab('letter')">Letter</button>
+                        <button class="stock-size-tab" data-stab="numeric" onclick="switchStockSizeTab('numeric')">Numeric</button>
+                        <button class="stock-size-tab" data-stab="bra" onclick="switchStockSizeTab('bra')">Bra</button>
+                        <button class="stock-size-tab" data-stab="other" onclick="switchStockSizeTab('other')">Other</button>
                     </div>
+                    <div class="stock-size-grid" id="stock-size-grid"></div>
                 </div>
             </div>
         </div>
@@ -1264,17 +1273,16 @@ function applyCqpColor(name) {
 }
 
 function showCqpForm() {
-    cqpPickerHex = null;
-    document.getElementById('cqp-preview').style.background = '';
-    document.getElementById('cqp-preview').textContent = 'tap';
+    cqpPickerHex = '#E74C3C';
+    document.getElementById('cqp-picker').value = '#E74C3C';
+    document.getElementById('cqp-swatch').style.background = '#E74C3C';
     document.getElementById('cqp-form').style.display = 'block';
     document.getElementById('cqp-name').focus();
 }
 function hideCqpForm() { document.getElementById('cqp-form').style.display='none'; }
 function onCqpPicker(val) {
     cqpPickerHex = val;
-    const p = document.getElementById('cqp-preview');
-    p.style.background = val; p.textContent = '';
+    document.getElementById('cqp-swatch').style.background = val;
 }
 function saveCqpColor() {
     const name = document.getElementById('cqp-name').value.trim();
@@ -1292,81 +1300,163 @@ function saveCqpColor() {
     showToast(name+' saved globally','success');
 }
 
-// ── CURRENT STOCK SIZES ───────────────────────────────────────────────
-let currentStockSizes=null,currentStockEditRows=[],currentStockEditing=false,sizesOverride=null;
-function showCurrentStockSizes(sizesObj){
-    currentStockSizes=sizesObj;sizesOverride=null;currentStockEditing=false;
-    const section=document.getElementById('current-stock-section');const label=document.getElementById('new-stock-label');
-    if(!sizesObj||Object.keys(sizesObj).length===0){section.style.display='none';if(label)label.style.display='none';return;}
-    section.style.display='block';if(label)label.style.display='block';
-    renderCurrentStockReadonly();
-    document.getElementById('current-stock-readonly').style.display='flex';
-    document.getElementById('current-stock-editable').style.display='none';
-    document.getElementById('current-stock-edit-btn').textContent='Edit';
-    const total=Object.values(sizesObj).reduce((s,v)=>s+(parseInt(v)||0),0);
-    document.getElementById('current-stock-total').textContent='— '+total+' units across '+Object.keys(sizesObj).length+' size'+(Object.keys(sizesObj).length!==1?'s':'');
-}
-function renderCurrentStockReadonly(){
-    const sizes=sizesOverride||currentStockSizes;if(!sizes)return;
-    document.getElementById('current-stock-readonly').innerHTML=Object.entries(sizes).map(([s,q])=>`<span class="inv-size-chip" style="background:#D8F3DC;border-color:#52B788;color:#1B4332">${q} × ${s}</span>`).join('');
-    const total=Object.values(sizes).reduce((s,v)=>s+(parseInt(v)||0),0);
-    document.getElementById('current-stock-total').textContent=total+' units across '+Object.keys(sizes).length+' size'+(Object.keys(sizes).length!==1?'s':'');
-}
-function toggleCurrentStockEdit(){
-    currentStockEditing=!currentStockEditing;
-    const ro=document.getElementById('current-stock-readonly');const ed=document.getElementById('current-stock-editable');const btn=document.getElementById('current-stock-edit-btn');
-    if(currentStockEditing){const sizes=sizesOverride||currentStockSizes||{};currentStockEditRows=Object.entries(sizes).map(([size,qty])=>({id:'csr-'+Date.now()+Math.random(),size,qty:parseInt(qty)||0}));renderCurrentStockEditRows();ro.style.display='none';ed.style.display='block';btn.textContent='Cancel';}
-    else{ro.style.display='flex';ed.style.display='none';btn.textContent='Edit';currentStockEditRows=[];}
-}
-const SIZE_OPTIONS=['XS','S','M','L','XL','XXL','XXXL','26','28','30','32','34','36','38','40','42','44','46','48','28A','28B','30A','30B','32A','32B','32C','32D','34A','34B','34C','34D','34DD','36B','36C','36D','36DD','38B','38C','38D','40C','40D','Free Size','Other'];
-function renderCurrentStockEditRows(){
-    document.getElementById('current-stock-rows').innerHTML=currentStockEditRows.map(row=>`
-        <div class="size-added-chip" id="${row.id}" style="background:#D8F3DC;border-color:#52B788;color:#1B4332;padding:4px 8px">
-            <select onchange="updateCurrentStockRowSize('${row.id}',this.value)" style="border:none;background:none;font-family:'DM Sans';font-size:12px;font-weight:700;color:#1B4332;outline:none;max-width:76px">
-                ${SIZE_OPTIONS.map(s=>`<option${s===row.size?' selected':''}>${s}</option>`).join('')}
-            </select>
-            <input type="text" inputmode="numeric" value="${row.qty||''}" placeholder="0" style="width:32px;border:none;background:none;font-family:'DM Sans';font-size:13px;font-weight:700;color:#1B4332;outline:none;text-align:center;padding:0" oninput="updateCurrentStockRow('${row.id}',this.value)">
-            <button onclick="removeCurrentStockRow('${row.id}')" style="color:#1B4332;background:none;border:none;cursor:pointer;font-size:13px;padding:0">✕</button>
-        </div>`).join('');
-}
-function addCurrentStockRow(){const size=document.getElementById('cstock-size-select').value;const qty=parseInt(document.getElementById('cstock-qty-input').value)||0;const id='csr-'+Date.now()+Math.random();currentStockEditRows.push({id,size,qty});renderCurrentStockEditRows();document.getElementById('cstock-qty-input').value='';document.getElementById('cstock-qty-input').focus();}
-function updateCurrentStockRow(id,val){const row=currentStockEditRows.find(r=>r.id===id);if(row)row.qty=parseInt(val)||0;}
-function updateCurrentStockRowSize(id,val){const row=currentStockEditRows.find(r=>r.id===id);if(row)row.size=val;}
-function removeCurrentStockRow(id){currentStockEditRows=currentStockEditRows.filter(r=>r.id!==id);renderCurrentStockEditRows();}
-function saveCurrentStockSizes(){const obj={};currentStockEditRows.forEach(r=>{if(r.qty>0)obj[r.size]=r.qty;});sizesOverride=Object.keys(obj).length>0?obj:null;renderCurrentStockReadonly();toggleCurrentStockEdit();showToast('Stock sizes updated — save product to apply','');}
-function clearCurrentStockSection(){currentStockSizes=null;currentStockEditRows=[];currentStockEditing=false;sizesOverride=null;const el=document.getElementById('current-stock-section');if(el)el.style.display='none';const lbl=document.getElementById('new-stock-label');if(lbl)lbl.style.display='none';}
+// ── CURRENT STOCK SIZES (tab grid, green) ────────────────────────────
+let currentStockSizes=null, currentStockEditing=false, sizesOverride=null;
+let cStockTab='letter', cStockValues={};
 
-// ── SIZE BREAKDOWN (ADD STOCK) ─────────────────────────────────────────
-let sizeBreakdownOpen=false,sizeRows=[];
-function toggleSizeBreakdown(){
-    sizeBreakdownOpen=!sizeBreakdownOpen;
-    const content=document.getElementById('size-accordion-content');const arrow=document.getElementById('size-accordion-arrow');
-    content.style.maxHeight=sizeBreakdownOpen?'9999px':'0';arrow.style.transform=sizeBreakdownOpen?'rotate(180deg)':'';
-    if(sizeBreakdownOpen){setTimeout(()=>{const el=document.getElementById('size-accordion-content');if(el)el.scrollIntoView({behavior:'smooth',block:'start'});},50);}
+const STOCK_SIZE_TABS = {
+    letter:  ['XS','S','M','L','XL','XXL','XXXL'],
+    numeric: ['26','28','30','32','34','36','38','40','42','44','46','48'],
+    bra:     ['28A','28B','30A','30B','32A','32B','32C','32D','34A','34B','34C','34D','34DD','36B','36C','36D','36DD','38B','38C','38D','40C','40D'],
+    other:   ['Free Size','Other']
+};
+
+function showCurrentStockSizes(sizesObj) {
+    currentStockSizes = sizesObj; sizesOverride = null; currentStockEditing = false;
+    const section = document.getElementById('current-stock-section');
+    const label   = document.getElementById('new-stock-label');
+    if (!sizesObj || !Object.keys(sizesObj).length) { section.style.display='none'; if(label) label.style.display='none'; return; }
+    section.style.display = 'block'; if (label) label.style.display = 'block';
+    renderCurrentStockReadonly();
+    document.getElementById('current-stock-readonly').style.display = 'flex';
+    document.getElementById('current-stock-editable').style.display = 'none';
+    document.getElementById('current-stock-edit-btn').textContent = 'Edit';
+    updateCStockTotal();
 }
-function addSizeRow(sizeVal,qtyVal){
-    const size=sizeVal||document.getElementById('size-select').value;
-    const qty=qtyVal!==undefined?qtyVal:(parseInt(document.getElementById('size-qty-input').value)||0);
-    if(!sizeVal&&sizeRows.find(r=>r.size===size)){showToast(size+' already added','error');return;}
-    const id='szrow-'+Date.now();sizeRows.push({id,size,qty});renderSizeRows();updateSizeTotal();
-    if(!sizeVal){document.getElementById('size-qty-input').value='';document.getElementById('size-qty-input').focus();}
+
+function renderCurrentStockReadonly() {
+    const sizes = sizesOverride || currentStockSizes; if (!sizes) return;
+    document.getElementById('current-stock-readonly').innerHTML =
+        Object.entries(sizes).map(([s,q]) => `<span class="inv-size-chip" style="background:#D8F3DC;border-color:#52B788;color:#1B4332">${q} × ${s}</span>`).join('');
+    updateCStockTotal();
 }
-function renderSizeRows(){
-    const container=document.getElementById('size-rows');if(!sizeRows.length){container.innerHTML='';return;}
-    container.innerHTML=sizeRows.map(row=>`<div class="size-added-chip" id="${row.id}"><span>${row.size}</span><input type="text" inputmode="numeric" value="${row.qty||''}" placeholder="0" style="width:36px;border:none;background:none;font-family:'DM Sans';font-size:13px;font-weight:700;color:var(--primary-dark);outline:none;text-align:center;padding:0" oninput="updateSizeRowQty('${row.id}',this.value)"><button onclick="removeSizeRow('${row.id}')">✕</button></div>`).join('');
+
+function updateCStockTotal() {
+    const sizes = sizesOverride || currentStockSizes; if (!sizes) return;
+    const total = Object.values(sizes).reduce((s,v) => s+(parseInt(v)||0), 0);
+    const keys  = Object.keys(sizes).length;
+    document.getElementById('current-stock-total').textContent = `— ${total} unit${total!==1?'s':''} across ${keys} size${keys!==1?'s':''}`;
 }
-function updateSizeRowQty(id,val){const row=sizeRows.find(r=>r.id===id);if(row){row.qty=parseInt(val)||0;updateSizeTotal();}}
-function removeSizeRow(id){sizeRows=sizeRows.filter(r=>r.id!==id);renderSizeRows();updateSizeTotal();}
-function updateSizeTotal(){
-    const total=sizeRows.reduce((sum,r)=>sum+(r.qty||0),0);
-    document.getElementById('f-qty').value=total>0?total:'';
-    const badge=document.getElementById('size-total-badge');
-    if(total>0){badge.textContent='Total: '+total;badge.style.display='inline';}else badge.style.display='none';
-    if(sizeBreakdownOpen)document.getElementById('size-accordion-content').style.maxHeight='500px';
+
+function toggleCurrentStockEdit() {
+    currentStockEditing = !currentStockEditing;
+    const ro  = document.getElementById('current-stock-readonly');
+    const ed  = document.getElementById('current-stock-editable');
+    const btn = document.getElementById('current-stock-edit-btn');
+    if (currentStockEditing) {
+        const sizes = sizesOverride || currentStockSizes || {};
+        cStockValues = {};
+        Object.values(STOCK_SIZE_TABS).flat().forEach(s => cStockValues[s] = parseInt(sizes[s])||0);
+        switchCStockTab(cStockTab);
+        ro.style.display='none'; ed.style.display='block'; btn.textContent='Cancel';
+    } else {
+        ro.style.display='flex'; ed.style.display='none'; btn.textContent='Edit';
+    }
 }
-function onManualQtyInput(){if(sizeRows.length>0){sizeRows=[];renderSizeRows();document.getElementById('size-total-badge').style.display='none';}}
-function clearSizeBreakdown(){sizeRows=[];renderSizeRows();document.getElementById('size-total-badge').style.display='none';const qi=document.getElementById('size-qty-input');if(qi)qi.value='';if(sizeBreakdownOpen)toggleSizeBreakdown();}
-function getSizeBreakdown(){if(!sizeRows.length)return null;const obj={};sizeRows.forEach(r=>{if(r.qty>0)obj[r.size]=r.qty;});return Object.keys(obj).length>0?obj:null;}
+
+function switchCStockTab(tab) {
+    cStockTab = tab;
+    document.querySelectorAll('#cstock-tab-row .stock-size-tab').forEach(b =>
+        b.classList.toggle('active', b.dataset.cstab === tab));
+    renderCStockGrid();
+}
+
+function renderCStockGrid() {
+    const grid = document.getElementById('cstock-size-grid');
+    grid.innerHTML = STOCK_SIZE_TABS[cStockTab].map(s => {
+        const v = cStockValues[s] || 0;
+        const safeS = s.replace(/\s/g,'_');
+        return `<div class="stock-size-cell">
+            <div class="stock-size-cell-label">${s}</div>
+            <input class="stock-size-cell-input cstock${v>0?' has-val':''}" id="csi-${safeS}"
+                type="number" min="0" inputmode="numeric" value="${v||''}" placeholder="0"
+                oninput="cStockValues['${s}']=parseInt(this.value)||0;this.className='stock-size-cell-input cstock'+(this.value>0?' has-val':'')" />
+        </div>`;
+    }).join('');
+}
+
+function saveCurrentStockSizes() {
+    const obj = {};
+    Object.entries(cStockValues).forEach(([s,v]) => { if (v > 0) obj[s] = v; });
+    sizesOverride = Object.keys(obj).length ? obj : null;
+    renderCurrentStockReadonly();
+    toggleCurrentStockEdit();
+    showToast('Stock sizes updated — save product to apply','');
+}
+
+function clearCurrentStockSection() {
+    currentStockSizes=null; currentStockEditing=false; sizesOverride=null; cStockValues={};
+    const el=document.getElementById('current-stock-section'); if(el) el.style.display='none';
+    const lbl=document.getElementById('new-stock-label'); if(lbl) lbl.style.display='none';
+}
+
+// ── SIZE BREAKDOWN - ADDING NOW (tab grid, primary) ────────────────────
+let sizeBreakdownOpen=false, currentStockTab='letter', stockSizeValues={};
+
+// Initialise all sizes to 0
+Object.values(STOCK_SIZE_TABS).flat().forEach(s => stockSizeValues[s] = 0);
+
+function toggleSizeBreakdown() {
+    sizeBreakdownOpen = !sizeBreakdownOpen;
+    const content = document.getElementById('size-accordion-content');
+    const arrow   = document.getElementById('size-accordion-arrow');
+    content.style.maxHeight = sizeBreakdownOpen ? '9999px' : '0';
+    arrow.style.transform   = sizeBreakdownOpen ? 'rotate(180deg)' : '';
+    if (sizeBreakdownOpen) {
+        renderStockSizeGrid();
+        setTimeout(() => content.scrollIntoView({behavior:'smooth',block:'start'}), 50);
+    }
+}
+
+function switchStockSizeTab(tab) {
+    currentStockTab = tab;
+    document.querySelectorAll('#stock-tab-row .stock-size-tab').forEach(b =>
+        b.classList.toggle('active', b.dataset.stab === tab));
+    renderStockSizeGrid();
+}
+
+function renderStockSizeGrid() {
+    const grid = document.getElementById('stock-size-grid');
+    if (!grid) return;
+    grid.innerHTML = STOCK_SIZE_TABS[currentStockTab].map(s => {
+        const v = stockSizeValues[s] || 0;
+        const safeS = s.replace(/\s/g,'_');
+        return `<div class="stock-size-cell">
+            <div class="stock-size-cell-label">${s}</div>
+            <input class="stock-size-cell-input${v>0?' has-val':''}" id="ssi-${safeS}"
+                type="number" min="0" inputmode="numeric" value="${v||''}" placeholder="0"
+                oninput="stockSizeValues['${s}']=parseInt(this.value)||0;this.className='stock-size-cell-input'+(this.value>0?' has-val':'');updateSizeTotal()" />
+        </div>`;
+    }).join('');
+}
+
+function updateSizeTotal() {
+    const total = Object.values(stockSizeValues).reduce((s,v) => s+(v||0), 0);
+    document.getElementById('f-qty').value = total > 0 ? total : '';
+    const badge = document.getElementById('size-total-badge');
+    if (total > 0) { badge.textContent='Total: '+total; badge.style.display='inline'; }
+    else badge.style.display = 'none';
+}
+
+function onManualQtyInput() {
+    // Manual qty entry: reset all size inputs
+    Object.keys(stockSizeValues).forEach(k => stockSizeValues[k] = 0);
+    document.getElementById('size-total-badge').style.display = 'none';
+    renderStockSizeGrid();
+}
+
+function clearSizeBreakdown() {
+    Object.keys(stockSizeValues).forEach(k => stockSizeValues[k] = 0);
+    document.getElementById('size-total-badge').style.display = 'none';
+    if (sizeBreakdownOpen) toggleSizeBreakdown();
+    else renderStockSizeGrid();
+}
+
+function getSizeBreakdown() {
+    const obj = {};
+    Object.entries(stockSizeValues).forEach(([s,v]) => { if (v > 0) obj[s] = v; });
+    return Object.keys(obj).length ? obj : null;
+}
 
 // ── INVENTORY ─────────────────────────────────────────────────────────
 let invSortLowFirst=false,invExpandedSku=null,invProductMap={};
