@@ -67,7 +67,7 @@
         .basket-count { background: var(--primary); color: white; border-radius: 50%; width: 19px; height: 19px; font-size: 10px; font-weight: 700; display: none; align-items: center; justify-content: center; }
         .basket-count.visible { display: flex; }
 
-        .screen-content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 18px 22px; display: flex; flex-direction: column; gap: 14px; }
+        .screen-content { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 18px 22px; display: flex; flex-direction: column; gap: 14px; }
 
         .barcode-field { background: var(--bg-card); border: 2px solid var(--border); border-radius: var(--radius); padding: 14px 18px; display: flex; align-items: center; gap: 12px; cursor: text; transition: border-color 0.2s; flex-shrink: 0; }
         .barcode-field:focus-within { border-color: var(--primary); }
@@ -939,7 +939,7 @@ function renderSizePicker(sizesObj) {
     if (tabs.length > 1) {
         tabRow.style.display = 'flex';
         tabRow.innerHTML = tabs.map(t =>
-            `<button class="size-tab${t.id===currentSellSizeTab?' active':''}" onclick="switchSellSizeTab('${t.id}')">${t.label}</button>`
+            `<button class="size-tab${t.id===currentSellSizeTab?' active':''}" data-tabid="${t.id}" onclick="switchSellSizeTab('${t.id}')">${t.label}</button>`
         ).join('');
     } else {
         tabRow.style.display = 'none';
@@ -964,8 +964,8 @@ function renderSizePicker(sizesObj) {
 
 function switchSellSizeTab(tab) {
     currentSellSizeTab = tab;
-    document.querySelectorAll('.size-tab').forEach(btn =>
-        btn.classList.toggle('active', btn.textContent === sellSizeData.tabs.find(t=>t.id===tab)?.label)
+    document.querySelectorAll('#size-tab-row .size-tab').forEach(btn =>
+        btn.classList.toggle('active', btn.dataset.tabid === tab)
     );
     renderSellSizeGrid();
 }
@@ -1233,11 +1233,21 @@ function renderCqpChips() {
     if (!row) return;
     const colors = loadGlobalColors();
     row.innerHTML = colors.map(({name,hex}) => {
+        const isBuiltin = BUILTIN_COLORS.find(b => b.name === name);
         const dotStyle = hex ? `background:${hex}` : 'background:var(--bg);border:1px solid var(--border)';
-        return `<div class="cqp-chip" onclick="applyCqpColor('${name.replace(/'/g,'\\\'')}')" title="${name}">
-            <div class="cqp-dot" style="${dotStyle}"></div>${name}
-        </div>`;
+        const safeName = name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+        const delBtn = !isBuiltin
+            ? `<span onclick="deleteCqpColor('${safeName}');event.stopPropagation()" style="margin-left:3px;font-size:11px;color:var(--text-light);line-height:1;padding:0 2px">×</span>`
+            : '';
+        return `<div class="cqp-chip" onclick="applyCqpColor('${safeName}')" title="${name}"><div class="cqp-dot" style="${dotStyle}"></div>${name}${delBtn}</div>`;
     }).join('') + `<div class="cqp-chip cqp-add" onclick="showCqpForm()">+ New</div>`;
+}
+
+function deleteCqpColor(name) {
+    const colors = loadGlobalColors().filter(c => c.name !== name);
+    saveCustomColors(colors);
+    renderCqpChips();
+    showToast(name + ' removed', '');
 }
 
 function applyCqpColor(name) {
