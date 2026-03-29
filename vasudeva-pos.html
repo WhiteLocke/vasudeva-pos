@@ -90,14 +90,52 @@
         .stock-status.low-stock { background: #FFF3CD; color: #856404; }
         .stock-status.out-stock { background: #FEE2E2; color: var(--danger); }
 
-        /* SIZE PICKER */
+        /* ── SIZE PICKER (SELL) ── */
         .size-picker-wrap { padding: 14px 18px; border-bottom: 1px solid var(--border); display: none; }
         .size-picker-label { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-light); margin-bottom: 10px; }
-        .size-picker-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+        /* Tab row for Letter / Numeric / Bra */
+        .size-tab-row { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+        .size-tab { font-size: 12px; padding: 5px 12px; border-radius: 20px; border: 1.5px solid var(--border); background: var(--bg); color: var(--text-light); cursor: pointer; font-family: 'DM Sans', sans-serif; font-weight: 500; transition: all 0.15s; }
+        .size-tab.active { border-color: var(--primary); background: var(--primary-light); color: var(--primary-dark); }
+        /* Grid of size chips within a tab */
+        .size-chip-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+        /* Persistent row: Free Size / Other — dashed separator */
+        .size-persistent-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
+        /* Shared chip style */
         .size-chip-sell { padding: 7px 14px; border: 2px solid var(--border); background: var(--bg); border-radius: 20px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; color: var(--text-mid); cursor: pointer; transition: all 0.15s; }
         .size-chip-sell:active { background: var(--primary-light); }
         .size-chip-sell.selected { border-color: var(--primary); background: var(--primary-light); color: var(--primary-dark); }
         .size-chip-sell.out { opacity: 0.35; cursor: not-allowed; text-decoration: line-through; }
+
+        /* ── COLOR PICKER (SELL) ── */
+        .color-picker-wrap { padding: 14px 18px; border-bottom: 1px solid var(--border); display: none; }
+        .color-chip-grid-sell { display: flex; flex-wrap: wrap; gap: 6px; }
+        .color-chip-sell { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 20px; border: 2px solid var(--border); background: var(--bg); cursor: pointer; transition: all 0.15s; }
+        .color-chip-sell:active { background: var(--primary-light); }
+        .color-chip-sell.selected { border-color: var(--primary); background: var(--primary-light); }
+        .color-dot-sell { width: 13px; height: 13px; border-radius: 50%; flex-shrink: 0; border: 0.5px solid rgba(0,0,0,0.12); }
+        .color-chip-sell-label { font-size: 13px; font-weight: 600; color: var(--text-mid); }
+        .color-chip-sell.selected .color-chip-sell-label { color: var(--primary-dark); }
+
+        /* ── COLOR QUICK-PICK (ADD STOCK) ── */
+        .color-quick-section { padding: 0 18px 14px; border-bottom: 1px solid var(--border); }
+        .color-quick-label { font-size: 10px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-light); margin-bottom: 8px; }
+        .color-quick-row { display: flex; flex-wrap: wrap; gap: 5px; }
+        .cqp-chip { display: flex; align-items: center; gap: 4px; padding: 4px 9px; border-radius: 20px; border: 1px solid var(--border); background: var(--bg); cursor: pointer; font-size: 11px; font-weight: 500; color: var(--text-mid); transition: background 0.12s; }
+        .cqp-chip:active { background: var(--primary-light); border-color: var(--primary); }
+        .cqp-dot { width: 10px; height: 10px; border-radius: 50%; border: 0.5px solid rgba(0,0,0,0.1); flex-shrink: 0; }
+        .cqp-add { border-style: dashed; color: var(--text-light); }
+        /* Inline form for adding custom color */
+        .cqp-form { display: none; margin-top: 8px; background: var(--bg); border-radius: var(--radius-sm); padding: 10px; border: 1px solid var(--border); }
+        .cqp-form-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+        .cqp-input { flex: 1; border: 1px solid var(--border); background: var(--bg-card); font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text); padding: 7px 10px; border-radius: var(--radius-sm); outline: none; }
+        .cqp-picker-wrap { position: relative; width: 36px; height: 36px; flex-shrink: 0; }
+        .cqp-picker-wrap input[type=color] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: none; padding: 0; }
+        .cqp-picker-preview { width: 36px; height: 36px; border-radius: var(--radius-sm); border: 1.5px solid var(--border); pointer-events: none; display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--text-light); background: var(--bg-card); }
+        .cqp-form-btns { display: flex; gap: 6px; }
+        .cqp-btn { flex: 1; font-size: 12px; font-weight: 600; padding: 8px; border-radius: var(--radius-sm); cursor: pointer; text-align: center; font-family: 'DM Sans', sans-serif; }
+        .cqp-btn-save { background: var(--primary); color: white; border: none; }
+        .cqp-btn-cancel { background: none; color: var(--text-light); border: 1px solid var(--border); }
 
         .info-row { display: flex; align-items: center; justify-content: space-between; padding: 15px 18px; border-bottom: 1px solid var(--border); }
         .row-label { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-light); }
@@ -293,7 +331,7 @@
         <button class="sell-tab" id="tab-basket" onclick="switchTab('basket')">🧺 Basket <span class="basket-count" id="basket-count">0</span></button>
     </div>
 
-    <!-- Product panel — ALL sell content lives inside here -->
+    <!-- Product panel -->
     <div id="panel-product" class="screen-content">
         <div class="barcode-field" onclick="document.getElementById('bc-sell').focus()">
             <span class="barcode-field-icon">⬛</span>
@@ -325,14 +363,23 @@
             <div class="product-card-header">
                 <div class="product-name-en" id="prod-name">—</div>
                 <div><span class="product-sku-badge" id="prod-sku">SKU</span></div>
-                <div id="prod-color-badge" style="display:none;margin-top:6px"><span style="font-size:11px;color:var(--text-light);background:var(--bg);padding:2px 10px;border-radius:20px;border:1px solid var(--border)" id="prod-color-text"></span></div>
                 <div><span class="stock-status in-stock" id="prod-stock-status">✓ In Stock</span></div>
             </div>
-            <!-- Size picker -->
+
+            <!-- SIZE PICKER: tabs + grid + persistent row -->
             <div class="size-picker-wrap" id="size-picker-wrap">
-                <div class="size-picker-label">Select Size <span style="font-family:'Noto Sans Devanagari';font-size:9px;opacity:0.65;font-weight:400">/ साइज़</span></div>
-                <div class="size-picker-chips" id="size-picker-chips"></div>
+                <div class="size-picker-label">Size <span style="font-family:'Noto Sans Devanagari';font-size:9px;opacity:0.65;font-weight:400">/ साइज़</span></div>
+                <div class="size-tab-row" id="size-tab-row" style="display:none"></div>
+                <div class="size-chip-grid" id="size-chip-grid"></div>
+                <div class="size-persistent-row" id="size-persistent-row" style="display:none"></div>
             </div>
+
+            <!-- COLOR PICKER: only shown when product has multiple colors -->
+            <div class="color-picker-wrap" id="color-picker-wrap">
+                <div class="size-picker-label">Color <span style="font-family:'Noto Sans Devanagari';font-size:9px;opacity:0.65;font-weight:400">/ रंग</span></div>
+                <div class="color-chip-grid-sell" id="color-chip-grid-sell"></div>
+            </div>
+
             <!-- Price -->
             <div class="info-row" style="cursor:pointer" onclick="openDiscount()">
                 <div><div class="row-label">Price <span class="row-label-hindi">/ कीमत</span></div></div>
@@ -343,15 +390,17 @@
                     <span class="edit-hint" style="margin-left:8px">✏️</span>
                 </div>
             </div>
-            <!-- Quantity -->
+
+            <!-- Quantity — label updates dynamically when size is selected (Option A) -->
             <div class="info-row">
-                <div><div class="row-label">Qty <span class="row-label-hindi">/ मात्रा</span></div></div>
+                <div><div class="row-label" id="qty-row-label">Qty <span class="row-label-hindi">/ मात्रा</span></div></div>
                 <div class="quantity-controls">
                     <button class="qty-btn" onclick="changeQty(-1)">−</button>
                     <div class="qty-value" id="qty-display" onclick="openNumpad('qty')">1</div>
                     <button class="qty-btn" onclick="changeQty(1)">+</button>
                 </div>
             </div>
+
             <!-- Details accordion -->
             <div class="accordion" id="acc-details">
                 <div class="accordion-header" onclick="toggleAcc('acc-details')">
@@ -428,9 +477,29 @@
                 <div class="field-label-wrap"><div class="field-label">Category</div><div class="field-label-hindi">श्रेणी</div></div>
                 <div class="field-input-wrap"><input class="field-input" id="f-cat" type="text" placeholder="e.g. Skincare" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-cat')"><span class="field-ghost" id="ghost-f-cat"></span></div><div class="field-hint" id="hint-f-cat" onclick="acceptSuggestion()"><span id="hint-val-f-cat"></span><span class="hint-arrow">→</span></div>
             </div>
-            <div class="form-field">
-                <div class="field-label-wrap"><div class="field-label">Color</div><div class="field-label-hindi">रंग</div></div>
-                <div class="field-input-wrap"><input class="field-input" id="f-color" type="text" placeholder="e.g. Black, Red" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-color')"><span class="field-ghost" id="ghost-f-color"></span></div><div class="field-hint" id="hint-f-color" onclick="acceptSuggestion()"><span id="hint-val-f-color"></span><span class="hint-arrow">→</span></div>
+            <!-- Color field + quick-pick chips below -->
+            <div class="form-field" style="flex-direction:column;align-items:stretch;gap:0;padding-bottom:0">
+                <div style="display:flex;align-items:center;gap:14px;width:100%">
+                    <div class="field-label-wrap"><div class="field-label">Color</div><div class="field-label-hindi">रंग</div></div>
+                    <div class="field-input-wrap"><input class="field-input" id="f-color" type="text" placeholder="e.g. Red, Black" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-color')"><span class="field-ghost" id="ghost-f-color"></span></div><div class="field-hint" id="hint-f-color" onclick="acceptSuggestion()"><span id="hint-val-f-color"></span><span class="hint-arrow">→</span></div>
+                </div>
+                <!-- Global color quick-pick -->
+                <div style="padding:8px 0 12px">
+                    <div class="color-quick-row" id="cqp-row"></div>
+                    <div class="cqp-form" id="cqp-form">
+                        <div class="cqp-form-row">
+                            <input class="cqp-input" id="cqp-name" placeholder="e.g. Beet Red, Dusty Rose…" />
+                            <div class="cqp-picker-wrap">
+                                <div class="cqp-picker-preview" id="cqp-preview">tap</div>
+                                <input type="color" id="cqp-picker" value="#E74C3C" oninput="onCqpPicker(this.value)" />
+                            </div>
+                        </div>
+                        <div class="cqp-form-btns">
+                            <button class="cqp-btn cqp-btn-save" onclick="saveCqpColor()">Save color globally</button>
+                            <button class="cqp-btn cqp-btn-cancel" onclick="hideCqpForm()">Cancel</button>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">MRP</div><div class="field-label-hindi">अधिकतम मूल्य</div></div>
@@ -588,11 +657,51 @@ const CONFIG = {
     CURRENCY: '₹'
 };
 
+// ── SIZE CATEGORY DEFINITIONS ──────────────────────────────────────────
+const LETTER_SIZES   = ['XS','S','M','L','XL','XXL','XXXL'];
+const NUMERIC_SIZES  = ['26','28','30','32','34','36','38','40','42','44','46','48'];
+const BRA_SIZES      = ['28A','28B','30A','30B','32A','32B','32C','32D','34A','34B','34C','34D','34DD','36B','36C','36D','36DD','38B','38C','38D','40C','40D'];
+const PERSISTENT_SIZES = ['Free Size','Other'];
+
+// ── GLOBAL COLOR STORAGE (localStorage) ────────────────────────────────
+const BUILTIN_COLORS = [
+    {name:'Red',hex:'#E74C3C'},{name:'Black',hex:'#2C2C2A'},{name:'White',hex:'#F5F5F0'},
+    {name:'Navy',hex:'#1A3A5C'},{name:'Pink',hex:'#E8A0B4'},{name:'Green',hex:'#2E7D32'},
+    {name:'Yellow',hex:'#F4C430'},{name:'Purple',hex:'#7D3C98'},{name:'Brown',hex:'#795548'},
+    {name:'Grey',hex:'#9E9E9E'},{name:'Orange',hex:'#E65100'},{name:'Maroon',hex:'#7B1C1C'},
+    {name:'Blue',hex:'#2980B9'},{name:'Beige',hex:'#D4B896'},{name:'Cream',hex:'#FFFDD0'},
+    {name:'Gold',hex:'#D4930A'}
+];
+const COLOR_STORAGE_KEY = 'vasudeva-global-colors';
+
+function loadGlobalColors() {
+    try {
+        const saved = JSON.parse(localStorage.getItem(COLOR_STORAGE_KEY) || '[]');
+        const result = [...BUILTIN_COLORS];
+        saved.forEach(c => { if (!result.find(b => b.name === c.name)) result.push(c); });
+        return result;
+    } catch(e) { return [...BUILTIN_COLORS]; }
+}
+
+function saveCustomColors(colors) {
+    const custom = colors.filter(c => !BUILTIN_COLORS.find(b => b.name === c.name));
+    try { localStorage.setItem(COLOR_STORAGE_KEY, JSON.stringify(custom)); } catch(e) {}
+}
+
+function getColorHex(name) {
+    const all = loadGlobalColors();
+    const found = all.find(c => c.name === name);
+    return found ? found.hex : null;
+}
+
+// ── STATE ─────────────────────────────────────────────────────────────
 let currentScreen = 'entry', currentProduct = null, currentQty = 1, currentPrice = 0;
-let currentSize = null;
+let currentSize = null, currentColor = null;
+let sellSizeData = {}, currentSellSizeTab = null;
 let basket = [], npTarget = null, npVal = '', pinVal = '', pinUnlocked = false;
 let stockProductFound = false, camCtx = null, camStream = null, camDetector = null, camFrame = null;
 let lastFailedBarcode = '', sellNameTimer = null, productCache = null, cacheLoading = false;
+let cqpPickerHex = null;
 
 // Mobile keyboard scroll
 if (window.visualViewport) {
@@ -636,7 +745,7 @@ function goTo(screen) {
     cur.classList.add('exit'); setTimeout(()=>cur.classList.remove('active','exit'),280);
     nxt.classList.add('active'); currentScreen = screen;
     if (screen==='sell') { setTimeout(()=>document.getElementById('bc-sell').focus(),350); resetSell(); }
-    if (screen==='addstock') setTimeout(()=>document.getElementById('bc-stock').focus(),350);
+    if (screen==='addstock') { setTimeout(()=>document.getElementById('bc-stock').focus(),350); renderCqpChips(); }
     if (screen==='inventory') { invExpandedSku=null; renderInventory(); }
 }
 function goBack() {
@@ -721,7 +830,7 @@ const GHOST_FIELDS = {
     'f-sku': p=>p.sku||'', 'f-name': p=>p.name||'', 'f-cat': p=>p.category||'',
     'f-color': p=>p.color||'', 'f-mrp': p=>p.mrp?String(p.mrp):'', 'f-cost': p=>p.cost?String(p.cost):''
 };
-const FIELD_PLACEHOLDERS = {'f-sku':'Supplier code','f-name':'Product name','f-cat':'e.g. Skincare','f-color':'e.g. Black, Red','f-mrp':'₹ 0','f-cost':'₹ 0','f-qty':'0','f-min':'10'};
+const FIELD_PLACEHOLDERS = {'f-sku':'Supplier code','f-name':'Product name','f-cat':'e.g. Skincare','f-color':'e.g. Red, Black','f-mrp':'₹ 0','f-cost':'₹ 0','f-qty':'0','f-min':'10'};
 function showGhosts(p) {
     currentSuggestion=p; const focusedEl=document.activeElement;
     Object.entries(GHOST_FIELDS).forEach(([id,fn])=>{
@@ -808,39 +917,167 @@ function goToAddStockUnregistered(){const bc=lastFailedBarcode;goTo('addstock');
 // ── SIZE PICKER (SELL) ────────────────────────────────────────────────
 function renderSizePicker(sizesObj) {
     const wrap = document.getElementById('size-picker-wrap');
-    const chips = document.getElementById('size-picker-chips');
-    if (!sizesObj || Object.keys(sizesObj).length === 0) { wrap.style.display = 'none'; return; }
+    if (!sizesObj || Object.keys(sizesObj).length === 0) { wrap.style.display='none'; return; }
     wrap.style.display = 'block';
-    chips.innerHTML = Object.entries(sizesObj).map(([s,q]) => {
-        const qty = parseInt(q)||0;
-        const isOut = qty <= 0;
-        return `<button onclick="${isOut?'':'selectSellSize(\''+s+'\')'}" class="size-chip-sell${isOut?' out':''}" id="sellchip-${s.replace(/\s/g,'_')}">${s} <span style="font-size:10px;opacity:0.6">(${qty})</span></button>`;
-    }).join('');
+
+    // Categorise sizes into buckets — only include sizes present in this product's JSON
+    const letterEntries   = Object.entries(sizesObj).filter(([s]) => LETTER_SIZES.includes(s));
+    const numericEntries  = Object.entries(sizesObj).filter(([s]) => NUMERIC_SIZES.includes(s));
+    const braEntries      = Object.entries(sizesObj).filter(([s]) => BRA_SIZES.includes(s));
+    const persistEntries  = Object.entries(sizesObj).filter(([s]) => PERSISTENT_SIZES.includes(s));
+
+    const tabs = [];
+    if (letterEntries.length)  tabs.push({id:'letter',  label:'Letter',  sizes:letterEntries});
+    if (numericEntries.length) tabs.push({id:'numeric', label:'Numeric', sizes:numericEntries});
+    if (braEntries.length)     tabs.push({id:'bra',     label:'Bra',     sizes:braEntries});
+
+    sellSizeData = {tabs, persistent: persistEntries};
+    currentSellSizeTab = tabs.length ? tabs[0].id : null;
+
+    // Render tab buttons (hidden if only one category)
+    const tabRow = document.getElementById('size-tab-row');
+    if (tabs.length > 1) {
+        tabRow.style.display = 'flex';
+        tabRow.innerHTML = tabs.map(t =>
+            `<button class="size-tab${t.id===currentSellSizeTab?' active':''}" onclick="switchSellSizeTab('${t.id}')">${t.label}</button>`
+        ).join('');
+    } else {
+        tabRow.style.display = 'none';
+    }
+
+    renderSellSizeGrid();
+
+    // Persistent row (Free Size / Other) — always shown if present, below dashed line
+    const persistRow = document.getElementById('size-persistent-row');
+    if (persistEntries.length) {
+        persistRow.style.display = 'flex';
+        persistRow.innerHTML = persistEntries.map(([s,q]) => makeSellSizeChip(s, parseInt(q)||0)).join('');
+    } else {
+        persistRow.style.display = 'none';
+    }
+
+    // Auto-select the size with the most stock (first on tie)
+    const allEntries = [...(tabs[0]?.sizes||[]), ...persistEntries];
+    const firstAvail = allEntries.find(([,q]) => (parseInt(q)||0) > 0);
+    if (firstAvail) selectSellSize(firstAvail[0]);
 }
+
+function switchSellSizeTab(tab) {
+    currentSellSizeTab = tab;
+    document.querySelectorAll('.size-tab').forEach(btn =>
+        btn.classList.toggle('active', btn.textContent === sellSizeData.tabs.find(t=>t.id===tab)?.label)
+    );
+    renderSellSizeGrid();
+}
+
+function renderSellSizeGrid() {
+    const grid = document.getElementById('size-chip-grid');
+    if (!currentSellSizeTab || !sellSizeData.tabs) { grid.innerHTML=''; return; }
+    const tabData = sellSizeData.tabs.find(t => t.id===currentSellSizeTab);
+    grid.innerHTML = tabData ? tabData.sizes.map(([s,q]) => makeSellSizeChip(s, parseInt(q)||0)).join('') : '';
+}
+
+function makeSellSizeChip(s, qty) {
+    const isOut = qty <= 0;
+    const isSelected = s === currentSize;
+    const safeId = 'sellchip-' + s.replace(/\s/g,'_').replace(/[^a-zA-Z0-9_]/g,'_');
+    return `<button class="size-chip-sell${isOut?' out':''}${isSelected?' selected':''}"
+        ${isOut ? 'disabled' : `onclick="selectSellSize('${s}')"`}
+        id="${safeId}"
+    >${s} <span style="font-size:10px;opacity:0.55">(${qty})</span></button>`;
+}
+
 function selectSellSize(size) {
     currentSize = size;
+    // Update chip selection
     document.querySelectorAll('.size-chip-sell').forEach(c => c.classList.remove('selected'));
-    const chip = document.getElementById('sellchip-'+size.replace(/\s/g,'_'));
+    const chip = document.getElementById('sellchip-' + size.replace(/\s/g,'_').replace(/[^a-zA-Z0-9_]/g,'_'));
     if (chip) chip.classList.add('selected');
-    document.getElementById('add-basket-btn').innerHTML = `🧺 Add to Basket &nbsp;·&nbsp; ${size}`;
+    // Option A: update qty row label
+    updateQtyLabel();
+    updateAddBasketBtn();
 }
+
+function updateQtyLabel() {
+    const label = document.getElementById('qty-row-label');
+    if (!label) return;
+    if (currentSize) {
+        label.innerHTML = `Qty &nbsp;<span style="color:var(--primary);font-weight:700;font-size:11px">· ${currentSize}</span> <span class="row-label-hindi">/ मात्रा</span>`;
+    } else {
+        label.innerHTML = 'Qty <span class="row-label-hindi">/ मात्रा</span>';
+    }
+}
+
+function updateAddBasketBtn() {
+    const parts = [];
+    if (currentSize)  parts.push(currentSize);
+    if (currentColor) parts.push(currentColor);
+    const suffix = parts.length ? ' &nbsp;·&nbsp; ' + parts.join(' · ') : '';
+    document.getElementById('add-basket-btn').innerHTML = `🧺 Add to Basket${suffix}`;
+}
+
 function clearSizePicker() {
-    currentSize = null;
+    currentSize = null; currentColor = null;
     document.getElementById('size-picker-wrap').style.display = 'none';
+    document.getElementById('color-picker-wrap').style.display = 'none';
     document.getElementById('add-basket-btn').innerHTML = '🧺 Add to Basket';
+    updateQtyLabel();
+}
+
+// ── COLOR PICKER (SELL) ───────────────────────────────────────────────
+function renderColorPicker(colorStr) {
+    const wrap = document.getElementById('color-picker-wrap');
+    if (!colorStr || !colorStr.trim()) { wrap.style.display='none'; currentColor=null; return; }
+
+    const colors = colorStr.split(',').map(c=>c.trim()).filter(Boolean);
+    if (!colors.length) { wrap.style.display='none'; return; }
+
+    // Default to first color
+    currentColor = colors[0];
+
+    if (colors.length === 1) {
+        // Single color — no picker needed, just set and hide
+        wrap.style.display = 'none';
+        updateAddBasketBtn();
+        return;
+    }
+
+    wrap.style.display = 'block';
+    const grid = document.getElementById('color-chip-grid-sell');
+    grid.innerHTML = colors.map(c => {
+        const hex = getColorHex(c);
+        const dotStyle = hex ? `background:${hex}` : 'background:var(--bg);border:1px solid var(--border)';
+        return `<button class="color-chip-sell${c===currentColor?' selected':''}" onclick="selectSellColor('${c.replace(/'/g,'\\\'')}')" data-color="${c}">
+            <div class="color-dot-sell" style="${dotStyle}"></div>
+            <span class="color-chip-sell-label">${c}</span>
+        </button>`;
+    }).join('');
+
+    updateAddBasketBtn();
+}
+
+function selectSellColor(color) {
+    currentColor = color;
+    document.querySelectorAll('.color-chip-sell').forEach(c =>
+        c.classList.toggle('selected', c.dataset.color === color)
+    );
+    updateAddBasketBtn();
 }
 
 // ── SELL SCREEN ───────────────────────────────────────────────────────
 function resetSell() {
-    currentProduct=null; currentQty=1; currentPrice=0; lastFailedBarcode=''; currentSize=null;
+    currentProduct=null; currentQty=1; currentPrice=0; lastFailedBarcode='';
+    currentSize=null; currentColor=null;
     document.getElementById('product-card').classList.remove('visible');
     document.getElementById('not-found-sell').classList.remove('visible');
     document.getElementById('sell-empty').style.display='';
     document.getElementById('bc-sell').value='';
-    clearSellNameSearch(); hideSellNameSuggestion(); updateQtyDisplay(); clearSizePicker();
+    clearSellNameSearch(); hideSellNameSuggestion();
+    clearSizePicker(); updateQtyDisplay();
 }
+
 function displayProduct(p) {
-    currentProduct=p; currentPrice=p.mrp; currentQty=1; currentSize=null;
+    currentProduct=p; currentPrice=p.mrp; currentQty=1; currentSize=null; currentColor=null;
     document.getElementById('sell-empty').style.display='none';
     document.getElementById('not-found-sell').classList.remove('visible');
     document.getElementById('product-card').classList.add('visible');
@@ -848,34 +1085,38 @@ function displayProduct(p) {
     document.getElementById('prod-sku').textContent=p.sku;
     document.getElementById('prod-sku-d').textContent=p.sku;
     document.getElementById('prod-cat').textContent=p.category||'—';
-    document.getElementById('prod-stock-n').textContent=p.stock+' units';
-    document.getElementById('prod-cost').textContent=CONFIG.CURRENCY+p.cost;
+    document.getElementById('prod-stock-n').textContent=(p.stock||0)+' units';
+    document.getElementById('prod-cost').textContent=CONFIG.CURRENCY+(p.cost||0);
     document.getElementById('prod-price').textContent=CONFIG.CURRENCY+p.mrp;
     document.getElementById('orig-price').style.display='none';
     document.getElementById('disc-badge').style.display='none';
     document.getElementById('add-basket-btn').innerHTML='🧺 Add to Basket';
-    // Color badge
-    const colorBadge=document.getElementById('prod-color-badge');
-    if(p.color){document.getElementById('prod-color-text').textContent='🎨 '+p.color;colorBadge.style.display='block';}
-    else colorBadge.style.display='none';
+
     // Stock status
     const ss=document.getElementById('prod-stock-status');
-    if(p.stock<=0){ss.className='stock-status out-stock';ss.textContent='✕ Out of Stock';}
-    else if(p.stock<=p.minStock){ss.className='stock-status low-stock';ss.textContent=`⚠ Low Stock (${p.stock})`;}
-    else{ss.className='stock-status in-stock';ss.textContent=`✓ In Stock (${p.stock})`;}
-    // Size picker
+    const stock=p.stock||0; const min=p.minStock||10;
+    if(stock<=0){ss.className='stock-status out-stock';ss.textContent='✕ Out of Stock';}
+    else if(stock<=min){ss.className='stock-status low-stock';ss.textContent=`⚠ Low Stock (${stock})`;}
+    else{ss.className='stock-status in-stock';ss.textContent=`✓ In Stock (${stock})`;}
+
+    // Size picker — only sizes present in JSON; Free Size shown if unaccounted stock
     const sizes = parseSizes(p.sizes);
     if (sizes && Object.keys(sizes).length > 0) {
         const sizeTotal = Object.values(sizes).reduce((s,v)=>s+(parseInt(v)||0),0);
         const remainder = (p.stock||0) - sizeTotal;
-        const displaySizes = remainder > 0 ? {...sizes,'Free Size':remainder} : sizes;
+        const displaySizes = remainder > 0 ? {...sizes, 'Free Size': (sizes['Free Size']||0) + remainder} : sizes;
         renderSizePicker(displaySizes);
     } else {
         clearSizePicker();
     }
+
+    // Color picker
+    renderColorPicker(p.color||'');
+    updateQtyLabel();
     updateQtyDisplay();
     showToast(p.name+' found','success');
 }
+
 function showNotFound(barcode) {
     lastFailedBarcode=barcode||'';
     document.getElementById('sell-empty').style.display='none';
@@ -896,15 +1137,27 @@ function addToBasket() {
     const sizes = parseSizes(currentProduct.sizes);
     const hasSizes = sizes && Object.keys(sizes).length > 0;
     if (hasSizes && !currentSize) { showToast('Please select a size first','error'); return; }
-    const displayName = currentProduct.name + (currentSize ? ` · ${currentSize}` : '') + (currentProduct.color ? ` · ${currentProduct.color}` : '');
-    const key = currentProduct.sku + (currentSize||'') + currentPrice;
+
+    const selColor = currentColor || currentProduct.color || '';
+    const nameParts = [currentProduct.name];
+    if (currentSize) nameParts.push(currentSize);
+    if (selColor)    nameParts.push(selColor);
+    const displayName = nameParts.join(' · ');
+
+    const key = currentProduct.sku + '|' + (currentSize||'') + '|' + currentPrice + '|' + selColor;
     const ex = basket.find(i=>i._key===key);
     if(ex){ex.qty+=currentQty;ex.total=ex.qty*ex.price;}
-    else basket.push({_key:key,name:displayName,sku:currentProduct.sku,barcode:currentProduct.barcode,size:currentSize,color:currentProduct.color,price:currentPrice,qty:currentQty,total:currentPrice*currentQty});
+    else basket.push({
+        _key:key, name:displayName,
+        sku:currentProduct.sku, barcode:currentProduct.barcode,
+        size:currentSize||'', color:selColor,
+        price:currentPrice, qty:currentQty, total:currentPrice*currentQty
+    });
     updateBasketUI();
     showToast(`Added ${currentQty}× ${displayName}`,'success');
     resetSell();
 }
+
 function updateBasketUI() {
     const count=basket.reduce((s,i)=>s+i.qty,0); const total=basket.reduce((s,i)=>s+i.total,0);
     const ce=document.getElementById('basket-count'); ce.textContent=count; ce.classList.toggle('visible',count>0);
@@ -929,8 +1182,12 @@ function updateBasketUI() {
 function removeFromBasket(i){basket.splice(i,1);updateBasketUI();}
 async function finalizeOrder() {
     if(!basket.length) return; showToast('Processing order…');
-    try{await fetch(CONFIG.N8N_SELL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items:basket,timestamp:new Date().toISOString()})});invalidateCache();basket=[];updateBasketUI();switchTab('product');showToast('Order complete! स्टॉक अपडेट हो गया','success');}
-    catch(_){showToast('Failed — try again','error');}
+    try{
+        await fetch(CONFIG.N8N_SELL,{method:'POST',headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({items:basket,timestamp:new Date().toISOString()})});
+        invalidateCache();basket=[];updateBasketUI();switchTab('product');
+        showToast('Order complete! स्टॉक अपडेट हो गया','success');
+    }catch(_){showToast('Failed — try again','error');}
 }
 
 // ── ADD STOCK ─────────────────────────────────────────────────────────
@@ -968,6 +1225,61 @@ async function submitStock() {
         showToast('Saved! उत्पाद सहेजा गया','success');
         document.getElementById('bc-stock').focus();
     }catch(_){showToast('Failed — try again','error');}
+}
+
+// ── GLOBAL COLOR QUICK-PICK (ADD STOCK) ───────────────────────────────
+function renderCqpChips() {
+    const row = document.getElementById('cqp-row');
+    if (!row) return;
+    const colors = loadGlobalColors();
+    row.innerHTML = colors.map(({name,hex}) => {
+        const dotStyle = hex ? `background:${hex}` : 'background:var(--bg);border:1px solid var(--border)';
+        return `<div class="cqp-chip" onclick="applyCqpColor('${name.replace(/'/g,'\\\'')}')" title="${name}">
+            <div class="cqp-dot" style="${dotStyle}"></div>${name}
+        </div>`;
+    }).join('') + `<div class="cqp-chip cqp-add" onclick="showCqpForm()">+ New</div>`;
+}
+
+function applyCqpColor(name) {
+    const el = document.getElementById('f-color');
+    if (!el) return;
+    const current = el.value.trim();
+    if (!current) {
+        el.value = name;
+    } else {
+        // Append if not already present
+        const existing = current.split(',').map(c=>c.trim());
+        if (!existing.includes(name)) el.value = current + ', ' + name;
+    }
+}
+
+function showCqpForm() {
+    cqpPickerHex = null;
+    document.getElementById('cqp-preview').style.background = '';
+    document.getElementById('cqp-preview').textContent = 'tap';
+    document.getElementById('cqp-form').style.display = 'block';
+    document.getElementById('cqp-name').focus();
+}
+function hideCqpForm() { document.getElementById('cqp-form').style.display='none'; }
+function onCqpPicker(val) {
+    cqpPickerHex = val;
+    const p = document.getElementById('cqp-preview');
+    p.style.background = val; p.textContent = '';
+}
+function saveCqpColor() {
+    const name = document.getElementById('cqp-name').value.trim();
+    if (!name) { document.getElementById('cqp-name').focus(); return; }
+    const colors = loadGlobalColors();
+    if (!colors.find(c=>c.name===name)) {
+        colors.push({name, hex: cqpPickerHex||null});
+        saveCustomColors(colors);
+    }
+    applyCqpColor(name);
+    hideCqpForm();
+    renderCqpChips();
+    document.getElementById('cqp-name').value = '';
+    cqpPickerHex = null;
+    showToast(name+' saved globally','success');
 }
 
 // ── CURRENT STOCK SIZES ───────────────────────────────────────────────
@@ -1065,7 +1377,7 @@ function renderInventory(){
         const sizes=parseSizes(p.sizes);
         const sizeTotal=sizes?Object.values(sizes).reduce((s,v)=>s+(parseInt(v)||0),0):0;
         const remainder=(p.stock||0)-sizeTotal;
-        const displaySizes=sizes?(remainder>0?{...sizes,'Free Size':remainder}:sizes):null;
+        const displaySizes=sizes?(remainder>0?{...sizes,'Free Size':(sizes['Free Size']||0)+remainder}:sizes):null;
         const sizeSummary=displaySizes?Object.entries(displaySizes).map(([s,q])=>`${q}×${s}`).join(' · '):'';
         const subLine=[p.category,p.color,sizeSummary].filter(Boolean).join(' · ')||p.sku||'';
         const isOpen=invExpandedSku===p.sku;
@@ -1111,6 +1423,7 @@ function editProductFromInventory(sku){
         stockProductFound=true;
         document.getElementById('restock-banner').style.display='block';
         document.getElementById('restock-name').textContent=p.name||p.sku||'';
+        renderCqpChips();
         showToast('Editing '+(p.name||p.sku),'');
     },350);
 }
