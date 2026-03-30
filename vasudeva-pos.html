@@ -101,7 +101,19 @@
         .size-chip-grid { display: flex; flex-wrap: wrap; gap: 8px; }
         /* Persistent row: Free Size / Other — dashed separator */
         .size-persistent-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
-        /* Shared chip style */
+        /* ── SIZE SELL ROWS ── */
+        .size-sell-row { display: flex; align-items: center; gap: 8px; background: var(--primary-light); border: 1.5px solid var(--primary); border-radius: var(--radius-sm); padding: 6px 10px; }
+        .size-sell-row-label { font-size: 13px; font-weight: 700; color: var(--primary-dark); min-width: 42px; }
+        .size-sell-row-ctrl { display: flex; align-items: center; border: 1px solid var(--primary); border-radius: 6px; overflow: hidden; margin-left: auto; }
+        .size-sell-row-btn { width: 30px; height: 30px; border: none; background: none; color: var(--primary); font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .size-sell-row-btn:active { background: var(--primary-light); }
+        .size-sell-row-qty { width: 32px; text-align: center; font-size: 14px; font-weight: 700; color: var(--primary-dark); border-left: 1px solid var(--primary); border-right: 1px solid var(--primary); line-height: 30px; }
+        .size-sell-row-confirm { width: 30px; height: 30px; border: none; background: var(--success); color: white; border-radius: 6px; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .size-sell-row-remove { width: 26px; height: 26px; border: none; background: #FEE2E2; color: var(--danger); border-radius: 6px; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .size-sell-row.confirmed { background: var(--success-light); border-color: var(--success); }
+        .size-sell-row.confirmed .size-sell-row-label { color: var(--success); }
+        .size-sell-row-addmore { display: flex; align-items: center; gap: 6px; padding: 5px 0; font-size: 12px; font-weight: 600; color: var(--primary); cursor: pointer; background: none; border: none; font-family: 'DM Sans'; }
+
         .size-chip-sell { padding: 7px 14px; border: 2px solid var(--border); background: var(--bg); border-radius: 20px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; color: var(--text-mid); cursor: pointer; transition: all 0.15s; }
         .size-chip-sell:active { background: var(--primary-light); }
         .size-chip-sell.selected { border-color: var(--primary); background: var(--primary-light); color: var(--primary-dark); }
@@ -382,12 +394,19 @@
                 <div><span class="stock-status in-stock" id="prod-stock-status">✓ In Stock</span></div>
             </div>
 
-            <!-- SIZE PICKER: tabs + grid + persistent row -->
+            <!-- SIZE PICKER: tabs + grid + selected rows -->
             <div class="size-picker-wrap" id="size-picker-wrap">
                 <div class="size-picker-label">Size <span style="font-family:'Noto Sans Devanagari';font-size:9px;opacity:0.65;font-weight:400">/ साइज़</span></div>
-                <div class="size-tab-row" id="size-tab-row" style="display:none"></div>
-                <div class="size-chip-grid" id="size-chip-grid"></div>
-                <div class="size-persistent-row" id="size-persistent-row" style="display:none"></div>
+                <!-- Selected size rows (built up as user picks) -->
+                <div id="size-sell-rows" style="display:none;flex-direction:column;gap:6px;margin-bottom:10px"></div>
+                <!-- Stock discrepancy note -->
+                <div id="stock-discrepancy-note" style="display:none;font-size:11px;padding:6px 10px;border-radius:var(--radius-sm);background:#FFF3CD;color:#856404;margin-bottom:8px"></div>
+                <!-- Chip picker (hidden after all sizes committed, reshown on +) -->
+                <div id="size-chip-picker" style="display:block">
+                    <div class="size-tab-row" id="size-tab-row" style="display:none"></div>
+                    <div class="size-chip-grid" id="size-chip-grid"></div>
+                    <div class="size-persistent-row" id="size-persistent-row" style="display:none"></div>
+                </div>
             </div>
 
             <!-- COLOR PICKER: only shown when product has multiple colors -->
@@ -407,9 +426,9 @@
                 </div>
             </div>
 
-            <!-- Quantity — label updates dynamically when size is selected (Option A) -->
-            <div class="info-row">
-                <div><div class="row-label" id="qty-row-label">Qty <span class="row-label-hindi">/ मात्रा</span></div></div>
+            <!-- Qty row: shown only for products without sizes -->
+            <div class="info-row" id="qty-row">
+                <div><div class="row-label">Qty <span class="row-label-hindi">/ मात्रा</span></div></div>
                 <div class="quantity-controls">
                     <button class="qty-btn" onclick="changeQty(-1)">−</button>
                     <div class="qty-value" id="qty-display" onclick="openNumpad('qty')">1</div>
@@ -923,17 +942,43 @@ function hideSellNameSuggestion(){sellNameSuggestion=null;const pill=document.ge
 function acceptSellNameSuggestion(){if(!sellNameSuggestion)return;const p={...sellNameSuggestion,found:true};clearSellNameSearch();hideSellNameSuggestion();displayProduct(p);document.getElementById('not-found-sell').classList.remove('visible');}
 function goToAddStockUnregistered(){const bc=lastFailedBarcode;goTo('addstock');if(bc){setTimeout(()=>{document.getElementById('bc-stock').value=bc;showToast('Barcode pre-filled — add product details','');document.getElementById('f-name').focus();},400);}}
 
-// ── SIZE PICKER (SELL) ────────────────────────────────────────────────
+// ── SIZE PICKER (SELL) — multi-row ───────────────────────────────────
+let sellSizeRows = [];   // [{size, qty, confirmed}]
+let sellSizeAvail = {};  // size → available qty from product
+
 function renderSizePicker(sizesObj) {
     const wrap = document.getElementById('size-picker-wrap');
-    if (!sizesObj || Object.keys(sizesObj).length === 0) { wrap.style.display='none'; return; }
+    if (!sizesObj || !Object.keys(sizesObj).length) { wrap.style.display='none'; return; }
     wrap.style.display = 'block';
+    sellSizeAvail = sizesObj;
+    sellSizeRows = [];
 
-    // Categorise sizes into buckets — only include sizes present in this product's JSON
-    const letterEntries   = Object.entries(sizesObj).filter(([s]) => LETTER_SIZES.includes(s));
-    const numericEntries  = Object.entries(sizesObj).filter(([s]) => NUMERIC_SIZES.includes(s));
-    const braEntries      = Object.entries(sizesObj).filter(([s]) => BRA_SIZES.includes(s));
-    const persistEntries  = Object.entries(sizesObj).filter(([s]) => PERSISTENT_SIZES.includes(s));
+    // Stock discrepancy check
+    const sizeTotal = Object.values(sizesObj).reduce((s,v)=>s+(parseInt(v)||0),0);
+    const productStock = currentProduct ? (currentProduct.stock||0) : 0;
+    const note = document.getElementById('stock-discrepancy-note');
+    if (Math.abs(sizeTotal - productStock) > 0) {
+        note.style.display = 'block';
+        if (sizeTotal < productStock) {
+            const diff = productStock - sizeTotal;
+            note.textContent = `⚠ ${diff} unit${diff!==1?'s':''} unaccounted — shown as Free Size`;
+        } else {
+            note.textContent = `⚠ Size totals (${sizeTotal}) exceed stock count (${productStock}) — check inventory`;
+        }
+    } else {
+        note.style.display = 'none';
+    }
+
+    buildSellSizeChipPicker(sizesObj);
+    renderSellSizeRowsUI();
+    document.getElementById('qty-row').style.display = 'none';
+}
+
+function buildSellSizeChipPicker(sizesObj) {
+    const letterEntries  = Object.entries(sizesObj).filter(([s]) => LETTER_SIZES.includes(s));
+    const numericEntries = Object.entries(sizesObj).filter(([s]) => NUMERIC_SIZES.includes(s));
+    const braEntries     = Object.entries(sizesObj).filter(([s]) => BRA_SIZES.includes(s));
+    const persistEntries = Object.entries(sizesObj).filter(([s]) => PERSISTENT_SIZES.includes(s));
 
     const tabs = [];
     if (letterEntries.length)  tabs.push({id:'letter',  label:'Letter',  sizes:letterEntries});
@@ -943,7 +988,6 @@ function renderSizePicker(sizesObj) {
     sellSizeData = {tabs, persistent: persistEntries};
     currentSellSizeTab = tabs.length ? tabs[0].id : null;
 
-    // Render tab buttons (hidden if only one category)
     const tabRow = document.getElementById('size-tab-row');
     if (tabs.length > 1) {
         tabRow.style.display = 'flex';
@@ -956,7 +1000,6 @@ function renderSizePicker(sizesObj) {
 
     renderSellSizeGrid();
 
-    // Persistent row (Free Size / Other) — always shown if present, below dashed line
     const persistRow = document.getElementById('size-persistent-row');
     if (persistEntries.length) {
         persistRow.style.display = 'flex';
@@ -964,18 +1007,12 @@ function renderSizePicker(sizesObj) {
     } else {
         persistRow.style.display = 'none';
     }
-
-    // Auto-select the size with the most stock (first on tie)
-    const allEntries = [...(tabs[0]?.sizes||[]), ...persistEntries];
-    const firstAvail = allEntries.find(([,q]) => (parseInt(q)||0) > 0);
-    if (firstAvail) selectSellSize(firstAvail[0]);
 }
 
 function switchSellSizeTab(tab) {
     currentSellSizeTab = tab;
     document.querySelectorAll('#size-tab-row .size-tab').forEach(btn =>
-        btn.classList.toggle('active', btn.dataset.tabid === tab)
-    );
+        btn.classList.toggle('active', btn.dataset.tabid === tab));
     renderSellSizeGrid();
 }
 
@@ -983,54 +1020,145 @@ function renderSellSizeGrid() {
     const grid = document.getElementById('size-chip-grid');
     if (!currentSellSizeTab || !sellSizeData.tabs) { grid.innerHTML=''; return; }
     const tabData = sellSizeData.tabs.find(t => t.id===currentSellSizeTab);
-    grid.innerHTML = tabData ? tabData.sizes.map(([s,q]) => makeSellSizeChip(s, parseInt(q)||0)).join('') : '';
+    const alreadyPicked = sellSizeRows.map(r => r.size);
+    grid.innerHTML = tabData ? tabData.sizes.map(([s,q]) => {
+        const taken = alreadyPicked.includes(s);
+        return makeSellSizeChip(s, parseInt(q)||0, taken);
+    }).join('') : '';
 }
 
-function makeSellSizeChip(s, qty) {
-    const isOut = qty <= 0;
-    const isSelected = s === currentSize;
-    const safeId = 'sellchip-' + s.replace(/\s/g,'_').replace(/[^a-zA-Z0-9_]/g,'_');
-    return `<button class="size-chip-sell${isOut?' out':''}${isSelected?' selected':''}"
-        ${isOut ? 'disabled' : `onclick="selectSellSize('${s}')"`}
-        id="${safeId}"
-    >${s} <span style="font-size:10px;opacity:0.55">(${qty})</span></button>`;
+function makeSellSizeChip(s, qty, taken=false) {
+    const isOut = qty <= 0 || taken;
+    const safeId = 'sellchip-' + s.replace(/[\s\/]/g,'_');
+    const label = taken ? `${s} ✓` : `${s} <span style="font-size:10px;opacity:0.55">(${qty})</span>`;
+    return `<button class="size-chip-sell${isOut?' out':''}"
+        ${isOut ? 'disabled' : `onclick="addSellSizeRow('${s}')"`}
+        id="${safeId}">${label}</button>`;
 }
 
-function selectSellSize(size) {
-    currentSize = size;
-    // Update chip selection
-    document.querySelectorAll('.size-chip-sell').forEach(c => c.classList.remove('selected'));
-    const chip = document.getElementById('sellchip-' + size.replace(/\s/g,'_').replace(/[^a-zA-Z0-9_]/g,'_'));
-    if (chip) chip.classList.add('selected');
-    // Option A: update qty row label
-    updateQtyLabel();
-    updateAddBasketBtn();
-}
-
-function updateQtyLabel() {
-    const label = document.getElementById('qty-row-label');
-    if (!label) return;
-    if (currentSize) {
-        label.innerHTML = `Qty &nbsp;<span style="color:var(--primary);font-weight:700;font-size:11px">· ${currentSize}</span> <span class="row-label-hindi">/ मात्रा</span>`;
-    } else {
-        label.innerHTML = 'Qty <span class="row-label-hindi">/ मात्रा</span>';
+function addSellSizeRow(size) {
+    if (sellSizeRows.find(r => r.size === size)) return;
+    sellSizeRows.push({size, qty: 1, confirmed: false});
+    renderSellSizeRowsUI();
+    renderSellSizeGrid();
+    // re-render persistent row too
+    const persistRow = document.getElementById('size-persistent-row');
+    const alreadyPicked = sellSizeRows.map(r => r.size);
+    if (sellSizeData.persistent && sellSizeData.persistent.length) {
+        persistRow.innerHTML = sellSizeData.persistent.map(([s,q]) => makeSellSizeChip(s, parseInt(q)||0, alreadyPicked.includes(s))).join('');
     }
 }
 
+function renderSellSizeRowsUI() {
+    const container = document.getElementById('size-sell-rows');
+    const picker = document.getElementById('size-chip-picker');
+
+    if (!sellSizeRows.length) {
+        container.style.display = 'none';
+        picker.style.display = 'block';
+        updateAddBasketBtn();
+        return;
+    }
+
+    container.style.display = 'flex';
+
+    // Build rows HTML
+    container.innerHTML = sellSizeRows.map((row, idx) => {
+        const avail = sellSizeAvail[row.size] || 0;
+        const canInc = row.qty < avail;
+        if (row.confirmed) {
+            return `<div class="size-sell-row confirmed">
+                <span class="size-sell-row-label">${row.size} ×${row.qty}</span>
+                <button class="size-sell-row-remove" style="margin-left:auto" onclick="removeSellSizeRow(${idx})">✕</button>
+            </div>`;
+        }
+        return `<div class="size-sell-row">
+            <span class="size-sell-row-label">${row.size}</span>
+            <div class="size-sell-row-ctrl">
+                <button class="size-sell-row-btn" onclick="changeSellRowQty(${idx},-1)">−</button>
+                <div class="size-sell-row-qty">${row.qty}</div>
+                <button class="size-sell-row-btn" ${!canInc?'disabled style="opacity:0.35"':''} onclick="changeSellRowQty(${idx},1)">+</button>
+            </div>
+            <button class="size-sell-row-confirm" onclick="confirmSellSizeRow(${idx})" title="Confirm and add another">✓</button>
+            <button class="size-sell-row-remove" onclick="removeSellSizeRow(${idx})">✕</button>
+        </div>`;
+    }).join('');
+
+    // Show chip picker only if there are unconfirmed rows (so user can confirm first)
+    // or all are confirmed (so they can add more)
+    const allConfirmed = sellSizeRows.every(r => r.confirmed);
+    picker.style.display = allConfirmed ? 'block' : 'none';
+
+    // If all confirmed, show an "add another size" button above chip picker
+    let addMoreBtn = document.getElementById('size-addmore-btn');
+    if (!addMoreBtn) {
+        addMoreBtn = document.createElement('button');
+        addMoreBtn.id = 'size-addmore-btn';
+        addMoreBtn.className = 'size-sell-row-addmore';
+        addMoreBtn.onclick = () => { picker.style.display='block'; addMoreBtn.style.display='none'; };
+        container.after(addMoreBtn);
+    }
+    if (allConfirmed && Object.keys(sellSizeAvail).some(s => !sellSizeRows.find(r=>r.size===s) && (sellSizeAvail[s]||0)>0)) {
+        addMoreBtn.style.display = 'flex';
+        addMoreBtn.textContent = '+ Add another size';
+    } else {
+        addMoreBtn.style.display = 'none';
+    }
+
+    updateAddBasketBtn();
+}
+
+function changeSellRowQty(idx, d) {
+    const row = sellSizeRows[idx];
+    if (!row) return;
+    const avail = sellSizeAvail[row.size] || 0;
+    row.qty = Math.max(1, Math.min(avail, row.qty + d));
+    renderSellSizeRowsUI();
+}
+
+function confirmSellSizeRow(idx) {
+    if (sellSizeRows[idx]) {
+        sellSizeRows[idx].confirmed = true;
+        renderSellSizeRowsUI();
+        renderSellSizeGrid();
+    }
+}
+
+function removeSellSizeRow(idx) {
+    sellSizeRows.splice(idx, 1);
+    renderSellSizeRowsUI();
+    renderSellSizeGrid();
+    // re-render persistent row
+    const persistRow = document.getElementById('size-persistent-row');
+    if (sellSizeData.persistent && sellSizeData.persistent.length) {
+        const alreadyPicked = sellSizeRows.map(r => r.size);
+        persistRow.innerHTML = sellSizeData.persistent.map(([s,q]) => makeSellSizeChip(s, parseInt(q)||0, alreadyPicked.includes(s))).join('');
+    }
+    document.getElementById('size-chip-picker').style.display = 'block';
+}
+
 function updateAddBasketBtn() {
-    const parts = [];
-    if (currentSize)  parts.push(currentSize);
-    if (currentColor) parts.push(currentColor);
-    const suffix = parts.length ? ' &nbsp;·&nbsp; ' + parts.join(' · ') : '';
-    document.getElementById('add-basket-btn').innerHTML = `🧺 Add to Basket${suffix}`;
+    const confirmed = sellSizeRows.filter(r => r.confirmed);
+    let label = '🧺 Add to Basket';
+    if (confirmed.length) {
+        const sizeParts = confirmed.map(r => `${r.size} ×${r.qty}`).join(' · ');
+        label += ' &nbsp;·&nbsp; ' + sizeParts;
+    }
+    if (currentColor) label += ' &nbsp;·&nbsp; ' + currentColor;
+    document.getElementById('add-basket-btn').innerHTML = label;
 }
 
 function clearSizePicker() {
+    sellSizeRows = []; sellSizeAvail = {};
     currentSize = null; currentColor = null;
     document.getElementById('size-picker-wrap').style.display = 'none';
     document.getElementById('color-picker-wrap').style.display = 'none';
     document.getElementById('add-basket-btn').innerHTML = '🧺 Add to Basket';
-    updateQtyLabel();
+    document.getElementById('qty-row').style.display = 'flex';
+    const addMore = document.getElementById('size-addmore-btn');
+    if (addMore) addMore.style.display = 'none';
+    const note = document.getElementById('stock-discrepancy-note');
+    if (note) note.style.display = 'none';
 }
 
 // ── COLOR PICKER (SELL) ───────────────────────────────────────────────
@@ -1076,7 +1204,7 @@ function selectSellColor(color) {
 // ── SELL SCREEN ───────────────────────────────────────────────────────
 function resetSell() {
     currentProduct=null; currentQty=1; currentPrice=0; lastFailedBarcode='';
-    currentSize=null; currentColor=null;
+    currentSize=null; currentColor=null; sellSizeRows=[]; sellSizeAvail={};
     document.getElementById('product-card').classList.remove('visible');
     document.getElementById('not-found-sell').classList.remove('visible');
     document.getElementById('sell-empty').style.display='';
@@ -1086,7 +1214,8 @@ function resetSell() {
 }
 
 function displayProduct(p) {
-    currentProduct=p; currentPrice=p.mrp; currentQty=1; currentSize=null; currentColor=null;
+    currentProduct=p; currentPrice=p.mrp; currentQty=1;
+    currentSize=null; currentColor=null; sellSizeRows=[]; sellSizeAvail={};
     document.getElementById('sell-empty').style.display='none';
     document.getElementById('not-found-sell').classList.remove('visible');
     document.getElementById('product-card').classList.add('visible');
@@ -1101,27 +1230,26 @@ function displayProduct(p) {
     document.getElementById('disc-badge').style.display='none';
     document.getElementById('add-basket-btn').innerHTML='🧺 Add to Basket';
 
-    // Stock status
     const ss=document.getElementById('prod-stock-status');
     const stock=p.stock||0; const min=p.minStock||10;
     if(stock<=0){ss.className='stock-status out-stock';ss.textContent='✕ Out of Stock';}
     else if(stock<=min){ss.className='stock-status low-stock';ss.textContent=`⚠ Low Stock (${stock})`;}
     else{ss.className='stock-status in-stock';ss.textContent=`✓ In Stock (${stock})`;}
 
-    // Size picker — only sizes present in JSON; Free Size shown if unaccounted stock
+    // Sizes: auto-heal discrepancy by adding remainder to Free Size
     const sizes = parseSizes(p.sizes);
     if (sizes && Object.keys(sizes).length > 0) {
         const sizeTotal = Object.values(sizes).reduce((s,v)=>s+(parseInt(v)||0),0);
         const remainder = (p.stock||0) - sizeTotal;
-        const displaySizes = remainder > 0 ? {...sizes, 'Free Size': (sizes['Free Size']||0) + remainder} : sizes;
+        const displaySizes = remainder > 0
+            ? {...sizes, 'Free Size': (parseInt(sizes['Free Size'])||0) + remainder}
+            : sizes;
         renderSizePicker(displaySizes);
     } else {
         clearSizePicker();
     }
 
-    // Color picker
     renderColorPicker(p.color||'');
-    updateQtyLabel();
     updateQtyDisplay();
     showToast(p.name+' found','success');
 }
@@ -1143,27 +1271,50 @@ function updateQtyDisplay(){document.getElementById('qty-display').textContent=c
 // ── BASKET ────────────────────────────────────────────────────────────
 function addToBasket() {
     if (!currentProduct) return;
-    const sizes = parseSizes(currentProduct.sizes);
-    const hasSizes = sizes && Object.keys(sizes).length > 0;
-    if (hasSizes && !currentSize) { showToast('Please select a size first','error'); return; }
-
+    const hasSizes = Object.keys(sellSizeAvail).length > 0;
     const selColor = currentColor || currentProduct.color || '';
-    const nameParts = [currentProduct.name];
-    if (currentSize) nameParts.push(currentSize);
-    if (selColor)    nameParts.push(selColor);
-    const displayName = nameParts.join(' · ');
 
-    const key = currentProduct.sku + '|' + (currentSize||'') + '|' + currentPrice + '|' + selColor;
-    const ex = basket.find(i=>i._key===key);
-    if(ex){ex.qty+=currentQty;ex.total=ex.qty*ex.price;}
-    else basket.push({
-        _key:key, name:displayName,
-        sku:currentProduct.sku, barcode:currentProduct.barcode,
-        size:currentSize||'', color:selColor,
-        price:currentPrice, qty:currentQty, total:currentPrice*currentQty
-    });
+    if (hasSizes) {
+        const confirmed = sellSizeRows.filter(r => r.confirmed);
+        // Also include any unconfirmed row (if user didn't tap ✓, treat it as confirmed)
+        const unconfirmed = sellSizeRows.filter(r => !r.confirmed);
+        const allRows = [...confirmed, ...unconfirmed];
+        if (!allRows.length) { showToast('Please select a size first','error'); return; }
+
+        allRows.forEach(row => {
+            const nameParts = [currentProduct.name, row.size];
+            if (selColor) nameParts.push(selColor);
+            const displayName = nameParts.join(' · ');
+            const key = currentProduct.sku + '|' + row.size + '|' + currentPrice + '|' + selColor;
+            const ex = basket.find(i => i._key===key);
+            if (ex) { ex.qty+=row.qty; ex.total=ex.qty*ex.price; }
+            else basket.push({
+                _key:key, name:displayName,
+                sku:currentProduct.sku, barcode:currentProduct.barcode,
+                size:row.size, color:selColor,
+                price:currentPrice, qty:row.qty, total:currentPrice*row.qty
+            });
+        });
+
+        const summary = allRows.map(r=>`${r.size} ×${r.qty}`).join(', ');
+        showToast(`Added ${currentProduct.name} — ${summary}`,'success');
+    } else {
+        const nameParts = [currentProduct.name];
+        if (selColor) nameParts.push(selColor);
+        const displayName = nameParts.join(' · ');
+        const key = currentProduct.sku + '||' + currentPrice + '|' + selColor;
+        const ex = basket.find(i=>i._key===key);
+        if(ex){ex.qty+=currentQty;ex.total=ex.qty*ex.price;}
+        else basket.push({
+            _key:key, name:displayName,
+            sku:currentProduct.sku, barcode:currentProduct.barcode,
+            size:'', color:selColor,
+            price:currentPrice, qty:currentQty, total:currentPrice*currentQty
+        });
+        showToast(`Added ${currentQty}× ${displayName}`,'success');
+    }
+
     updateBasketUI();
-    showToast(`Added ${currentQty}× ${displayName}`,'success');
     resetSell();
 }
 
