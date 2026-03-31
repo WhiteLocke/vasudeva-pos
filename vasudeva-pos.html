@@ -951,6 +951,18 @@ function acceptSuggestion() {
     stockProductFound=true; clearGhosts();
     document.getElementById('restock-banner').style.display='block';
     document.getElementById('restock-name').textContent=p.name||'';
+    // Open size accordion and show existing sizes
+    const sizes=parseSizes(p.sizes);
+    if(sizes&&Object.keys(sizes).length){
+        if(!sizeBreakdownOpen)toggleSizeBreakdown();
+        showCurrentStockSizes(sizes);
+    }
+    // Open color accordion if product has colors
+    const colors=parseColors(p.color||'');
+    if(colors&&Object.keys(colors).length>=2){
+        if(!colorBreakdownOpen)toggleColorBreakdown();
+        else{renderCqpChips();renderStockColorGrid();}
+    }
     showToast(p.name+' found — restocking','success');
 }
 function handleStockFieldKey(e,fieldId) {
@@ -1023,21 +1035,9 @@ function renderSizePicker(sizesObj) {
     sellSizeAvail = sizesObj;
     sellSizeRows = [];
 
-    // Stock discrepancy check
-    const sizeTotal = Object.values(sizesObj).reduce((s,v)=>s+(parseInt(v)||0),0);
-    const productStock = currentProduct ? (currentProduct.stock||0) : 0;
+    // Auto-heal discrepancy in both directions — note hidden, sizes adjusted silently in displayProduct
     const note = document.getElementById('stock-discrepancy-note');
-    if (Math.abs(sizeTotal - productStock) > 0) {
-        note.style.display = 'block';
-        if (sizeTotal < productStock) {
-            const diff = productStock - sizeTotal;
-            note.textContent = `⚠ ${diff} unit${diff!==1?'s':''} unaccounted — shown as Free Size`;
-        } else {
-            note.textContent = `⚠ Size totals (${sizeTotal}) exceed stock count (${productStock}) — check inventory`;
-        }
-    } else {
-        note.style.display = 'none';
-    }
+    note.style.display = 'none';
 
     buildSellSizeChipPicker(sizesObj);
     renderSellSizeRowsUI();
@@ -1442,14 +1442,25 @@ function displayProduct(p) {
     else if(stock<=min){ss.className='stock-status low-stock';ss.textContent=`⚠ Low Stock (${stock})`;}
     else{ss.className='stock-status in-stock';ss.textContent=`✓ In Stock (${stock})`;}
 
-    // Sizes: auto-heal discrepancy by adding remainder to Free Size
+    // Sizes: auto-heal discrepancy in both directions
+    // Under: add remainder to Free Size. Over: trust the sizes, use sizeTotal as effective stock.
     const sizes = parseSizes(p.sizes);
     if (sizes && Object.keys(sizes).length > 0) {
         const sizeTotal = Object.values(sizes).reduce((s,v)=>s+(parseInt(v)||0),0);
-        const remainder = (p.stock||0) - sizeTotal;
-        const displaySizes = remainder > 0
-            ? {...sizes, 'Free Size': (parseInt(sizes['Free Size'])||0) + remainder}
-            : sizes;
+        const stock = p.stock || 0;
+        let displaySizes;
+        if (sizeTotal < stock) {
+            // Add unaccounted units to Free Size
+            const diff = stock - sizeTotal;
+            displaySizes = {...sizes, 'Free Size': (parseInt(sizes['Free Size'])||0) + diff};
+        } else if (sizeTotal > stock) {
+            // Sizes exceed quantity — trust the sizes, treat sizeTotal as ground truth
+            // Override currentProduct.stock so sell limits are accurate
+            currentProduct = {...currentProduct, stock: sizeTotal};
+            displaySizes = sizes;
+        } else {
+            displaySizes = sizes;
+        }
         renderSizePicker(displaySizes);
     } else {
         clearSizePicker();
@@ -1614,12 +1625,17 @@ async function submitStock() {
     const name=document.getElementById('f-name').value.trim();
     const sku=document.getElementById('f-sku').value.trim();
     if(!barcode&&!name&&!sku){showToast('Barcode, name or SKU required','error');return;}
-    // colors: use breakdown JSON if qtys entered, otherwise plain comma string from field
-    const colorBreakdown = getColorBreakdown();
+    // color = plain comma names for the Color column
+    // colors = JSON quantities map for n8n to merge per-color stock
+    const colorBreakdown = getColorBreakdown(); // JSON string {"Red":5} or null
     const colorField = (document.getElementById('f-color').value||'').trim();
+    // If breakdown has qtys, derive plain names from its keys; else use the text field directly
+    const colorNames = colorBreakdown
+        ? Object.keys(JSON.parse(colorBreakdown)).join(', ')
+        : colorField;
     const payload={
         barcode,sku,name,category:document.getElementById('f-cat').value,
-        color: colorBreakdown || colorField,
+        color: colorNames,
         mrp:document.getElementById('f-mrp').value,cost:document.getElementById('f-cost').value,
         quantity:qty||'0',minStock:document.getElementById('f-min').value||10,
         expiry:document.getElementById('f-exp').value,supplier:document.getElementById('f-sup').value,
