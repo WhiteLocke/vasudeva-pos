@@ -1590,14 +1590,6 @@ async function finalizeOrder() {
     }catch(_){showToast('Failed — try again','error');}
 }
 
-    try{
-        await fetch(CONFIG.N8N_SELL,{method:'POST',headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({items, timestamp:new Date().toISOString()})});
-        invalidateCache();basket=[];updateBasketUI();switchTab('product');
-        showToast('Order complete! स्टॉक अपडेट हो गया','success');
-    }catch(_){showToast('Failed — try again','error');}
-}
-
 // ── ADD STOCK ─────────────────────────────────────────────────────────
 function onStockInput(){const bc=document.getElementById('bc-stock').value;if(!bc){document.getElementById('restock-banner').style.display='none';stockProductFound=false;clearGhosts();}}
 function clearStockForm() {
