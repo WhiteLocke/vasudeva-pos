@@ -545,31 +545,6 @@
                 <div class="field-label-wrap"><div class="field-label">Category</div><div class="field-label-hindi">श्रेणी</div></div>
                 <div class="field-input-wrap"><input class="field-input" id="f-cat" type="text" placeholder="e.g. Skincare" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-cat')"><span class="field-ghost" id="ghost-f-cat"></span></div><div class="field-hint" id="hint-f-cat" onclick="acceptSuggestion()"><span id="hint-val-f-cat"></span><span class="hint-arrow">→</span></div>
             </div>
-            <!-- Color field + quick-pick chips below -->
-            <div class="form-field" style="flex-direction:column;align-items:stretch;gap:0;padding-bottom:0">
-                <div style="display:flex;align-items:center;gap:14px;width:100%">
-                    <div class="field-label-wrap"><div class="field-label">Color</div><div class="field-label-hindi">रंग</div></div>
-                    <div class="field-input-wrap"><input class="field-input" id="f-color" type="text" placeholder="e.g. Red, Black" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-color')"><span class="field-ghost" id="ghost-f-color"></span></div><div class="field-hint" id="hint-f-color" onclick="acceptSuggestion()"><span id="hint-val-f-color"></span><span class="hint-arrow">→</span></div>
-                </div>
-                <!-- Global color quick-pick -->
-                <div style="padding:8px 0 12px">
-                    <div class="color-quick-row" id="cqp-row"></div>
-                    <div class="cqp-form" id="cqp-form">
-                        <div class="cqp-form-row">
-                            <input class="cqp-input" id="cqp-name" placeholder="e.g. Beet Red, Dusty Rose…" />
-                            <label class="color-pick-btn">
-                                <div class="color-pick-swatch" id="cqp-swatch" style="background:#E74C3C"></div>
-                                Pick color
-                                <input type="color" id="cqp-picker" value="#E74C3C" oninput="onCqpPicker(this.value)" />
-                            </label>
-                        </div>
-                        <div class="cqp-form-btns">
-                            <button class="cqp-btn cqp-btn-save" onclick="saveCqpColor()">Save color globally</button>
-                            <button class="cqp-btn cqp-btn-cancel" onclick="hideCqpForm()">Cancel</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">MRP</div><div class="field-label-hindi">अधिकतम मूल्य</div></div>
                 <div class="field-input-wrap"><input class="field-input" id="f-mrp" type="text" inputmode="decimal" placeholder="₹ 0" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-mrp')"><span class="field-ghost" id="ghost-f-mrp"></span></div><div class="field-hint" id="hint-f-mrp" onclick="acceptSuggestion()"><span id="hint-val-f-mrp"></span><span class="hint-arrow">→</span></div>
@@ -634,6 +609,39 @@
                 </div>
             </div>
         </div>
+
+        <!-- Color Breakdown -->
+        <div style="background:var(--bg-card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:visible">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;cursor:pointer;user-select:none" onclick="toggleColorBreakdown()">
+                <span style="font-size:12px;font-weight:600;color:var(--text-mid);display:flex;align-items:center;gap:6px">🎨 Color Breakdown <span id="color-total-badge" style="display:none;font-size:10px;font-weight:700;color:var(--primary);background:var(--primary-light);padding:2px 8px;border-radius:20px"></span></span>
+                <span id="color-accordion-arrow" style="font-size:11px;color:var(--text-light);transition:transform 0.2s">▼</span>
+            </div>
+            <div id="color-accordion-content" style="max-height:0;overflow:hidden;transition:max-height 0.5s ease">
+                <div style="padding:12px 14px 14px;border-top:1px solid var(--border)">
+                    <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-light);margin-bottom:8px">Color names (comma-separated)</div>
+                    <input id="f-color" type="text" placeholder="e.g. Red, Black, Navy" autocomplete="off"
+                        style="width:100%;border:1.5px solid var(--border);background:var(--bg);font-family:'DM Sans';font-size:14px;color:var(--text);padding:9px 12px;border-radius:var(--radius-sm);outline:none;margin-bottom:10px"
+                        onkeydown="handleStockFieldKey(event,'f-color')" oninput="onColorFieldInput()">
+                    <div class="color-quick-row" id="cqp-row"></div>
+                    <div class="cqp-form" id="cqp-form">
+                        <div class="cqp-form-row">
+                            <input class="cqp-input" id="cqp-name" placeholder="e.g. Beet Red, Dusty Rose…" />
+                            <label class="color-pick-btn">
+                                <div class="color-pick-swatch" id="cqp-swatch" style="background:#E74C3C"></div>
+                                Pick color
+                                <input type="color" id="cqp-picker" value="#E74C3C" oninput="onCqpPicker(this.value)" />
+                            </label>
+                        </div>
+                        <div class="cqp-form-btns">
+                            <button class="cqp-btn cqp-btn-save" onclick="saveCqpColor()">Save color globally</button>
+                            <button class="cqp-btn cqp-btn-cancel" onclick="hideCqpForm()">Cancel</button>
+                        </div>
+                    </div>
+                    <div id="stock-color-grid" style="margin-top:10px"></div>
+                </div>
+            </div>
+        </div>
+
         <div style="height:20px"></div>
     </div>
     <div style="flex-shrink:0;padding:12px 22px 16px;background:var(--bg);border-top:1px solid var(--border)">
@@ -1597,7 +1605,7 @@ function clearStockForm() {
     ['bc-stock','f-sku','f-name','f-cat','f-color','f-mrp','f-cost','f-qty','f-min','f-exp','f-sup'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
     Object.entries(FIELD_PLACEHOLDERS).forEach(([id,ph])=>{const el=document.getElementById(id);if(el)el.placeholder=ph;});
     document.getElementById('restock-banner').style.display='none';
-    clearCurrentStockSection();clearSizeBreakdown();showToast('Form cleared','');
+    clearCurrentStockSection();clearSizeBreakdown();clearColorBreakdown();showToast('Form cleared','');
 }
 function displayRestock(p,barcode){if(p)autofillStock(p);}
 async function submitStock() {
@@ -1606,21 +1614,25 @@ async function submitStock() {
     const name=document.getElementById('f-name').value.trim();
     const sku=document.getElementById('f-sku').value.trim();
     if(!barcode&&!name&&!sku){showToast('Barcode, name or SKU required','error');return;}
+    // colors: use breakdown JSON if qtys entered, otherwise plain comma string from field
+    const colorBreakdown = getColorBreakdown();
+    const colorField = (document.getElementById('f-color').value||'').trim();
     const payload={
         barcode,sku,name,category:document.getElementById('f-cat').value,
-        color:document.getElementById('f-color').value,
+        color: colorBreakdown || colorField,
         mrp:document.getElementById('f-mrp').value,cost:document.getElementById('f-cost').value,
         quantity:qty||'0',minStock:document.getElementById('f-min').value||10,
         expiry:document.getElementById('f-exp').value,supplier:document.getElementById('f-sup').value,
         sizes:getSizeBreakdown()||null,sizesOverride:sizesOverride||null,
+        colors: colorBreakdown,
         timestamp:new Date().toISOString()
     };
     showToast('Saving…');
     try{
         await fetch(CONFIG.N8N_ADD_STOCK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
         invalidateCache();loadProductCache();
-        ['bc-stock','f-sku','f-name','f-cat','f-color','f-mrp','f-cost','f-qty','f-min','f-exp','f-sup'].forEach(id=>document.getElementById(id).value='');
-        clearSizeBreakdown();clearCurrentStockSection();stockProductFound=false;clearGhosts();
+        ['bc-stock','f-sku','f-name','f-cat','f-color','f-mrp','f-cost','f-qty','f-min','f-exp','f-sup'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+        clearSizeBreakdown();clearColorBreakdown();clearCurrentStockSection();stockProductFound=false;clearGhosts();
         document.getElementById('restock-banner').style.display='none';
         showToast('Saved! उत्पाद सहेजा गया','success');
         document.getElementById('bc-stock').focus();
@@ -1849,6 +1861,71 @@ function getSizeBreakdown() {
     return Object.keys(obj).length ? obj : null;
 }
 
+// ── COLOR BREAKDOWN - ADD STOCK ────────────────────────────────────────
+let colorBreakdownOpen = false, stockColorValues = {};
+
+function toggleColorBreakdown() {
+    colorBreakdownOpen = !colorBreakdownOpen;
+    const content = document.getElementById('color-accordion-content');
+    const arrow   = document.getElementById('color-accordion-arrow');
+    content.style.maxHeight = colorBreakdownOpen ? '9999px' : '0';
+    arrow.style.transform   = colorBreakdownOpen ? 'rotate(180deg)' : '';
+    if (colorBreakdownOpen) {
+        renderCqpChips();
+        renderStockColorGrid();
+        setTimeout(() => content.scrollIntoView({behavior:'smooth',block:'start'}), 50);
+    }
+}
+
+function onColorFieldInput() {
+    renderStockColorGrid();
+    // Sync color total badge
+    const total = Object.values(stockColorValues).reduce((s,v)=>s+(v||0),0);
+    const badge = document.getElementById('color-total-badge');
+    if (total > 0) { badge.textContent='Total: '+total; badge.style.display='inline'; }
+    else badge.style.display='none';
+}
+
+function renderStockColorGrid() {
+    const grid = document.getElementById('stock-color-grid');
+    if (!grid) return;
+    const raw = (document.getElementById('f-color')||{}).value || '';
+    const names = raw.split(',').map(c=>c.trim()).filter(Boolean);
+    if (!names.length) { grid.innerHTML=''; return; }
+    // Preserve existing values, init new ones to 0
+    names.forEach(n => { if (stockColorValues[n] === undefined) stockColorValues[n] = 0; });
+    // Remove stale keys
+    Object.keys(stockColorValues).forEach(k => { if (!names.includes(k)) delete stockColorValues[k]; });
+    grid.innerHTML = names.map(name => {
+        const v = stockColorValues[name] || 0;
+        const hex = getColorHex(name);
+        const dotStyle = hex ? `background:${hex}` : 'background:var(--border)';
+        const safeN = name.replace(/'/g,"\\'");
+        return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border)">
+            <div style="width:11px;height:11px;border-radius:50%;flex-shrink:0;border:0.5px solid rgba(0,0,0,0.12);${dotStyle.replace('background:','background:')}"></div>
+            <span style="flex:1;font-size:13px;font-weight:500;color:var(--text-mid)">${name}</span>
+            <input type="number" min="0" inputmode="numeric" placeholder="0" value="${v||''}"
+                style="width:72px;font-size:14px;font-weight:600;padding:6px 8px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--bg);color:var(--text);text-align:center;font-family:'DM Sans'"
+                class="${v>0?'has-val':''}"
+                oninput="stockColorValues['${safeN}']=parseInt(this.value)||0;this.className=this.value>0?'has-val':'';onColorFieldInput()">
+        </div>`;
+    }).join('');
+}
+
+function getColorBreakdown() {
+    const obj = {};
+    Object.entries(stockColorValues).forEach(([c,v]) => { if (v > 0) obj[c] = v; });
+    return Object.keys(obj).length ? JSON.stringify(obj) : null;
+}
+
+function clearColorBreakdown() {
+    stockColorValues = {};
+    const badge = document.getElementById('color-total-badge');
+    if (badge) badge.style.display = 'none';
+    if (colorBreakdownOpen) toggleColorBreakdown();
+    else { const g = document.getElementById('stock-color-grid'); if(g) g.innerHTML=''; }
+}
+
 // ── INVENTORY ─────────────────────────────────────────────────────────
 let invSortLowFirst=false,invExpandedSku=null,invProductMap={};
 function toggleInvSort(){invSortLowFirst=!invSortLowFirst;const btn=document.getElementById('inv-sort-btn');btn.textContent=invSortLowFirst?'↑ A–Z':'⚠ Low stock first';btn.style.color=invSortLowFirst?'var(--primary)':'var(--text-light)';renderInventory();}
@@ -1911,6 +1988,12 @@ function editProductFromInventory(sku){
         document.getElementById('f-qty').value=''; document.getElementById('f-min').value=p.minStock||'';
         document.getElementById('f-exp').value=p.expiry||''; document.getElementById('f-sup').value=p.supplier||'';
         const sizes=parseSizes(p.sizes);if(sizes)showCurrentStockSizes(sizes);
+        // Open color accordion if product has colors
+        const colors=parseColors(p.color||'');
+        if(colors&&Object.keys(colors).length){
+            if(!colorBreakdownOpen)toggleColorBreakdown();
+            else{renderCqpChips();renderStockColorGrid();}
+        }
         stockProductFound=true;
         document.getElementById('restock-banner').style.display='block';
         document.getElementById('restock-name').textContent=p.name||p.sku||'';
