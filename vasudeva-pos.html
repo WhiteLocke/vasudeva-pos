@@ -1665,6 +1665,9 @@ async function submitStock() {
         const colorSum=Object.values(stockColorValues).reduce((s,v)=>s+(v||0),0);
         const existingColorSum=Object.values(currentColorStock||{}).reduce((s,v)=>s+(parseInt(v)||0),0);
         const newTotal=stockFormBaseQty+addQty;
+        if(existingColorSum>newTotal){
+            showToast(`Existing color total (${existingColorSum}) exceeds new stock total (${newTotal}). Edit current color stock first.`,'error');return;
+        }
         if(existingColorSum+colorSum!==newTotal){
             const expectedAdd=newTotal-existingColorSum;
             const msg=addQty!==0
@@ -1977,10 +1980,10 @@ function onColorQtyInput(name, val) {
         const other = names.find(k => k !== name);
         const existingThis  = (currentColorStock && currentColorStock[name])  || 0;
         const existingOther = (currentColorStock && currentColorStock[other]) || 0;
-        const rem = (stockFormBaseQty + addQty) - existingThis - (stockColorValues[name] || 0) - existingOther;
+        const rem = Math.max(0, (stockFormBaseQty + addQty) - existingThis - (stockColorValues[name] || 0) - existingOther);
         stockColorValues[other] = rem;
         const otherInput = document.querySelector(`#stock-color-grid input[data-color="${other.replace(/"/g,'&quot;')}"]`);
-        if (otherInput) { otherInput.value = rem !== 0 ? rem : ''; otherInput.className = 'stock-color-qty-input' + (rem > 0 ? ' has-val' : ''); }
+        if (otherInput) { otherInput.value = rem || ''; otherInput.className = 'stock-color-qty-input' + (rem > 0 ? ' has-val' : ''); }
     }
     syncColorBadge();
 }
