@@ -974,9 +974,10 @@ function toggleStockNameResults(field) {
     const id = field==='sku' ? 'stock-sku-results' : 'stock-name-results';
     const box = document.getElementById(id);
     if(box.style.display!=='none'){clearStockNameResults();return;}
+    const suggestions = stockMultiSuggestions.slice(); // snapshot before clear
     clearStockNameResults();
-    const rows = stockMultiSuggestions.map((p,i)=>`<div class="stock-name-result" onclick="pickStockResult(${i})"><span class="stock-name-result-name">${esc(p.name||p.sku||'Unknown')}</span>${p.sku?`<span class="stock-name-result-sku">${esc(p.sku)}</span>`:''}</div>`).join('');
-    box.innerHTML = rows;
+    box.innerHTML = suggestions.map((p,i)=>`<div class="stock-name-result" onclick="pickStockResult(${i})"><span class="stock-name-result-name">${esc(p.name||p.sku||'Unknown')}</span>${p.sku?`<span class="stock-name-result-sku">${esc(p.sku)}</span>`:''}</div>`).join('');
+    stockMultiSuggestions = suggestions; // restore so pickStockResult can use it
     box.style.display='block';
     stockNameResultsOpen=true;
 }
