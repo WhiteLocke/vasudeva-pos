@@ -1098,14 +1098,8 @@ function onSellNameInput() {
     clearTimeout(sellNameTimer); const v=document.getElementById('sell-name-input').value.trim();
     if(v.length<3){hideSellNameResults();return;}
     sellNameTimer=setTimeout(async()=>{
-        let results=[];
-        if(productCache){
-            results=searchCacheMulti(v);
-        } else {
-            const ff=v.match(/^[A-Z0-9\-]+$/i)&&v.length<=12?'sku':'name'; const sf=ff==='name'?'sku':'name';
-            try{const r=await fetch(CONFIG.N8N_LOOKUP+'?'+ff+'='+encodeURIComponent(v));const d=await r.json();if(d.found&&(d.name||d.sku))results=[d];}catch(_){}
-            if(!results.length){try{const r2=await fetch(CONFIG.N8N_LOOKUP+'?'+sf+'='+encodeURIComponent(v));const d2=await r2.json();if(d2.found&&(d2.name||d2.sku))results=[d2];}catch(_){}}
-        }
+        if(!productCache) await loadProductCache();
+        const results=searchCacheMulti(v);
         if(results.length){showSellNameResults(results);}
         else{hideSellNameResults();showToast('No match found','error');}
     },350);
@@ -1708,7 +1702,7 @@ async function finalizeOrder() {
     try{
         await fetch(CONFIG.N8N_SELL,{method:'POST',headers:{'Content-Type':'application/json'},
             body:JSON.stringify({items, timestamp:new Date().toISOString()})});
-        invalidateCache();basket=[];updateBasketUI();switchTab('product');
+        invalidateCache();loadProductCache();basket=[];updateBasketUI();switchTab('product');
         showToast('Order complete! स्टॉक अपडेट हो गया','success');
     }catch(_){showToast('Failed — try again','error');}
 }
