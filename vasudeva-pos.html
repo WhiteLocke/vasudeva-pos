@@ -1054,8 +1054,7 @@ function acceptSuggestion() {
     showToast(p.name+' found — restocking','success');
 }
 function handleStockFieldKey(e,fieldId) {
-    if((e.key==='Enter'||e.key==='Tab')&&currentSuggestion){e.preventDefault();acceptSuggestion();}
-    else if(e.key==='Escape'){clearGhosts();stockProductFound=false;}
+    if(e.key==='Escape'){clearGhosts();stockProductFound=false;}
 }
 function onSkuInput() {
     if(stockProductFound){stockProductFound=false;clearGhosts();}
@@ -1084,7 +1083,7 @@ function clearSellNameSearch() {
     document.getElementById('sell-name-toggle').textContent='🔎 Search by name or SKU';
     hideSellNameResults();
 }
-let sellNameSuggestion=null, sellNameResults=[];
+let sellNameResults=[];
 function searchCacheMulti(value) {
     if (!productCache) return [];
     const v = String(value).toLowerCase().trim();
@@ -1137,7 +1136,6 @@ function pickSellNameResult(idx) {
     document.getElementById('not-found-sell').classList.remove('visible');
 }
 function hideSellNameResults(){sellNameResults=[];const box=document.getElementById('sell-name-results');if(box)box.style.display='none';}
-function acceptSellNameSuggestion(){if(!sellNameSuggestion)return;const p={...sellNameSuggestion,found:true};clearSellNameSearch();hideSellNameResults();displayProduct(p);document.getElementById('not-found-sell').classList.remove('visible');}
 function goToAddStockUnregistered(){const bc=lastFailedBarcode;goTo('addstock');if(bc){setTimeout(()=>{document.getElementById('bc-stock').value=bc;showToast('Barcode pre-filled — add product details','');document.getElementById('f-name').focus();},400);}}
 
 // ── SELL VARIANT ACCORDIONS ───────────────────────────────────────────
