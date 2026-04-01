@@ -618,6 +618,18 @@
                 <span id="color-accordion-arrow" style="font-size:11px;color:var(--text-light);transition:transform 0.2s">▼</span>
             </div>
             <div id="color-accordion-content" style="max-height:0;overflow:hidden;transition:max-height 0.5s ease">
+                <!-- CURRENT COLOR STOCK (shown when restocking existing product) -->
+                <div id="current-color-section" style="display:none;padding:12px 14px 14px;border-top:1px solid var(--border);background:#F6FDF8">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+                        <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--success)">Current Color Stock <span id="current-color-total" style="font-weight:400;opacity:0.8"></span></div>
+                        <button id="current-color-edit-btn" onclick="toggleCurrentColorEdit()" style="padding:3px 10px;border:1.5px solid var(--success);background:none;color:var(--success);border-radius:20px;font-family:'DM Sans';font-size:11px;font-weight:700;cursor:pointer">Edit</button>
+                    </div>
+                    <div id="current-color-readonly" class="inv-sizes" style="gap:6px"></div>
+                    <div id="current-color-editable" style="display:none">
+                        <div id="current-color-grid" style="margin-top:8px"></div>
+                        <button onclick="saveCurrentColorStock()" style="width:100%;padding:9px;border:none;background:var(--success);color:white;border-radius:var(--radius-sm);font-family:'DM Sans';font-size:13px;font-weight:600;cursor:pointer;margin-top:8px">✓ Save Color Stock</button>
+                    </div>
+                </div>
                 <div style="padding:12px 14px 14px;border-top:1px solid var(--border)">
                     <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-light);margin-bottom:8px">Color names (comma-separated)</div>
                     <input id="f-color" type="text" placeholder="e.g. Red, Black, Navy" autocomplete="off"
@@ -976,9 +988,11 @@ function acceptSuggestion() {
     const colors=parseColors(p.color||'');
     if(colors&&Object.keys(colors).length>=1){
         stockColorValues={};
-        Object.entries(colors).forEach(([n,q])=>{ if(q!==null) stockColorValues[n]=q; });
+        const knownQtys={};
+        Object.entries(colors).forEach(([n,q])=>{ if(q!==null){ stockColorValues[n]=q; knownQtys[n]=q; } });
         if(!colorBreakdownOpen)toggleColorBreakdown();
         else{renderCqpChips();renderStockColorGrid();}
+        if(Object.keys(knownQtys).length) showCurrentColorStock(knownQtys);
     }
     showToast(p.name+' found — restocking','success');
 }
@@ -1650,8 +1664,12 @@ async function submitStock() {
     if(colorNames3.length>=2){
         const colorSum=Object.values(stockColorValues).reduce((s,v)=>s+(v||0),0);
         const expectedQty = addQty!==0 ? addQty : stockFormBaseQty;
-        const label = addQty!==0 ? 'add quantity' : 'current stock';
-        if(colorSum!==expectedQty){showToast(`Color quantities (${colorSum}) must equal ${label} (${expectedQty})`,'error');return;}
+        if(colorSum!==expectedQty){
+            const msg = addQty!==0
+                ? `Color total must equal add quantity (${addQty})`
+                : `Color total must equal stock total`;
+            showToast(msg,'error');return;
+        }
     }
     // color = plain comma names for the Color column
     // colors = JSON quantities map for n8n to merge per-color stock
@@ -2028,6 +2046,86 @@ function clearColorBreakdown() {
     if (badge) badge.style.display = 'none';
     if (colorBreakdownOpen) toggleColorBreakdown();
     else { const g = document.getElementById('stock-color-grid'); if(g) g.innerHTML=''; }
+    document.getElementById('current-color-section').style.display = 'none';
+}
+
+// ── CURRENT COLOR STOCK ───────────────────────────────────────────────
+let currentColorStock = null, currentColorEditing = false;
+
+function showCurrentColorStock(colorsObj) {
+    currentColorStock = {...colorsObj};
+    currentColorEditing = false;
+    const section = document.getElementById('current-color-section');
+    if (!colorsObj || !Object.keys(colorsObj).length) { section.style.display='none'; return; }
+    section.style.display = 'block';
+    renderCurrentColorReadonly();
+    document.getElementById('current-color-readonly').style.display = 'flex';
+    document.getElementById('current-color-editable').style.display = 'none';
+    document.getElementById('current-color-edit-btn').textContent = 'Edit';
+    updateCurrentColorTotal();
+}
+
+function renderCurrentColorReadonly() {
+    if (!currentColorStock) return;
+    document.getElementById('current-color-readonly').innerHTML =
+        Object.entries(currentColorStock).map(([c,q]) =>
+            `<span class="inv-size-chip" style="background:#D8F3DC;border-color:#52B788;color:#1B4332">${q} × ${c}</span>`
+        ).join('');
+    updateCurrentColorTotal();
+}
+
+function updateCurrentColorTotal() {
+    if (!currentColorStock) return;
+    const total = Object.values(currentColorStock).reduce((s,v) => s+(parseInt(v)||0), 0);
+    document.getElementById('current-color-total').textContent = `— ${total} unit${total!==1?'s':''} across ${Object.keys(currentColorStock).length} colour${Object.keys(currentColorStock).length!==1?'s':''}`;
+}
+
+function renderCurrentColorGrid() {
+    const grid = document.getElementById('current-color-grid');
+    if (!grid || !currentColorStock) return;
+    grid.innerHTML = Object.keys(currentColorStock).map(name => {
+        const v = currentColorStock[name] || 0;
+        const hex = getColorHex(name);
+        const dotStyle = hex ? `background:${hex}` : 'background:var(--border)';
+        const safeAttr = name.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+        return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border)">
+            <div style="width:11px;height:11px;border-radius:50%;flex-shrink:0;border:0.5px solid rgba(0,0,0,0.12);${dotStyle}"></div>
+            <span style="flex:1;font-size:13px;font-weight:500;color:var(--text-mid)">${name}</span>
+            <input type="number" min="0" inputmode="numeric" placeholder="0" value="${v||''}"
+                data-color="${safeAttr}"
+                style="width:72px;font-size:14px;font-weight:600;padding:6px 8px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--bg);color:var(--text);text-align:center;font-family:'DM Sans'"
+                class="stock-color-qty-input${v>0?' has-val':''}"
+                oninput="currentColorStock[this.dataset.color]=parseInt(this.value)||0;this.className='stock-color-qty-input'+(this.value>0?' has-val':'');updateCurrentColorTotal()">
+        </div>`;
+    }).join('');
+}
+
+function toggleCurrentColorEdit() {
+    currentColorEditing = !currentColorEditing;
+    const ro  = document.getElementById('current-color-readonly');
+    const ed  = document.getElementById('current-color-editable');
+    const btn = document.getElementById('current-color-edit-btn');
+    if (currentColorEditing) {
+        renderCurrentColorGrid();
+        ro.style.display='none'; ed.style.display='block'; btn.textContent='Cancel';
+    } else {
+        renderCurrentColorReadonly();
+        ro.style.display='flex'; ed.style.display='none'; btn.textContent='Edit';
+    }
+}
+
+function saveCurrentColorStock() {
+    // Persist edits back to stockColorValues so submit validation and payload use the new totals
+    Object.assign(stockColorValues, currentColorStock);
+    // Remove any keys not in currentColorStock
+    Object.keys(stockColorValues).forEach(k => { if (!(k in currentColorStock)) delete stockColorValues[k]; });
+    renderCurrentColorReadonly();
+    document.getElementById('current-color-readonly').style.display='flex';
+    document.getElementById('current-color-editable').style.display='none';
+    document.getElementById('current-color-edit-btn').textContent='Edit';
+    currentColorEditing = false;
+    syncColorBadge();
+    showToast('Color stock updated — save product to apply','');
 }
 
 // ── INVENTORY ─────────────────────────────────────────────────────────
@@ -2103,9 +2201,11 @@ function editProductFromInventory(sku){
         const colors=parseColors(p.color||'');
         if(colors&&Object.keys(colors).length>=1){
             stockColorValues={};
-            Object.entries(colors).forEach(([n,q])=>{ if(q!==null) stockColorValues[n]=q; });
+            const knownQtys={};
+            Object.entries(colors).forEach(([n,q])=>{ if(q!==null){ stockColorValues[n]=q; knownQtys[n]=q; } });
             if(!colorBreakdownOpen)toggleColorBreakdown();
             else{renderCqpChips();renderStockColorGrid();}
+            if(Object.keys(knownQtys).length) showCurrentColorStock(knownQtys);
         }
         stockProductFound=true;
         document.getElementById('restock-banner').style.display='block';
