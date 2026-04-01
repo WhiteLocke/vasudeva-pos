@@ -316,7 +316,7 @@
         .sell-name-result-name { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .sell-name-result-meta { font-size: 11px; color: var(--text-light); margin-top: 1px; }
         .sell-name-result-price { font-size: 13px; font-weight: 600; color: var(--primary); white-space: nowrap; }
-        .stock-name-results { background: var(--bg-card); border: 1.5px solid var(--border); border-radius: var(--radius-sm); box-shadow: 0 4px 12px rgba(28,14,8,0.10); overflow: hidden; }
+        .stock-name-results { background: var(--bg-card); border: 1.5px solid var(--border); border-radius: var(--radius-sm); box-shadow: 0 4px 12px rgba(28,14,8,0.10); overflow: hidden; flex-shrink: 0; }
         .stock-name-result { display: flex; align-items: center; gap: 8px; padding: 9px 14px; cursor: pointer; border-bottom: 1px solid var(--border); transition: background 0.12s; }
         .stock-name-result:last-child { border-bottom: none; }
         .stock-name-result:active { background: var(--primary-light); }
@@ -1154,6 +1154,13 @@ function renderSizePicker(sizesObj) {
     note.style.display = 'none';
 
     buildSellSizeChipPicker(sizesObj);
+
+    // Single in-stock size: auto-select and confirm so user skips the chip step
+    const inStock = Object.entries(sizesObj).filter(([,q]) => (parseInt(q)||0) > 0);
+    if (inStock.length === 1) {
+        sellSizeRows = [{ size: inStock[0][0], qty: 1, confirmed: true }];
+    }
+
     renderSellSizeRowsUI();
     document.getElementById('qty-row').style.display = 'none';
 }
@@ -1645,6 +1652,14 @@ function addToBasket() {
     }
 
     updateBasketUI();
+
+    // Warn (non-blocking) if basket total for this product exceeds known stock
+    const basketQty = basket.filter(i => i.sku === currentProduct.sku).reduce((s,i) => s+i.qty, 0);
+    const stockQty  = computeHealedStock(currentProduct);
+    if (basketQty > stockQty) {
+        showToast(`⚠ Basket has ${basketQty} but stock shows ${stockQty}`, 'error');
+    }
+
     resetSell();
 }
 
