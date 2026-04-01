@@ -1666,7 +1666,7 @@ async function submitStock() {
         const existingColorSum=Object.values(currentColorStock||{}).reduce((s,v)=>s+(parseInt(v)||0),0);
         const newTotal=stockFormBaseQty+addQty;
         if(existingColorSum>newTotal){
-            showToast(`Existing color total (${existingColorSum}) exceeds new stock total (${newTotal}). Edit current color stock first.`,'error');return;
+            showToast(`Existing color total (${existingColorSum}) exceeds new stock total — edit current color stock to reach ${newTotal}.`,'error');return;
         }
         if(existingColorSum+colorSum!==newTotal){
             const expectedAdd=newTotal-existingColorSum;
@@ -1676,22 +1676,28 @@ async function submitStock() {
             showToast(msg,'error');return;
         }
     }
-    // color = plain comma names for the Color column
-    // colors = JSON quantities map for n8n to merge per-color stock
-    const colorBreakdown = getColorBreakdown(); // JSON string {"Red":5} or null
+    // Compute final totals so n8n replaces values directly — no arithmetic needed on backend
+    const newTotalStock = stockFormBaseQty + addQty;
+    // Final per-color totals: existing + add delta per color
+    const addColorRaw = getColorBreakdown(); // add deltas {"Red":3} or null
+    const addColorMap = addColorRaw ? JSON.parse(addColorRaw) : {};
+    const finalColorsMap = {};
+    const allColorKeys = new Set([...Object.keys(currentColorStock||{}), ...Object.keys(addColorMap)]);
+    allColorKeys.forEach(k => {
+        const v = ((currentColorStock||{})[k]||0) + (addColorMap[k]||0);
+        if (v !== 0) finalColorsMap[k] = v;
+    });
+    const finalColors = Object.keys(finalColorsMap).length ? JSON.stringify(finalColorsMap) : null;
     const colorField = (document.getElementById('f-color').value||'').trim();
-    // If breakdown has qtys, derive plain names from its keys; else use the text field directly
-    const colorNames = colorBreakdown
-        ? Object.keys(JSON.parse(colorBreakdown)).join(', ')
-        : colorField;
+    const colorNames = finalColors ? Object.keys(finalColorsMap).join(', ') : colorField;
     const payload={
         barcode,sku,name,category:document.getElementById('f-cat').value,
         color: colorNames,
         mrp:document.getElementById('f-mrp').value,cost:document.getElementById('f-cost').value,
-        quantity:qty||'0',minStock:document.getElementById('f-min').value||10,
+        quantity:newTotalStock,minStock:document.getElementById('f-min').value||10,
         expiry:document.getElementById('f-exp').value,supplier:document.getElementById('f-sup').value,
         sizes:getSizeBreakdown()||null,sizesOverride:sizesOverride||null,
-        colors: colorBreakdown,
+        colors: finalColors,
         timestamp:new Date().toISOString()
     };
     showToast('Saving…');
@@ -1980,7 +1986,7 @@ function onColorQtyInput(name, val) {
         const other = names.find(k => k !== name);
         const existingThis  = (currentColorStock && currentColorStock[name])  || 0;
         const existingOther = (currentColorStock && currentColorStock[other]) || 0;
-        const rem = Math.max(0, (stockFormBaseQty + addQty) - existingThis - (stockColorValues[name] || 0) - existingOther);
+        const rem = (stockFormBaseQty + addQty) - existingThis - (stockColorValues[name] || 0) - existingOther;
         stockColorValues[other] = rem;
         const otherInput = document.querySelector(`#stock-color-grid input[data-color="${other.replace(/"/g,'&quot;')}"]`);
         if (otherInput) { otherInput.value = rem || ''; otherInput.className = 'stock-color-qty-input' + (rem > 0 ? ' has-val' : ''); }
