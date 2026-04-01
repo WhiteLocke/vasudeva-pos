@@ -1909,17 +1909,43 @@ function renderStockColorGrid() {
     const raw = (document.getElementById('f-color')||{}).value || '';
     const names = raw.split(',').map(c=>c.trim()).filter(Boolean);
     if (!names.length) { grid.innerHTML=''; return; }
-    // Preserve existing values, init new ones to 0
-    names.forEach(n => { if (stockColorValues[n] === undefined) stockColorValues[n] = 0; });
+
+    const totalQty = parseInt((document.getElementById('f-qty')||{}).value) || 0;
+
+    // Single color: read-only display of total qty
+    if (names.length === 1) {
+        stockColorValues = {};
+        const name = names[0];
+        const hex = getColorHex(name);
+        const dotStyle = hex ? `background:${hex}` : 'background:var(--border)';
+        grid.innerHTML = `<div style="display:flex;align-items:center;gap:10px;padding:6px 0">
+            <div style="width:11px;height:11px;border-radius:50%;flex-shrink:0;border:0.5px solid rgba(0,0,0,0.12);${dotStyle}"></div>
+            <span style="flex:1;font-size:13px;font-weight:500;color:var(--text-mid)">${name}</span>
+            <span style="width:72px;font-size:14px;font-weight:600;padding:6px 8px;text-align:center;color:var(--text-mid)">${totalQty || '—'}</span>
+        </div>`;
+        return;
+    }
+
+    // Multiple colors: identify colors not yet assigned
+    const newColors = names.filter(n => stockColorValues[n] === undefined);
     // Remove stale keys
     Object.keys(stockColorValues).forEach(k => { if (!names.includes(k)) delete stockColorValues[k]; });
+    // Auto-allocate remaining qty evenly across new colors
+    if (newColors.length > 0) {
+        const assignedTotal = names.filter(n => !newColors.includes(n)).reduce((s,n) => s+(stockColorValues[n]||0), 0);
+        const remaining = Math.max(0, totalQty - assignedTotal);
+        const perColor = Math.floor(remaining / newColors.length);
+        const leftover = remaining - perColor * newColors.length;
+        newColors.forEach((n, i) => { stockColorValues[n] = perColor + (i === newColors.length - 1 ? leftover : 0); });
+    }
+
     grid.innerHTML = names.map(name => {
         const v = stockColorValues[name] || 0;
         const hex = getColorHex(name);
         const dotStyle = hex ? `background:${hex}` : 'background:var(--border)';
         const safeN = name.replace(/'/g,"\\'");
         return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border)">
-            <div style="width:11px;height:11px;border-radius:50%;flex-shrink:0;border:0.5px solid rgba(0,0,0,0.12);${dotStyle.replace('background:','background:')}"></div>
+            <div style="width:11px;height:11px;border-radius:50%;flex-shrink:0;border:0.5px solid rgba(0,0,0,0.12);${dotStyle}"></div>
             <span style="flex:1;font-size:13px;font-weight:500;color:var(--text-mid)">${name}</span>
             <input type="number" min="0" inputmode="numeric" placeholder="0" value="${v||''}"
                 style="width:72px;font-size:14px;font-weight:600;padding:6px 8px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--bg);color:var(--text);text-align:center;font-family:'DM Sans'"
