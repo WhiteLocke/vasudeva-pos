@@ -1635,6 +1635,13 @@ async function submitStock() {
     const name=document.getElementById('f-name').value.trim();
     const sku=document.getElementById('f-sku').value.trim();
     if(!barcode&&!name&&!sku){showToast('Barcode, name or SKU required','error');return;}
+    // Validate color quantities for 3+ colors
+    const colorNames3 = (document.getElementById('f-color').value||'').split(',').map(c=>c.trim()).filter(Boolean);
+    if(colorNames3.length>=3){
+        const totalQty=parseInt(qty)||0;
+        const colorSum=Object.values(stockColorValues).reduce((s,v)=>s+(v||0),0);
+        if(colorSum!==totalQty){showToast(`Color quantities (${colorSum}) must equal total stock (${totalQty})`,'error');return;}
+    }
     // color = plain comma names for the Color column
     // colors = JSON quantities map for n8n to merge per-color stock
     const colorBreakdown = getColorBreakdown(); // JSON string {"Red":5} or null
@@ -1906,11 +1913,29 @@ function toggleColorBreakdown() {
 
 function onColorFieldInput() {
     renderStockColorGrid();
-    // Sync color total badge
+    syncColorBadge();
+}
+
+function syncColorBadge() {
     const total = Object.values(stockColorValues).reduce((s,v)=>s+(v||0),0);
     const badge = document.getElementById('color-total-badge');
     if (total > 0) { badge.textContent='Total: '+total; badge.style.display='inline'; }
     else badge.style.display='none';
+}
+
+function onColorQtyInput(name, val) {
+    stockColorValues[name] = parseInt(val) || 0;
+    const names = Object.keys(stockColorValues);
+    const totalQty = parseInt((document.getElementById('f-qty')||{}).value) || 0;
+    // 2-color: auto-balance the other field
+    if (names.length === 2) {
+        const other = names.find(k => k !== name);
+        const rem = Math.max(0, totalQty - (stockColorValues[name] || 0));
+        stockColorValues[other] = rem;
+        const otherInput = document.querySelector(`#stock-color-grid input[data-color="${other.replace(/"/g,'&quot;')}"]`);
+        if (otherInput) { otherInput.value = rem || ''; otherInput.className = 'stock-color-qty-input' + (rem > 0 ? ' has-val' : ''); }
+    }
+    syncColorBadge();
 }
 
 function renderStockColorGrid() {
@@ -1954,13 +1979,15 @@ function renderStockColorGrid() {
         const hex = getColorHex(name);
         const dotStyle = hex ? `background:${hex}` : 'background:var(--border)';
         const safeN = name.replace(/'/g,"\\'");
+        const safeAttr = name.replace(/"/g,'&quot;');
         return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border)">
             <div style="width:11px;height:11px;border-radius:50%;flex-shrink:0;border:0.5px solid rgba(0,0,0,0.12);${dotStyle}"></div>
             <span style="flex:1;font-size:13px;font-weight:500;color:var(--text-mid)">${name}</span>
             <input type="number" min="0" inputmode="numeric" placeholder="0" value="${v||''}"
+                data-color="${safeAttr}"
                 style="width:72px;font-size:14px;font-weight:600;padding:6px 8px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--bg);color:var(--text);text-align:center;font-family:'DM Sans'"
-                class="${v>0?'has-val':''}"
-                oninput="stockColorValues['${safeN}']=parseInt(this.value)||0;this.className=this.value>0?'has-val':'';onColorFieldInput()">
+                class="stock-color-qty-input${v>0?' has-val':''}"
+                oninput="this.className='stock-color-qty-input'+(this.value>0?' has-val':'');onColorQtyInput('${safeN}',this.value)">
         </div>`;
     }).join('');
 }
