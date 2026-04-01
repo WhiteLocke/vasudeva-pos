@@ -1672,6 +1672,10 @@ async function submitStock() {
                 : `Color total must equal stock total`;
             showToast(msg,'error');return;
         }
+        for(const [c,addV] of Object.entries(stockColorValues)){
+            const existV=(currentColorStock||{})[c]||0;
+            if(existV+addV<0){showToast(`Cannot remove more ${c} than in stock (have ${existV}, removing ${Math.abs(addV)})`,'error');return;}
+        }
     }
     // Compute final totals so n8n replaces values directly — no arithmetic needed on backend
     const newTotalStock = stockFormBaseQty + addQty;
@@ -1986,7 +1990,7 @@ function onColorQtyInput(name, val) {
         const other = names.find(k => k !== name);
         const existingThis  = (currentColorStock && currentColorStock[name])  || 0;
         const existingOther = (currentColorStock && currentColorStock[other]) || 0;
-        const rem = (stockFormBaseQty + addQty) - existingThis - (stockColorValues[name] || 0) - existingOther;
+        const rem = Math.max(-existingOther, (stockFormBaseQty + addQty) - existingThis - (stockColorValues[name] || 0) - existingOther);
         stockColorValues[other] = rem;
         const otherInput = document.querySelector(`#stock-color-grid input[data-color="${other.replace(/"/g,'&quot;')}"]`);
         if (otherInput) { otherInput.value = rem || ''; otherInput.className = 'stock-color-qty-input' + (rem > 0 ? ' has-val' : ''); }
@@ -2108,7 +2112,7 @@ function renderCurrentColorGrid() {
                 data-color="${safeAttr}"
                 style="width:72px;font-size:14px;font-weight:600;padding:6px 8px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--bg);color:var(--text);text-align:center;font-family:'DM Sans'"
                 class="stock-color-qty-input${v>0?' has-val':''}"
-                oninput="currentColorStock[this.dataset.color]=parseInt(this.value)||0;this.className='stock-color-qty-input'+(this.value>0?' has-val':'');updateCurrentColorTotal()">
+                oninput="const _v=Math.max(0,parseInt(this.value)||0);currentColorStock[this.dataset.color]=_v;if(parseInt(this.value)<0)this.value=_v;this.className='stock-color-qty-input'+(_v>0?' has-val':'');updateCurrentColorTotal()">
         </div>`;
     }).join('');
 }
