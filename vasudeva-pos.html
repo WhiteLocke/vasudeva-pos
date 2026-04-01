@@ -308,8 +308,8 @@
 
         .name-search-toggle { display: block; width: 100%; padding: 9px 4px; border: none; background: none; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; color: var(--text-light); text-align: left; transition: color 0.15s; }
         .name-search-toggle:active { color: var(--primary); }
-        .sell-name-results { border: 1.5px solid var(--border); border-radius: var(--radius-sm); overflow-y: auto; max-height: 224px; background: var(--bg-card); box-shadow: 0 4px 16px rgba(28,14,8,0.10); }
-        .sell-name-result { display: flex; align-items: center; gap: 10px; padding: 11px 14px; cursor: pointer; border-bottom: 1px solid var(--border); transition: background 0.12s; }
+        .sell-name-results { border: 1.5px solid var(--border); border-radius: var(--radius-sm); overflow-y: auto; max-height: 232px; background: var(--bg-card); box-shadow: 0 4px 16px rgba(28,14,8,0.10); }
+        .sell-name-result { display: flex; align-items: center; gap: 10px; padding: 11px 14px; min-height: 48px; cursor: pointer; border-bottom: 1px solid var(--border); transition: background 0.12s; line-height: 1.3; }
         .sell-name-result:last-child { border-bottom: none; }
         .sell-name-result:active { background: var(--primary-light); }
         .sell-name-result-text { flex: 1; min-width: 0; }
@@ -551,13 +551,13 @@
         <div class="form-section">
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">SKU</div><div class="field-label-hindi">कोड</div></div>
-                <div class="field-input-wrap"><input class="field-input" id="f-sku" type="text" placeholder="Supplier code" autocomplete="off" oninput="onSkuInput()" onkeydown="handleStockFieldKey(event,'f-sku')"><span class="field-ghost" id="ghost-f-sku"></span></div><div class="field-hint" id="hint-f-sku" onclick="acceptSuggestion()"><span id="hint-val-f-sku"></span><span class="hint-arrow">→</span></div>
+                <div class="field-input-wrap"><input class="field-input" id="f-sku" type="text" placeholder="Supplier code" autocomplete="off" oninput="onSkuInput()" onkeydown="handleStockFieldKey(event,'f-sku')"><span class="field-ghost" id="ghost-f-sku"></span></div><div class="field-hint" id="hint-f-sku" onclick="acceptSuggestion()"><span id="hint-val-f-sku"></span><span class="hint-arrow">→</span></div><div class="field-hint" id="hint-f-sku-more" style="display:none" onclick="toggleStockNameResults()"><span style="font-size:11px;color:var(--primary);font-weight:600" id="hint-f-sku-more-label"></span></div>
             </div>
+            <div id="stock-name-results" class="stock-name-results" style="display:none"></div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">Name</div><div class="field-label-hindi">नाम</div></div>
                 <div class="field-input-wrap"><input class="field-input" id="f-name" type="text" placeholder="Product name" autocomplete="off" oninput="onNameInput()" onkeydown="handleStockFieldKey(event,'f-name')"><span class="field-ghost" id="ghost-f-name"></span></div><div class="field-hint" id="hint-f-name" onclick="acceptSuggestion()"><span id="hint-val-f-name"></span><span class="hint-arrow">→</span></div><div class="field-hint" id="hint-f-name-more" style="display:none" onclick="toggleStockNameResults()"><span style="font-size:11px;color:var(--primary);font-weight:600" id="hint-f-name-more-label"></span></div>
             </div>
-            <div id="stock-name-results" class="stock-name-results" style="display:none"></div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">Category</div><div class="field-label-hindi">श्रेणी</div></div>
                 <div class="field-input-wrap"><input class="field-input" id="f-cat" type="text" placeholder="e.g. Skincare" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-cat')"><span class="field-ghost" id="ghost-f-cat"></span></div><div class="field-hint" id="hint-f-cat" onclick="acceptSuggestion()"><span id="hint-val-f-cat"></span><span class="hint-arrow">→</span></div>
@@ -947,7 +947,7 @@ async function lookupProduct(barcode) {
     if(data.barcode!==undefined) data.barcode=sanitizeBarcode(data.barcode);
     return data;
 }
-let stockMultiSuggestions=[], stockNameResultsOpen=false;
+let stockMultiSuggestions=[], stockNameResultsOpen=false, stockMultiSourceField='';
 async function lookupBy(field,value) {
     if(!value||value.trim().length<3||stockProductFound) return;
     if (productCache){
@@ -955,12 +955,17 @@ async function lookupBy(field,value) {
         if(!matches.length){clearGhosts();clearStockNameResults();return;}
         showGhosts({...matches[0],found:true});
         stockMultiSuggestions=matches;
+        stockMultiSourceField=field;
+        // Hide both "more" pills first, then show the one for the triggering field
+        document.getElementById('hint-f-sku-more').style.display='none';
+        document.getElementById('hint-f-name-more').style.display='none';
+        clearStockNameResults();
         if(matches.length>1){
-            document.getElementById('hint-f-name-more').style.display='block';
-            document.getElementById('hint-f-name-more-label').textContent='+ '+(matches.length-1)+' more →';
-        } else {
-            document.getElementById('hint-f-name-more').style.display='none';
-            clearStockNameResults();
+            const moreId='hint-f-'+field+'-more';
+            const moreLabelId='hint-f-'+field+'-more-label';
+            const moreEl=document.getElementById(moreId);
+            const moreLabelEl=document.getElementById(moreLabelId);
+            if(moreEl){moreEl.style.display='block';moreLabelEl.textContent='+ '+(matches.length-1)+' more →';}
         }
         return;
     }
@@ -981,8 +986,8 @@ function pickStockResult(idx) {
 }
 function clearStockNameResults() {
     const box=document.getElementById('stock-name-results');if(box)box.style.display='none';
-    const more=document.getElementById('hint-f-name-more');if(more)more.style.display='none';
-    stockNameResultsOpen=false; stockMultiSuggestions=[];
+    ['hint-f-sku-more','hint-f-name-more'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+    stockNameResultsOpen=false; stockMultiSuggestions=[]; stockMultiSourceField='';
 }
 
 // ── GHOST AUTOCOMPLETE ────────────────────────────────────────────────
@@ -1514,7 +1519,7 @@ function resetSell() {
     document.getElementById('not-found-sell').classList.remove('visible');
     document.getElementById('sell-empty').style.display='';
     document.getElementById('bc-sell').value='';
-    clearSellNameSearch(); hideSellNameSuggestion();
+    clearSellNameSearch(); hideSellNameResults();
     clearSizePicker(); updateQtyDisplay();
 }
 
