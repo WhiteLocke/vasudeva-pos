@@ -1676,25 +1676,28 @@ async function submitStock() {
     // Compute final totals so n8n replaces values directly — no arithmetic needed on backend
     const newTotalStock = stockFormBaseQty + addQty;
     // Final per-color totals: existing + add delta per color
-    const addColorRaw = getColorBreakdown(); // add deltas {"Red":3} or null
+    const addColorRaw = getColorBreakdown(); // add deltas {"Red":-2} or null
     const addColorMap = addColorRaw ? JSON.parse(addColorRaw) : {};
-    const finalColorsMap = {};
-    const allColorKeys = new Set([...Object.keys(currentColorStock||{}), ...Object.keys(addColorMap)]);
-    allColorKeys.forEach(k => {
-        const v = ((currentColorStock||{})[k]||0) + (addColorMap[k]||0);
-        if (v !== 0) finalColorsMap[k] = v;
-    });
-    const finalColors = Object.keys(finalColorsMap).length ? JSON.stringify(finalColorsMap) : null;
     const colorField = (document.getElementById('f-color').value||'').trim();
-    const colorNames = finalColors ? Object.keys(finalColorsMap).join(', ') : colorField;
+    const colorNames = addColorRaw ? Object.keys(addColorMap).join(', ') : colorField;
+    // Convert sizesOverride (target totals) to a delta vs currentStockSizes so n8n can add it
+    let sizesOverrideDelta = null;
+    if (sizesOverride) {
+        const baseline = {...(currentStockSizes||{})};
+        delete baseline['Free Size']; // Free Size is implicit, never delta'd
+        const allKeys = new Set([...Object.keys(sizesOverride).filter(k=>k!=='Free Size'), ...Object.keys(baseline)]);
+        const delta = {};
+        allKeys.forEach(k => { const d=(sizesOverride[k]||0)-(baseline[k]||0); if(d!==0) delta[k]=d; });
+        sizesOverrideDelta = Object.keys(delta).length ? delta : null;
+    }
     const payload={
         barcode,sku,name,category:document.getElementById('f-cat').value,
         color: colorNames,
         mrp:document.getElementById('f-mrp').value,cost:document.getElementById('f-cost').value,
         quantity:addQty,minStock:document.getElementById('f-min').value||10,
         expiry:document.getElementById('f-exp').value,supplier:document.getElementById('f-sup').value,
-        sizes:getSizeBreakdown()||null,sizesOverride:sizesOverride||null,
-        colors: finalColors,
+        sizes:getSizeBreakdown()||null,sizesOverride:sizesOverrideDelta,
+        colors: addColorRaw,
         timestamp:new Date().toISOString()
     };
     showToast('Saving…');
