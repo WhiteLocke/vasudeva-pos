@@ -1665,9 +1665,6 @@ async function submitStock() {
         const colorSum=Object.values(stockColorValues).reduce((s,v)=>s+(v||0),0);
         const existingColorSum=Object.values(currentColorStock||{}).reduce((s,v)=>s+(parseInt(v)||0),0);
         const newTotal=stockFormBaseQty+addQty;
-        if(existingColorSum>newTotal){
-            showToast(`Existing color total (${existingColorSum}) exceeds new stock total — edit current color stock to reach ${newTotal}.`,'error');return;
-        }
         if(existingColorSum+colorSum!==newTotal){
             const expectedAdd=newTotal-existingColorSum;
             const msg=addQty!==0
