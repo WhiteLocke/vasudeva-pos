@@ -1663,10 +1663,12 @@ async function submitStock() {
     const addQty=parseInt(qty)||0;
     if(colorNames3.length>=2){
         const colorSum=Object.values(stockColorValues).reduce((s,v)=>s+(v||0),0);
-        const expectedQty = addQty!==0 ? addQty : stockFormBaseQty;
-        if(colorSum!==expectedQty){
-            const msg = addQty!==0
-                ? `Color total must equal add quantity (${addQty})`
+        const existingColorSum=Object.values(currentColorStock||{}).reduce((s,v)=>s+(parseInt(v)||0),0);
+        const newTotal=stockFormBaseQty+addQty;
+        if(existingColorSum+colorSum!==newTotal){
+            const expectedAdd=newTotal-existingColorSum;
+            const msg=addQty!==0
+                ? `Color total must equal add quantity (${expectedAdd})`
                 : `Color total must equal stock total`;
             showToast(msg,'error');return;
         }
@@ -1969,14 +1971,16 @@ function syncColorBadge() {
 function onColorQtyInput(name, val) {
     stockColorValues[name] = parseInt(val) || 0;
     const names = Object.keys(stockColorValues);
-    const totalQty = parseInt((document.getElementById('f-qty')||{}).value) || 0;
-    // 2-color: auto-balance the other field
+    const addQty = parseInt((document.getElementById('f-qty')||{}).value) || 0;
+    // 2-color: auto-balance using full invariant: existingColors + addColors = stockFormBaseQty + addQty
     if (names.length === 2) {
         const other = names.find(k => k !== name);
-        const rem = Math.max(0, totalQty - (stockColorValues[name] || 0));
+        const existingThis  = (currentColorStock && currentColorStock[name])  || 0;
+        const existingOther = (currentColorStock && currentColorStock[other]) || 0;
+        const rem = (stockFormBaseQty + addQty) - existingThis - (stockColorValues[name] || 0) - existingOther;
         stockColorValues[other] = rem;
         const otherInput = document.querySelector(`#stock-color-grid input[data-color="${other.replace(/"/g,'&quot;')}"]`);
-        if (otherInput) { otherInput.value = rem || ''; otherInput.className = 'stock-color-qty-input' + (rem > 0 ? ' has-val' : ''); }
+        if (otherInput) { otherInput.value = rem !== 0 ? rem : ''; otherInput.className = 'stock-color-qty-input' + (rem > 0 ? ' has-val' : ''); }
     }
     syncColorBadge();
 }
