@@ -990,10 +990,12 @@ function acceptSuggestion() {
         stockColorValues={};
         const knownQtys={};
         Object.entries(colors).forEach(([n,q])=>{ if(q!==null) knownQtys[n]=q; });
-        if(!colorBreakdownOpen)toggleColorBreakdown();
-        else{renderCqpChips();renderStockColorGrid();}
+        renderCqpChips();renderStockColorGrid();
         if(Object.keys(knownQtys).length) showCurrentColorStock(knownQtys);
     }
+    // Focus f-qty since barcode is already filled
+    const bcEl = document.getElementById('bc-stock');
+    setTimeout(()=>{ if(!bcEl.value) bcEl.focus(); else document.getElementById('f-qty').focus(); }, 50);
     showToast(p.name+' found — restocking','success');
 }
 function handleStockFieldKey(e,fieldId) {
@@ -1294,22 +1296,6 @@ function renderColorPicker(colorVal) {
 
     sellColorAvail = colors;
     sellColorRows = [];
-
-    // Default: pre-select the color with the highest qty (or first if all null/equal)
-    const entries = Object.entries(colors);
-    const sorted = [...entries].sort((a, b) => {
-        if (b[1] === null && a[1] === null) return 0;
-        if (b[1] === null) return -1;
-        if (a[1] === null) return 1;
-        return (parseInt(b[1])||0) - (parseInt(a[1])||0);
-    });
-    const defaultColor = sorted[0][0];
-    const defaultAvail = sorted[0][1];
-    const defaultQty   = (defaultAvail === null || parseInt(defaultAvail) > 0) ? 1 : 0;
-
-    if (defaultQty > 0) {
-        sellColorRows.push({ color: defaultColor, qty: defaultQty, confirmed: false });
-    }
 
     acc.style.display = 'block';
     acc.classList.add('open');
@@ -2246,14 +2232,15 @@ function editProductFromInventory(sku){
             stockColorValues={};
             const knownQtys={};
             Object.entries(colors).forEach(([n,q])=>{ if(q!==null) knownQtys[n]=q; });
-            if(!colorBreakdownOpen)toggleColorBreakdown();
-            else{renderCqpChips();renderStockColorGrid();}
+            renderCqpChips();renderStockColorGrid();
             if(Object.keys(knownQtys).length) showCurrentColorStock(knownQtys);
         }
         stockProductFound=true;
         document.getElementById('restock-banner').style.display='block';
         document.getElementById('restock-name').textContent=p.name||p.sku||'';
         renderCqpChips();
+        // Focus f-qty since barcode is pre-filled from inventory
+        document.getElementById('f-qty').focus();
         showToast('Editing '+(p.name||p.sku),'');
     },350);
 }
