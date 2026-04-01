@@ -1658,50 +1658,60 @@ async function submitStock() {
     const name=document.getElementById('f-name').value.trim();
     const sku=document.getElementById('f-sku').value.trim();
     if(!barcode&&!name&&!sku){showToast('Barcode, name or SKU required','error');return;}
-    // Validate color quantities for 2+ colors
+
+    const addQty = parseInt(qty)||0;
+    const newTotal = stockFormBaseQty + addQty;
+    const sizeAddBreakdown = getSizeBreakdown(); // "Adding Now" sizes — computed once
+
+    // Rule 3: final stock cannot be negative
+    if(newTotal < 0){showToast(`Final stock (${newTotal}) cannot be negative`,'error');return;}
+
+    // Rule 1 + Rule 3: when sizes are changing, implied Free Size must not go negative
+    if(sizesOverride || sizeAddBreakdown){
+        const base = sizesOverride ? {...sizesOverride} : {...(currentStockSizes||{})};
+        delete base['Free Size'];
+        if(sizeAddBreakdown) Object.entries(sizeAddBreakdown).forEach(([s,v])=>{base[s]=(base[s]||0)+(parseInt(v)||0);});
+        const namedTotal = Object.values(base).reduce((s,v)=>s+v,0);
+        if(newTotal-namedTotal < 0){showToast(`Size total (${namedTotal}) exceeds new stock total (${newTotal})`,'error');return;}
+    }
+
+    // Rule 2 + Rule 3: color totals must balance and no colour may go negative
     const colorNames3 = (document.getElementById('f-color').value||'').split(',').map(c=>c.trim()).filter(Boolean);
-    const addQty=parseInt(qty)||0;
     if(colorNames3.length>=2){
         const colorSum=Object.values(stockColorValues).reduce((s,v)=>s+(v||0),0);
         const existingColorSum=Object.values(currentColorStock||{}).reduce((s,v)=>s+(parseInt(v)||0),0);
-        const newTotal=stockFormBaseQty+addQty;
         if(existingColorSum+colorSum!==newTotal){
             const expectedAdd=newTotal-existingColorSum;
-            const msg=addQty!==0
-                ? `Color total must equal add quantity (${expectedAdd})`
-                : `Color total must equal stock total`;
-            showToast(msg,'error');return;
+            showToast(addQty!==0?`Color total must equal add quantity (${expectedAdd})`:`Color total must equal stock total`,'error');return;
         }
         for(const [c,addV] of Object.entries(stockColorValues)){
             const existV=(currentColorStock||{})[c]||0;
             if(existV+addV<0){showToast(`Cannot remove more ${c} than in stock (have ${existV}, removing ${Math.abs(addV)})`,'error');return;}
         }
     }
-    // Compute final totals so n8n replaces values directly — no arithmetic needed on backend
-    const newTotalStock = stockFormBaseQty + addQty;
-    // Final per-color totals: existing + add delta per color
-    const addColorRaw = getColorBreakdown(); // add deltas {"Red":-2} or null
+
+    // Build payload
+    const addColorRaw = getColorBreakdown();
     const addColorMap = addColorRaw ? JSON.parse(addColorRaw) : {};
     const colorField = (document.getElementById('f-color').value||'').trim();
     const colorNames = addColorRaw ? Object.keys(addColorMap).join(', ') : colorField;
-    // Convert sizesOverride (target totals) to a delta vs currentStockSizes so n8n can add it
     let sizesOverrideDelta = null;
-    if (sizesOverride) {
+    if(sizesOverride){
         const baseline = {...(currentStockSizes||{})};
-        delete baseline['Free Size']; // Free Size is implicit, never delta'd
+        delete baseline['Free Size'];
         const allKeys = new Set([...Object.keys(sizesOverride).filter(k=>k!=='Free Size'), ...Object.keys(baseline)]);
         const delta = {};
-        allKeys.forEach(k => { const d=(sizesOverride[k]||0)-(baseline[k]||0); if(d!==0) delta[k]=d; });
+        allKeys.forEach(k=>{const d=(sizesOverride[k]||0)-(baseline[k]||0);if(d!==0)delta[k]=d;});
         sizesOverrideDelta = Object.keys(delta).length ? delta : null;
     }
     const payload={
         barcode,sku,name,category:document.getElementById('f-cat').value,
-        color: colorNames,
+        color:colorNames,
         mrp:document.getElementById('f-mrp').value,cost:document.getElementById('f-cost').value,
         quantity:addQty,minStock:document.getElementById('f-min').value||10,
         expiry:document.getElementById('f-exp').value,supplier:document.getElementById('f-sup').value,
-        sizes:getSizeBreakdown()||null,sizesOverride:sizesOverrideDelta,
-        colors: addColorRaw,
+        sizes:sizeAddBreakdown||null,sizesOverride:sizesOverrideDelta,
+        colors:addColorRaw,
         timestamp:new Date().toISOString()
     };
     showToast('Saving…');
