@@ -951,8 +951,10 @@ function clearGhosts() {
 }
 function acceptSuggestion() {
     if(!currentSuggestion) return; const p=currentSuggestion;
+    const _colors=parseColors(p.color||'');
+    const _colorStr=_colors?Object.keys(_colors).join(', '):(p.color||'');
     document.getElementById('f-sku').value=p.sku||''; document.getElementById('f-name').value=p.name||'';
-    document.getElementById('f-cat').value=p.category||''; document.getElementById('f-color').value=p.color||'';
+    document.getElementById('f-cat').value=p.category||''; document.getElementById('f-color').value=_colorStr;
     document.getElementById('f-mrp').value=p.mrp||''; document.getElementById('f-cost').value=p.cost||'';
     document.getElementById('f-qty').value=computeHealedStock(p)||'';
     if(!document.getElementById('bc-stock').value) document.getElementById('bc-stock').value=sanitizeBarcode(p.barcode);
@@ -1978,8 +1980,7 @@ function renderStockColorGrid() {
         const v = stockColorValues[name] || 0;
         const hex = getColorHex(name);
         const dotStyle = hex ? `background:${hex}` : 'background:var(--border)';
-        const safeN = name.replace(/'/g,"\\'");
-        const safeAttr = name.replace(/"/g,'&quot;');
+        const safeAttr = name.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
         return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border)">
             <div style="width:11px;height:11px;border-radius:50%;flex-shrink:0;border:0.5px solid rgba(0,0,0,0.12);${dotStyle}"></div>
             <span style="flex:1;font-size:13px;font-weight:500;color:var(--text-mid)">${name}</span>
@@ -1987,7 +1988,7 @@ function renderStockColorGrid() {
                 data-color="${safeAttr}"
                 style="width:72px;font-size:14px;font-weight:600;padding:6px 8px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--bg);color:var(--text);text-align:center;font-family:'DM Sans'"
                 class="stock-color-qty-input${v>0?' has-val':''}"
-                oninput="this.className='stock-color-qty-input'+(this.value>0?' has-val':'');onColorQtyInput('${safeN}',this.value)">
+                oninput="this.className='stock-color-qty-input'+(this.value>0?' has-val':'');onColorQtyInput(this.dataset.color,this.value)">
         </div>`;
     }).join('');
 }
@@ -2062,8 +2063,10 @@ function editProductFromInventory(sku){
     goTo('addstock');
     setTimeout(()=>{
         document.getElementById('bc-stock').value=sanitizeBarcode(p.barcode);
+        const _ec=parseColors(p.color||'');
+        const _ecStr=_ec?Object.keys(_ec).join(', '):(p.color||'');
         document.getElementById('f-sku').value=p.sku||''; document.getElementById('f-name').value=p.name||'';
-        document.getElementById('f-cat').value=p.category||''; document.getElementById('f-color').value=p.color||'';
+        document.getElementById('f-cat').value=p.category||''; document.getElementById('f-color').value=_ecStr;
         document.getElementById('f-mrp').value=p.mrp||''; document.getElementById('f-cost').value=p.cost||'';
         document.getElementById('f-qty').value=computeHealedStock(p)||''; document.getElementById('f-min').value=p.minStock||'';
         document.getElementById('f-exp').value=p.expiry||''; document.getElementById('f-sup').value=p.supplier||'';
