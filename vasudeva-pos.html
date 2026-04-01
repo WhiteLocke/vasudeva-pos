@@ -554,8 +554,9 @@
                 <div class="field-input-wrap"><input class="field-input" id="f-cost" type="text" inputmode="decimal" placeholder="₹ 0" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-cost')"><span class="field-ghost" id="ghost-f-cost"></span></div><div class="field-hint" id="hint-f-cost" onclick="acceptSuggestion()"><span id="hint-val-f-cost"></span><span class="hint-arrow">→</span></div>
             </div>
             <div class="form-field">
-                <div class="field-label-wrap"><div class="field-label">Quantity</div><div class="field-label-hindi">मात्रा</div></div>
+                <div class="field-label-wrap"><div class="field-label">Add Qty</div><div class="field-label-hindi">जोड़ें</div></div>
                 <div class="field-input-wrap"><input class="field-input" id="f-qty" type="text" inputmode="numeric" placeholder="0" autocomplete="off" oninput="onManualQtyInput()" onkeydown="handleStockFieldKey(event,'f-qty')"><span class="field-ghost" id="ghost-f-qty"></span></div>
+                <div id="f-qty-current" style="display:none;font-size:11px;color:var(--text-light);margin-top:4px;padding-left:2px">Current stock: <span id="f-qty-current-val" style="font-weight:600;color:var(--text-mid)"></span></div>
             </div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">Min Stock</div><div class="field-label-hindi">न्यूनतम</div></div>
@@ -956,7 +957,10 @@ function acceptSuggestion() {
     document.getElementById('f-sku').value=p.sku||''; document.getElementById('f-name').value=p.name||'';
     document.getElementById('f-cat').value=p.category||''; document.getElementById('f-color').value=_colorStr;
     document.getElementById('f-mrp').value=p.mrp||''; document.getElementById('f-cost').value=p.cost||'';
-    document.getElementById('f-qty').value=computeHealedStock(p)||'';
+    document.getElementById('f-qty').value='';
+    const _healedStock=computeHealedStock(p);
+    document.getElementById('f-qty-current-val').textContent=_healedStock+' units';
+    document.getElementById('f-qty-current').style.display='block';
     if(!document.getElementById('bc-stock').value) document.getElementById('bc-stock').value=sanitizeBarcode(p.barcode);
     stockProductFound=true; clearGhosts();
     document.getElementById('restock-banner').style.display='block';
@@ -967,7 +971,7 @@ function acceptSuggestion() {
         if(!sizeBreakdownOpen)toggleSizeBreakdown();
         showCurrentStockSizes(sizes);
     }
-    // Open color accordion if product has colors; pre-seed known quantities
+    // Open color accordion if product has colors; pre-seed from sheet
     const colors=parseColors(p.color||'');
     if(colors&&Object.keys(colors).length>=1){
         stockColorValues={};
@@ -1628,6 +1632,7 @@ function clearStockForm() {
     ['bc-stock','f-sku','f-name','f-cat','f-color','f-mrp','f-cost','f-qty','f-min','f-exp','f-sup'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
     Object.entries(FIELD_PLACEHOLDERS).forEach(([id,ph])=>{const el=document.getElementById(id);if(el)el.placeholder=ph;});
     document.getElementById('restock-banner').style.display='none';
+    document.getElementById('f-qty-current').style.display='none';
     clearCurrentStockSection();clearSizeBreakdown();clearColorBreakdown();showToast('Form cleared','');
 }
 function displayRestock(p,barcode){if(p)autofillStock(p);}
@@ -1637,12 +1642,12 @@ async function submitStock() {
     const name=document.getElementById('f-name').value.trim();
     const sku=document.getElementById('f-sku').value.trim();
     if(!barcode&&!name&&!sku){showToast('Barcode, name or SKU required','error');return;}
-    // Validate color quantities for 3+ colors
+    // Validate color quantities for 2+ colors when adding stock
     const colorNames3 = (document.getElementById('f-color').value||'').split(',').map(c=>c.trim()).filter(Boolean);
-    if(colorNames3.length>=3){
-        const totalQty=parseInt(qty)||0;
+    const addQty=parseInt(qty)||0;
+    if(colorNames3.length>=2 && addQty>0){
         const colorSum=Object.values(stockColorValues).reduce((s,v)=>s+(v||0),0);
-        if(colorSum!==totalQty){showToast(`Color quantities (${colorSum}) must equal total stock (${totalQty})`,'error');return;}
+        if(colorSum!==addQty){showToast(`Color quantities (${colorSum}) must equal add quantity (${addQty})`,'error');return;}
     }
     // color = plain comma names for the Color column
     // colors = JSON quantities map for n8n to merge per-color stock
@@ -1669,6 +1674,7 @@ async function submitStock() {
         ['bc-stock','f-sku','f-name','f-cat','f-color','f-mrp','f-cost','f-qty','f-min','f-exp','f-sup'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
         clearSizeBreakdown();clearColorBreakdown();clearCurrentStockSection();stockProductFound=false;clearGhosts();
         document.getElementById('restock-banner').style.display='none';
+        document.getElementById('f-qty-current').style.display='none';
         showToast('Saved! उत्पाद सहेजा गया','success');
         document.getElementById('bc-stock').focus();
     }catch(_){showToast('Failed — try again','error');}
@@ -2068,10 +2074,13 @@ function editProductFromInventory(sku){
         document.getElementById('f-sku').value=p.sku||''; document.getElementById('f-name').value=p.name||'';
         document.getElementById('f-cat').value=p.category||''; document.getElementById('f-color').value=_ecStr;
         document.getElementById('f-mrp').value=p.mrp||''; document.getElementById('f-cost').value=p.cost||'';
-        document.getElementById('f-qty').value=computeHealedStock(p)||''; document.getElementById('f-min').value=p.minStock||'';
+        document.getElementById('f-qty').value=''; document.getElementById('f-min').value=p.minStock||'';
+        const _healedStockE=computeHealedStock(p);
+        document.getElementById('f-qty-current-val').textContent=_healedStockE+' units';
+        document.getElementById('f-qty-current').style.display='block';
         document.getElementById('f-exp').value=p.expiry||''; document.getElementById('f-sup').value=p.supplier||'';
         const sizes=parseSizes(p.sizes);if(sizes)showCurrentStockSizes(sizes);
-        // Open color accordion if product has colors; pre-seed known quantities
+        // Open color accordion if product has colors; pre-seed from sheet
         const colors=parseColors(p.color||'');
         if(colors&&Object.keys(colors).length>=1){
             stockColorValues={};
