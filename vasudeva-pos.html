@@ -1691,12 +1691,28 @@ async function submitStock() {
     }
 
     // Build payload
-    const addColorRaw = getColorBreakdown();
-    const addColorMap = addColorRaw ? JSON.parse(addColorRaw) : {};
     const colorField = (document.getElementById('f-color').value||'').trim();
-    const colorNames = addColorRaw ? Object.keys(addColorMap).join(', ') : colorField;
+    // Compute final per-color totals: existing stock + add delta. Sent as colorsOverride so
+    // n8n replaces the colors column directly rather than merging/adding.
+    let colorsOverride = null;
+    if(colorNames3.length >= 1){
+        const allColorKeys = new Set([...Object.keys(currentColorStock||{}), ...Object.keys(stockColorValues)]);
+        if(allColorKeys.size){
+            const merged = {};
+            allColorKeys.forEach(k => {
+                const v = ((currentColorStock||{})[k]||0) + (stockColorValues[k]||0);
+                if(v !== 0) merged[k] = v;
+            });
+            colorsOverride = Object.keys(merged).length ? merged : null;
+        }
+    }
+    const colorNames = colorsOverride ? Object.keys(colorsOverride).join(', ') : colorField;
     let sizesOverrideDelta = null;
     if(sizesOverride){
+        // Free Size is never stored explicitly in the sheet — it is always implicit as
+        // (stock − sum(namedSizes)). Any Free Size change is captured by addQty (the stock
+        // delta), so it must NOT appear in sizesOverrideDelta or n8n would store it as a
+        // named size and it would be counted twice.
         const baseline = {...(currentStockSizes||{})};
         delete baseline['Free Size'];
         const allKeys = new Set([...Object.keys(sizesOverride).filter(k=>k!=='Free Size'), ...Object.keys(baseline)]);
@@ -1711,7 +1727,7 @@ async function submitStock() {
         quantity:addQty,minStock:document.getElementById('f-min').value||10,
         expiry:document.getElementById('f-exp').value,supplier:document.getElementById('f-sup').value,
         sizes:sizeAddBreakdown||null,sizesOverride:sizesOverrideDelta,
-        colors:addColorRaw,
+        colorsOverride:colorsOverride,
         timestamp:new Date().toISOString()
     };
     showToast('Saving…');
