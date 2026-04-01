@@ -1694,7 +1694,7 @@ async function submitStock() {
         barcode,sku,name,category:document.getElementById('f-cat').value,
         color: colorNames,
         mrp:document.getElementById('f-mrp').value,cost:document.getElementById('f-cost').value,
-        quantity:newTotalStock,minStock:document.getElementById('f-min').value||10,
+        quantity:addQty,minStock:document.getElementById('f-min').value||10,
         expiry:document.getElementById('f-exp').value,supplier:document.getElementById('f-sup').value,
         sizes:getSizeBreakdown()||null,sizesOverride:sizesOverride||null,
         colors: finalColors,
