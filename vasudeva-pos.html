@@ -316,7 +316,7 @@
         .sell-name-result-name { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .sell-name-result-meta { font-size: 11px; color: var(--text-light); margin-top: 1px; }
         .sell-name-result-price { font-size: 13px; font-weight: 600; color: var(--primary); white-space: nowrap; }
-        .stock-name-results { background: var(--bg-card); border: 1.5px solid var(--border); border-radius: var(--radius-sm); box-shadow: 0 4px 12px rgba(28,14,8,0.10); overflow: hidden; flex-shrink: 0; }
+        .stock-name-results { position: fixed; left: 22px; right: 22px; z-index: 50; background: var(--bg-card); border: 1.5px solid var(--border); border-radius: var(--radius-sm); box-shadow: 0 8px 24px rgba(28,14,8,0.18); overflow-y: auto; max-height: 224px; }
         .stock-name-result { display: flex; align-items: center; gap: 8px; padding: 9px 14px; cursor: pointer; border-bottom: 1px solid var(--border); transition: background 0.12s; }
         .stock-name-result:last-child { border-bottom: none; }
         .stock-name-result:active { background: var(--primary-light); }
@@ -349,6 +349,7 @@
             .entry-btn { padding: 30px 32px; }
             .entry-brand h1 { font-size: 68px; }
             .sell-name-results { max-width: 480px; align-self: flex-end; }
+            .stock-name-results { left: auto; right: 28px; width: 480px; }
         }
     </style>
 </head>
@@ -974,6 +975,9 @@ async function lookupBy(field,value) {
 function toggleStockNameResults() {
     const box=document.getElementById('stock-name-results');
     if(box.style.display!=='none'){clearStockNameResults();return;}
+    const triggerId='hint-f-'+stockMultiSourceField+'-more';
+    const triggerEl=document.getElementById(triggerId);
+    if(triggerEl){const rect=triggerEl.getBoundingClientRect();box.style.top=(rect.bottom+4)+'px';}
     box.innerHTML=stockMultiSuggestions.map((p,i)=>`<div class="stock-name-result" onclick="pickStockResult(${i})"><span class="stock-name-result-name">${esc(p.name||p.sku||'Unknown')}</span><span class="stock-name-result-sku">${esc(p.sku||'')}</span></div>`).join('');
     box.style.display='block';
     stockNameResultsOpen=true;
