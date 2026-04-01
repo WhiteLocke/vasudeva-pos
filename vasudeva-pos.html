@@ -989,7 +989,7 @@ function acceptSuggestion() {
     if(colors&&Object.keys(colors).length>=1){
         stockColorValues={};
         const knownQtys={};
-        Object.entries(colors).forEach(([n,q])=>{ if(q!==null){ stockColorValues[n]=q; knownQtys[n]=q; } });
+        Object.entries(colors).forEach(([n,q])=>{ if(q!==null) knownQtys[n]=q; });
         if(!colorBreakdownOpen)toggleColorBreakdown();
         else{renderCqpChips();renderStockColorGrid();}
         if(Object.keys(knownQtys).length) showCurrentColorStock(knownQtys);
@@ -2202,7 +2202,7 @@ function editProductFromInventory(sku){
         if(colors&&Object.keys(colors).length>=1){
             stockColorValues={};
             const knownQtys={};
-            Object.entries(colors).forEach(([n,q])=>{ if(q!==null){ stockColorValues[n]=q; knownQtys[n]=q; } });
+            Object.entries(colors).forEach(([n,q])=>{ if(q!==null) knownQtys[n]=q; });
             if(!colorBreakdownOpen)toggleColorBreakdown();
             else{renderCqpChips();renderStockColorGrid();}
             if(Object.keys(knownQtys).length) showCurrentColorStock(knownQtys);
