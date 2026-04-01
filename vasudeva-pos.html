@@ -914,7 +914,7 @@ function searchCache(field,value) {
     const v=String(value).toLowerCase().trim(); if(!v) return null;
     return productCache.find(p=>{
         if(field==='barcode'){const bc=sanitizeBarcode(p.barcode);return bc&&bc===sanitizeBarcode(value);}
-        if(field==='sku'){const s=(p.sku||'').toLowerCase();return s&&s===v;}
+        if(field==='sku'){const s=(p.sku||'').toLowerCase();return s&&s.includes(v);}
         if(field==='name'){const n=(p.name||'').toLowerCase();return n&&(n.includes(v)||v.includes(n));}
         return false;
     })||null;
