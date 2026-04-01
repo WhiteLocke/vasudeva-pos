@@ -1689,6 +1689,7 @@ function applyCqpColor(name) {
         const existing = current.split(',').map(c=>c.trim());
         if (!existing.includes(name)) el.value = current + ', ' + name;
     }
+    onColorFieldInput();
 }
 
 function showCqpForm() {
