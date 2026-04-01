@@ -316,7 +316,7 @@
         .sell-name-result-name { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .sell-name-result-meta { font-size: 11px; color: var(--text-light); margin-top: 1px; }
         .sell-name-result-price { font-size: 13px; font-weight: 600; color: var(--primary); white-space: nowrap; }
-        .stock-name-results { background: var(--bg-card); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+        .stock-name-results { width: 100%; border-top: 1px solid var(--border); }
         .stock-name-result { display: block; padding: 11px 18px; cursor: pointer; border-bottom: 1px solid var(--border); font-family: 'DM Sans', sans-serif; }
         .stock-name-result:last-child { border-bottom: none; }
         .stock-name-result:active { background: var(--primary-light); }
@@ -976,7 +976,7 @@ function toggleStockNameResults() {
     if(box.style.display!=='none'){clearStockNameResults();return;}
     // Move box to sit right after the form-field that contains the triggering pill
     const triggerEl=document.getElementById('hint-f-'+stockMultiSourceField+'-more');
-    if(triggerEl){triggerEl.closest('.form-field').after(box);}
+    if(triggerEl){triggerEl.closest('.form-field').appendChild(box);}
     box.innerHTML=stockMultiSuggestions.map((p,i)=>`<div class="stock-name-result" onclick="pickStockResult(${i})"><span class="stock-name-result-name">${esc(p.name||p.sku||'Unknown')}</span>${p.sku?`<span class="stock-name-result-sku">${esc(p.sku)}</span>`:''}</div>`).join('');
     box.style.display='block';
     stockNameResultsOpen=true;
