@@ -776,6 +776,13 @@ let stockProductFound = false, camCtx = null, camStream = null, camDetector = nu
 let lastFailedBarcode = '', sellNameTimer = null, productCache = null, cacheLoading = false;
 let cqpPickerHex = null;
 
+// Healed stock: use max(sizeTotal, sheetStock) to reconcile drift between Quantity cell and sizes.
+function computeHealedStock(p) {
+    const sizes = parseSizes(p.sizes);
+    const sizeTotal = sizes ? Object.values(sizes).reduce((s,v) => s+(parseInt(v)||0), 0) : 0;
+    return Math.max(sizeTotal, parseInt(p.stock) || 0);
+}
+
 // Parse Color column: handles both old "Red, Black" strings and new {"Red":5,"Black":3} JSON.
 // Returns {colorName: qty} where qty is null for old-format (unknown qty).
 function parseColors(val) {
@@ -947,6 +954,7 @@ function acceptSuggestion() {
     document.getElementById('f-sku').value=p.sku||''; document.getElementById('f-name').value=p.name||'';
     document.getElementById('f-cat').value=p.category||''; document.getElementById('f-color').value=p.color||'';
     document.getElementById('f-mrp').value=p.mrp||''; document.getElementById('f-cost').value=p.cost||'';
+    document.getElementById('f-qty').value=computeHealedStock(p)||'';
     if(!document.getElementById('bc-stock').value) document.getElementById('bc-stock').value=sanitizeBarcode(p.barcode);
     stockProductFound=true; clearGhosts();
     document.getElementById('restock-banner').style.display='block';
@@ -957,9 +965,11 @@ function acceptSuggestion() {
         if(!sizeBreakdownOpen)toggleSizeBreakdown();
         showCurrentStockSizes(sizes);
     }
-    // Open color accordion if product has colors
+    // Open color accordion if product has colors; pre-seed known quantities
     const colors=parseColors(p.color||'');
-    if(colors&&Object.keys(colors).length>=2){
+    if(colors&&Object.keys(colors).length>=1){
+        stockColorValues={};
+        Object.entries(colors).forEach(([n,q])=>{ if(q!==null) stockColorValues[n]=q; });
         if(!colorBreakdownOpen)toggleColorBreakdown();
         else{renderCqpChips();renderStockColorGrid();}
     }
@@ -2028,12 +2038,14 @@ function editProductFromInventory(sku){
         document.getElementById('f-sku').value=p.sku||''; document.getElementById('f-name').value=p.name||'';
         document.getElementById('f-cat').value=p.category||''; document.getElementById('f-color').value=p.color||'';
         document.getElementById('f-mrp').value=p.mrp||''; document.getElementById('f-cost').value=p.cost||'';
-        document.getElementById('f-qty').value=''; document.getElementById('f-min').value=p.minStock||'';
+        document.getElementById('f-qty').value=computeHealedStock(p)||''; document.getElementById('f-min').value=p.minStock||'';
         document.getElementById('f-exp').value=p.expiry||''; document.getElementById('f-sup').value=p.supplier||'';
         const sizes=parseSizes(p.sizes);if(sizes)showCurrentStockSizes(sizes);
-        // Open color accordion if product has colors
+        // Open color accordion if product has colors; pre-seed known quantities
         const colors=parseColors(p.color||'');
-        if(colors&&Object.keys(colors).length){
+        if(colors&&Object.keys(colors).length>=1){
+            stockColorValues={};
+            Object.entries(colors).forEach(([n,q])=>{ if(q!==null) stockColorValues[n]=q; });
             if(!colorBreakdownOpen)toggleColorBreakdown();
             else{renderCqpChips();renderStockColorGrid();}
         }
