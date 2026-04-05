@@ -223,7 +223,7 @@
         .finalize-btn:active { opacity: 0.85; transform: scale(0.98); }
         .basket-empty { text-align: center; padding: 80px 28px; }
 
-        .form-section { background: var(--bg-card); border-radius: var(--radius); box-shadow: var(--shadow); flex-shrink: 0; }
+        .form-section { background: var(--bg-card); border-radius: var(--radius); box-shadow: var(--shadow); flex-shrink: 0; overflow: hidden; }
         .form-field { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 14px; position: relative; flex-wrap: wrap; }
         .form-field:first-child { border-radius: var(--radius) var(--radius) 0 0; }
         .form-field:last-child { border-bottom: none; border-radius: 0 0 var(--radius) var(--radius); }
@@ -316,7 +316,7 @@
         .sell-name-result-name { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .sell-name-result-meta { font-size: 11px; color: var(--text-light); margin-top: 1px; }
         .sell-name-result-price { font-size: 13px; font-weight: 600; color: var(--primary); white-space: nowrap; }
-        .stock-name-results { width: 100%; border-top: 1px solid var(--border); }
+        .stock-name-results { width: 100%; background: var(--bg-card); border-top: 1px solid var(--border); }
         .stock-name-result { display: block; padding: 11px 18px; cursor: pointer; border-bottom: 1px solid var(--border); font-family: 'DM Sans', sans-serif; }
         .stock-name-result:last-child { border-bottom: none; }
         .stock-name-result:active { background: var(--primary-light); }
@@ -551,12 +551,14 @@
         <div class="form-section">
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">SKU</div><div class="field-label-hindi">कोड</div></div>
-                <div class="field-input-wrap"><input class="field-input" id="f-sku" type="text" placeholder="Supplier code" autocomplete="off" oninput="onSkuInput()" onkeydown="handleStockFieldKey(event,'f-sku')"><span class="field-ghost" id="ghost-f-sku"></span></div><div class="field-hint" id="hint-f-sku" onclick="acceptSuggestion()"><span id="hint-val-f-sku"></span><span class="hint-arrow">→</span></div><div class="field-hint" id="hint-f-sku-more" style="display:none" onclick="toggleStockNameResults('sku')"><span style="font-size:11px;color:var(--primary);font-weight:600" id="hint-f-sku-more-label"></span></div><div id="stock-sku-results" class="stock-name-results" style="display:none"></div>
+                <div class="field-input-wrap"><input class="field-input" id="f-sku" type="text" placeholder="Supplier code" autocomplete="off" oninput="onSkuInput()" onkeydown="handleStockFieldKey(event,'f-sku')"><span class="field-ghost" id="ghost-f-sku"></span></div><div class="field-hint" id="hint-f-sku" onclick="acceptSuggestion()"><span id="hint-val-f-sku"></span><span class="hint-arrow">→</span></div><div class="field-hint" id="hint-f-sku-more" style="display:none" onclick="toggleStockNameResults('sku')"><span style="font-size:11px;color:var(--primary);font-weight:600" id="hint-f-sku-more-label"></span></div>
             </div>
+            <div id="stock-sku-results" class="stock-name-results" style="display:none"></div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">Name</div><div class="field-label-hindi">नाम</div></div>
-                <div class="field-input-wrap"><input class="field-input" id="f-name" type="text" placeholder="Product name" autocomplete="off" oninput="onNameInput()" onkeydown="handleStockFieldKey(event,'f-name')"><span class="field-ghost" id="ghost-f-name"></span></div><div class="field-hint" id="hint-f-name" onclick="acceptSuggestion()"><span id="hint-val-f-name"></span><span class="hint-arrow">→</span></div><div class="field-hint" id="hint-f-name-more" style="display:none" onclick="toggleStockNameResults('name')"><span style="font-size:11px;color:var(--primary);font-weight:600" id="hint-f-name-more-label"></span></div><div id="stock-name-results" class="stock-name-results" style="display:none"></div>
+                <div class="field-input-wrap"><input class="field-input" id="f-name" type="text" placeholder="Product name" autocomplete="off" oninput="onNameInput()" onkeydown="handleStockFieldKey(event,'f-name')"><span class="field-ghost" id="ghost-f-name"></span></div><div class="field-hint" id="hint-f-name" onclick="acceptSuggestion()"><span id="hint-val-f-name"></span><span class="hint-arrow">→</span></div><div class="field-hint" id="hint-f-name-more" style="display:none" onclick="toggleStockNameResults('name')"><span style="font-size:11px;color:var(--primary);font-weight:600" id="hint-f-name-more-label"></span></div>
             </div>
+            <div id="stock-name-results" class="stock-name-results" style="display:none"></div>
             <div class="form-field">
                 <div class="field-label-wrap"><div class="field-label">Category</div><div class="field-label-hindi">श्रेणी</div></div>
                 <div class="field-input-wrap"><input class="field-input" id="f-cat" type="text" placeholder="e.g. Skincare" autocomplete="off" onkeydown="handleStockFieldKey(event,'f-cat')"><span class="field-ghost" id="ghost-f-cat"></span></div><div class="field-hint" id="hint-f-cat" onclick="acceptSuggestion()"><span id="hint-val-f-cat"></span><span class="hint-arrow">→</span></div>
