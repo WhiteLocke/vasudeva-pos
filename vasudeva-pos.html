@@ -223,7 +223,7 @@
         .finalize-btn:active { opacity: 0.85; transform: scale(0.98); }
         .basket-empty { text-align: center; padding: 80px 28px; }
 
-        .form-section { background: var(--bg-card); border-radius: var(--radius); box-shadow: var(--shadow); flex-shrink: 0; overflow: hidden; }
+        .form-section { background: var(--bg-card); border-radius: var(--radius); box-shadow: var(--shadow); flex-shrink: 0; }
         .form-field { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 14px; position: relative; flex-wrap: wrap; }
         .form-field:first-child { border-radius: var(--radius) var(--radius) 0 0; }
         .form-field:last-child { border-bottom: none; border-radius: 0 0 var(--radius) var(--radius); }
@@ -957,10 +957,12 @@ async function lookupBy(field,value) {
         showGhosts({...matches[0],found:true});
         stockMultiSuggestions=matches;
         stockMultiSourceField=field;
-        // Hide both "more" pills first, then show the one for the triggering field
+        // Hide both "more" pills and close any open results panel — but do NOT clear
+        // stockMultiSuggestions since we just set it above
         document.getElementById('hint-f-sku-more').style.display='none';
         document.getElementById('hint-f-name-more').style.display='none';
-        clearStockNameResults();
+        ['stock-sku-results','stock-name-results'].forEach(id=>{const el=document.getElementById(id);if(el){el.style.display='none';el.innerHTML='';}});
+        stockNameResultsOpen=false;
         if(matches.length>1){
             const moreId='hint-f-'+field+'-more';
             const moreLabelId='hint-f-'+field+'-more-label';
