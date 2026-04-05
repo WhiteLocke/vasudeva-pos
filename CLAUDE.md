@@ -124,11 +124,25 @@ All major UI elements have English + Hindi labels. Hindi text uses Devanagari sc
 - The discount flow requires the owner PIN (`OWNER_PIN` in CONFIG) to unlock price override
 - Stock status thresholds: green = in stock, amber = stock ≤ `minStock` (default 10), red = out of stock
 
+## Multi-Match Search Pattern (Add Stock)
+
+SKU and Name fields support multi-match autocomplete via `searchCacheMulti(value)`:
+- `stockMultiSuggestions[]` holds the current match array — **must not be cleared between setting and tapping the pill**
+- `clearStockNameResults()` clears `stockMultiSuggestions` — never call it immediately after setting the array; snapshot first
+- Results containers (`#stock-sku-results`, `#stock-name-results`) are **block siblings inside `.form-section`**, NOT inside the `.form-field` flex containers
+- They require `position: relative` and `background: var(--bg)` — without `position: relative` they render behind `position: relative` form-fields; without a contrasting background they're invisible against `var(--bg-card)`
+- The pill ("+ N more →") is shown via `#hint-f-sku-more` / `#hint-f-name-more`; clicking calls `toggleStockNameResults(field)`
+
 ## Known Issues (do not break workarounds)
 
 1. **Color quantities not saving to sheet** — `incoming.colors` may not be reaching vasudeva-addstock Code JS1 correctly. Needs investigation.
 2. **Sell by color unconfirmed** — color deduction code exists in vasudeva-sell JS1, guarded by `colorsRaw.trim().startsWith('{')`. Won't run until color quantities are in JSON format in sheet.
 3. **Size/quantity drift** — when `sizeTotal > stock`, frontend trusts sizes as ground truth. Sheet Quantity cell not auto-corrected. Manual fix needed until reconciliation workflow is built.
+
+## Upcoming Features (planned, not yet built)
+
+1. **Invoice scanning with sizes + colors** — integrate size and color fields into the invoice scan workflow; verify Google AI model integration is working at no charge
+2. **Barcode mapping mode** — button in Inventory (or Add Stock) that enters a simplified "assign barcode" flow: shows SKU prominently, auto-focuses barcode scan field, optional name field, "Next" advances to next unbarcode product; saves in background; uses existing add-stock webhook
 
 ## Core Validation Rules — DO NOT BREAK
 
