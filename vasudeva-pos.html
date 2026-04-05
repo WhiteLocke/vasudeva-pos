@@ -896,7 +896,7 @@ let sellColorRows = [];  // [{color, qty, confirmed}]
 let sellColorAvail = {}; // color → available qty (null = old string format, qty unknown)
 let basket = [], npTarget = null, npVal = '', pinVal = '', pinUnlocked = false;
 let stockProductFound = false, camCtx = null, camStream = null, camDetector = null, camFrame = null;
-let bmapQueue = [], bmapIndex = 0, bmapExtraOpen = false, bmapSavedCount = 0;
+let bmapQueue = [], bmapIndex = 0, bmapExtraOpen = false, bmapSavedCount = 0, bmapSavedIndices = new Set();
 let lastFailedBarcode = '', sellNameTimer = null, productCache = null, cacheLoading = false;
 let cqpPickerHex = null;
 
@@ -2474,7 +2474,7 @@ function startBarcodeMapping() {
     }
     bmapQueue = productCache.filter(p => !sanitizeBarcode(p.barcode));
     if (!bmapQueue.length) { showToast('All products already have barcodes!', 'success'); return; }
-    bmapIndex = 0; bmapSavedCount = 0; bmapExtraOpen = false;
+    bmapIndex = 0; bmapSavedCount = 0; bmapExtraOpen = false; bmapSavedIndices = new Set();
     // Reset done state from any previous session
     document.getElementById('bmap-content').style.display = '';
     document.getElementById('bmap-done').style.display = 'none';
@@ -2529,6 +2529,7 @@ function bmapNext() {
             });
             if (!Object.keys(sizesObj).length) sizesObj = null;
         }
+        if (!bmapSavedIndices.has(bmapIndex)) { bmapSavedCount++; bmapSavedIndices.add(bmapIndex); }
         bmapSaveInBackground(p, barcode, bmapName,
             parseInt(document.getElementById('bmap-f-qty').value)||0,
             document.getElementById('bmap-f-mrp').value.trim(),
@@ -2539,7 +2540,6 @@ function bmapNext() {
             document.getElementById('bmap-f-exp').value,
             document.getElementById('bmap-f-sup').value.trim(),
             sizesObj);
-        bmapSavedCount++;
     }
     bmapIndex++;
     if (bmapIndex >= bmapQueue.length) {
@@ -2591,32 +2591,45 @@ function exitBarcodeMapping() {
     invExpandedSku = null; renderInventory();
     if (bmapSavedCount > 0) { invalidateCache(); loadProductCache(); }
 }
-// Swipe-left on bmap screen — follows finger, commits or snaps back
+function bmapPrev() {
+    if (bmapIndex <= 0) return;
+    bmapIndex--;
+    // Restore done state to content if we swiped back from completion
+    document.getElementById('bmap-content').style.display = '';
+    document.getElementById('bmap-done').style.display = 'none';
+    document.getElementById('bmap-next-btn').textContent = 'Next →';
+    document.getElementById('bmap-next-btn').onclick = bmapNext;
+    loadBmapProduct(bmapIndex);
+}
+// Bidirectional swipe on bmap screen — follows finger, commits or snaps back
 (function(){
     const scr = document.getElementById('screen-barcodescan');
-    let tx=0, ty=0, swiping=false;
+    let tx=0, ty=0, swiping=false, dir=0;
     scr.addEventListener('touchstart', e=>{
-        tx=e.touches[0].clientX; ty=e.touches[0].clientY; swiping=false;
+        tx=e.touches[0].clientX; ty=e.touches[0].clientY; swiping=false; dir=0;
         scr.style.transition='none';
     },{passive:true});
     scr.addEventListener('touchmove', e=>{
         const dx=e.touches[0].clientX-tx, dy=e.touches[0].clientY-ty;
         if (!swiping && Math.abs(dy)>Math.abs(dx)) return; // vertical scroll wins
-        if (dx<0){
-            swiping=true; e.preventDefault();
+        if (!swiping && dx>0 && bmapIndex===0) return; // can't go before first
+        if (dx!==0){
+            swiping=true; dir=dx<0?-1:1; e.preventDefault();
             scr.style.transform=`translateX(${dx}px)`;
-            scr.style.opacity=String(Math.max(0.4, 1+dx/window.innerWidth));
+            scr.style.opacity=String(Math.max(0.4, 1-Math.abs(dx)/window.innerWidth));
         }
     },{passive:false});
     scr.addEventListener('touchend', e=>{
         const dx=e.changedTouches[0].clientX-tx;
-        if (swiping && dx<-60){
+        const committed = swiping && Math.abs(dx)>60;
+        if (committed){
+            const goLeft=dx<0;
             scr.style.transition='opacity 0.15s ease, transform 0.15s ease';
-            scr.style.transform='translateX(-100%)'; scr.style.opacity='0';
+            scr.style.transform=`translateX(${goLeft?'-100%':'100%'})`; scr.style.opacity='0';
             setTimeout(()=>{
-                bmapNext();
+                if (goLeft) bmapNext(); else bmapPrev();
                 scr.style.transition='none';
-                scr.style.transform='translateX(30px)'; scr.style.opacity='0';
+                scr.style.transform=`translateX(${goLeft?'30px':'-30px'})`; scr.style.opacity='0';
                 requestAnimationFrame(()=>requestAnimationFrame(()=>{
                     scr.style.transition=''; scr.style.transform=''; scr.style.opacity='';
                 }));
@@ -2624,7 +2637,7 @@ function exitBarcodeMapping() {
         } else {
             scr.style.transition=''; scr.style.transform=''; scr.style.opacity='';
         }
-        swiping=false;
+        swiping=false; dir=0;
     },{passive:true});
 }());
 
