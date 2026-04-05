@@ -978,6 +978,7 @@ function toggleStockNameResults(field) {
     const id = field==='sku' ? 'stock-sku-results' : 'stock-name-results';
     const box = document.getElementById(id);
     if(box.style.display!=='none'){clearStockNameResults();return;}
+    showToast('DEBUG: '+stockMultiSuggestions.length+' suggestions','info');
     const suggestions = stockMultiSuggestions.slice(); // snapshot before clear
     clearStockNameResults();
     box.innerHTML = suggestions.map((p,i)=>`<div class="stock-name-result" onclick="pickStockResult(${i})"><span class="stock-name-result-name">${esc(p.name||p.sku||'Unknown')}</span>${p.sku?`<span class="stock-name-result-sku">${esc(p.sku)}</span>`:''}</div>`).join('');
