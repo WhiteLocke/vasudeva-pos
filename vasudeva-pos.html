@@ -712,7 +712,7 @@
 <div id="screen-barcodescan" class="screen">
     <div class="screen-header">
         <button class="back-btn" onclick="exitBarcodeMapping()">←</button>
-        <div class="screen-title"><h2>Map Barcodes</h2><div class="hindi-title">बारकोड मैप</div></div>
+        <div class="screen-title"><h2>Add Barcodes</h2><div class="hindi-title">बारकोड जोड़ें</div></div>
         <div style="margin-left:auto;font-size:12px;color:var(--text-light);font-weight:600;padding-right:4px" id="bmap-progress"></div>
     </div>
     <div class="screen-content" id="bmap-content">
@@ -896,7 +896,7 @@ let sellColorRows = [];  // [{color, qty, confirmed}]
 let sellColorAvail = {}; // color → available qty (null = old string format, qty unknown)
 let basket = [], npTarget = null, npVal = '', pinVal = '', pinUnlocked = false;
 let stockProductFound = false, camCtx = null, camStream = null, camDetector = null, camFrame = null;
-let bmapQueue = [], bmapIndex = 0, bmapExtraOpen = false, bmapSavedCount = 0, bmapSavedIndices = new Set();
+let bmapQueue = [], bmapIndex = 0, bmapExtraOpen = false, bmapSavedCount = 0, bmapSavedIndices = new Set(), bmapData = {};
 let lastFailedBarcode = '', sellNameTimer = null, productCache = null, cacheLoading = false;
 let cqpPickerHex = null;
 
@@ -2474,7 +2474,7 @@ function startBarcodeMapping() {
     }
     bmapQueue = productCache.filter(p => !sanitizeBarcode(p.barcode));
     if (!bmapQueue.length) { showToast('All products already have barcodes!', 'success'); return; }
-    bmapIndex = 0; bmapSavedCount = 0; bmapExtraOpen = false; bmapSavedIndices = new Set();
+    bmapIndex = 0; bmapSavedCount = 0; bmapExtraOpen = false; bmapSavedIndices = new Set(); bmapData = {};
     // Reset done state from any previous session
     document.getElementById('bmap-content').style.display = '';
     document.getElementById('bmap-done').style.display = 'none';
@@ -2488,6 +2488,21 @@ function startBarcodeMapping() {
     loadBmapProduct(0);
     setTimeout(()=>document.getElementById('bc-bmap').focus(), 350);
 }
+function saveBmapToCache() {
+    bmapData[bmapIndex] = {
+        barcode: document.getElementById('bc-bmap').value,
+        name:    document.getElementById('bmap-f-name').value,
+        cat:     document.getElementById('bmap-f-cat').value,
+        color:   document.getElementById('bmap-f-color').value,
+        sizes:   document.getElementById('bmap-f-sizes').value,
+        qty:     document.getElementById('bmap-f-qty').value,
+        mrp:     document.getElementById('bmap-f-mrp').value,
+        cost:    document.getElementById('bmap-f-cost').value,
+        min:     document.getElementById('bmap-f-min').value,
+        exp:     document.getElementById('bmap-f-exp').value,
+        sup:     document.getElementById('bmap-f-sup').value,
+    };
+}
 function loadBmapProduct(idx) {
     const p = bmapQueue[idx];
     document.getElementById('bmap-progress').textContent = (idx+1)+' of '+bmapQueue.length;
@@ -2499,21 +2514,23 @@ function loadBmapProduct(idx) {
     if (stock) meta.push('Stock: '+stock);
     if (p.mrp) meta.push(CONFIG.CURRENCY+p.mrp);
     document.getElementById('bmap-meta-row').textContent = meta.join(' · ');
-    document.getElementById('bc-bmap').value = '';
-    document.getElementById('bmap-f-name').value = p.name || '';
-    document.getElementById('bmap-f-cat').value = p.category || '';
-    document.getElementById('bmap-f-color').value = (typeof p.color==='string'&&!p.color.startsWith('{')) ? p.color : '';
-    document.getElementById('bmap-f-sizes').value = '';
-    document.getElementById('bmap-f-qty').value = '';
-    document.getElementById('bmap-f-mrp').value = p.mrp || '';
-    document.getElementById('bmap-f-cost').value = p.cost || '';
-    document.getElementById('bmap-f-min').value = p.minStock || '';
-    document.getElementById('bmap-f-exp').value = p.expiry || '';
-    document.getElementById('bmap-f-sup').value = p.supplier || '';
+    const c = bmapData[idx]; // cached edits from a previous visit
+    document.getElementById('bc-bmap').value      = c ? c.barcode : '';
+    document.getElementById('bmap-f-name').value  = c ? c.name   : (p.name || '');
+    document.getElementById('bmap-f-cat').value   = c ? c.cat    : (p.category || '');
+    document.getElementById('bmap-f-color').value = c ? c.color  : ((typeof p.color==='string'&&!p.color.startsWith('{')) ? p.color : '');
+    document.getElementById('bmap-f-sizes').value = c ? c.sizes  : '';
+    document.getElementById('bmap-f-qty').value   = c ? c.qty    : '';
+    document.getElementById('bmap-f-mrp').value   = c ? c.mrp    : (p.mrp || '');
+    document.getElementById('bmap-f-cost').value  = c ? c.cost   : (p.cost || '');
+    document.getElementById('bmap-f-min').value   = c ? c.min    : (p.minStock || '');
+    document.getElementById('bmap-f-exp').value   = c ? c.exp    : (p.expiry || '');
+    document.getElementById('bmap-f-sup').value   = c ? c.sup    : (p.supplier || '');
     if (bmapExtraOpen) toggleBmapExtra();
     updateBmapBtn();
 }
 function bmapNext() {
+    saveBmapToCache();
     const barcode = sanitizeBarcode(document.getElementById('bc-bmap').value);
     const p = bmapQueue[bmapIndex];
     const bmapName = document.getElementById('bmap-f-name').value.trim();
@@ -2589,10 +2606,12 @@ function exitBarcodeMapping() {
     document.getElementById('screen-inventory').classList.add('active');
     currentScreen = 'inventory';
     invExpandedSku = null; renderInventory();
+    bmapData = {};
     if (bmapSavedCount > 0) { invalidateCache(); loadProductCache(); }
 }
 function bmapPrev() {
     if (bmapIndex <= 0) return;
+    saveBmapToCache();
     bmapIndex--;
     // Restore done state to content if we swiped back from completion
     document.getElementById('bmap-content').style.display = '';
