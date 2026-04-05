@@ -672,7 +672,7 @@
                             </label>
                         </div>
                         <div class="cqp-form-btns">
-                            <button class="cqp-btn cqp-btn-save" onclick="saveCqpColor()">Save color globally</button>
+                            <button class="cqp-btn cqp-btn-save" onclick="saveCqpColor()">Save color</button>
                             <button class="cqp-btn cqp-btn-cancel" onclick="hideCqpForm()">Cancel</button>
                         </div>
                     </div>
@@ -694,7 +694,7 @@
         <button class="back-btn" onclick="goBack()">←</button>
         <div class="screen-title"><h2>Inventory</h2><div class="hindi-title">सूची</div></div>
         <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
-            <button onclick="startBarcodeMapping()" id="bmap-inv-btn" style="padding:6px 12px;border:1.5px solid var(--primary);background:none;border-radius:var(--radius-sm);font-family:'DM Sans';font-size:11px;font-weight:600;color:var(--primary);cursor:pointer">⬛ Map barcodes</button>
+            <button onclick="startBarcodeMapping()" id="bmap-inv-btn" style="padding:6px 12px;border:1.5px solid var(--primary);background:none;border-radius:var(--radius-sm);font-family:'DM Sans';font-size:11px;font-weight:600;color:var(--primary);cursor:pointer">⬛ Add barcodes</button>
             <button id="inv-sort-btn" onclick="toggleInvSort()" style="padding:6px 12px;border:1.5px solid var(--border);background:none;border-radius:var(--radius-sm);font-family:'DM Sans';font-size:11px;font-weight:600;color:var(--text-light);cursor:pointer">⚠ Low stock first</button>
         </div>
     </div>
@@ -726,16 +726,31 @@
             <span class="barcode-field-icon">⬛</span>
             <div class="barcode-field-input-wrap">
                 <div class="barcode-label">Barcode <span class="barcode-label-hindi">/ बारकोड</span></div>
-                <input id="bc-bmap" class="barcode-input" type="text" inputmode="numeric" placeholder="Scan or enter barcode…" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();bmapNext();}">
+                <input id="bc-bmap" class="barcode-input" type="text" inputmode="numeric" placeholder="Scan or enter barcode…" autocomplete="off" oninput="updateBmapBtn()" onkeydown="if(event.key==='Enter'){event.preventDefault();bmapNext();}">
             </div>
             <button class="camera-btn" onclick="openCamera('bmap');event.stopPropagation()">📷</button>
         </div>
-        <div id="bmap-extra-toggle" class="bmap-extra-toggle" onclick="toggleBmapExtra()">+ Edit name &amp; details</div>
+        <div class="barcode-field" style="margin-top:0;border-top:none;border-radius:0 0 var(--radius) var(--radius)" onclick="document.getElementById('bmap-f-name').focus()">
+            <span class="barcode-field-icon" style="font-size:16px;opacity:0.4">Aa</span>
+            <div class="barcode-field-input-wrap">
+                <div class="barcode-label">Name <span class="barcode-label-hindi">/ नाम</span></div>
+                <input id="bmap-f-name" class="barcode-input" type="text" placeholder="Product name…" autocomplete="off" oninput="updateBmapBtn()" onkeydown="if(event.key==='Enter'){event.preventDefault();bmapNext();}">
+            </div>
+        </div>
+        <div id="bmap-extra-toggle" class="bmap-extra-toggle" onclick="toggleBmapExtra()">+ Edit details</div>
         <div id="bmap-extra" style="display:none">
             <div class="form-section">
                 <div class="form-field">
-                    <div class="field-label-wrap"><div class="field-label">Name</div><div class="field-label-hindi">नाम</div></div>
-                    <div class="field-input-wrap"><input class="field-input" id="bmap-f-name" type="text" placeholder="Product name" autocomplete="off"></div>
+                    <div class="field-label-wrap"><div class="field-label">Category</div><div class="field-label-hindi">श्रेणी</div></div>
+                    <div class="field-input-wrap"><input class="field-input" id="bmap-f-cat" type="text" placeholder="e.g. Skincare" autocomplete="off"></div>
+                </div>
+                <div class="form-field">
+                    <div class="field-label-wrap"><div class="field-label">Colors</div><div class="field-label-hindi">रंग</div></div>
+                    <div class="field-input-wrap"><input class="field-input" id="bmap-f-color" type="text" placeholder="Red, Black, Navy" autocomplete="off"></div>
+                </div>
+                <div class="form-field">
+                    <div class="field-label-wrap"><div class="field-label">Sizes</div><div class="field-label-hindi">आकार</div></div>
+                    <div class="field-input-wrap"><input class="field-input" id="bmap-f-sizes" type="text" placeholder="M:3, L:5, XL:2" autocomplete="off"></div>
                 </div>
                 <div class="form-field">
                     <div class="field-label-wrap"><div class="field-label">Add Qty</div><div class="field-label-hindi">जोड़ें</div></div>
@@ -748,6 +763,18 @@
                 <div class="form-field">
                     <div class="field-label-wrap"><div class="field-label">Cost</div><div class="field-label-hindi">लागत</div></div>
                     <div class="field-input-wrap"><input class="field-input" id="bmap-f-cost" type="text" inputmode="decimal" placeholder="₹ 0" autocomplete="off"></div>
+                </div>
+                <div class="form-field">
+                    <div class="field-label-wrap"><div class="field-label">Min Stock</div><div class="field-label-hindi">न्यूनतम</div></div>
+                    <div class="field-input-wrap"><input class="field-input" id="bmap-f-min" type="text" inputmode="numeric" placeholder="10" autocomplete="off"></div>
+                </div>
+                <div class="form-field">
+                    <div class="field-label-wrap"><div class="field-label">Expiry</div><div class="field-label-hindi">समाप्ति</div></div>
+                    <input class="field-input" id="bmap-f-exp" type="date" autocomplete="off">
+                </div>
+                <div class="form-field">
+                    <div class="field-label-wrap"><div class="field-label">Supplier</div><div class="field-label-hindi">आपूर्तिकर्ता</div></div>
+                    <div class="field-input-wrap"><input class="field-input" id="bmap-f-sup" type="text" placeholder="Supplier name" autocomplete="off"></div>
                 </div>
             </div>
         </div>
@@ -2474,20 +2501,44 @@ function loadBmapProduct(idx) {
     document.getElementById('bmap-meta-row').textContent = meta.join(' · ');
     document.getElementById('bc-bmap').value = '';
     document.getElementById('bmap-f-name').value = p.name || '';
+    document.getElementById('bmap-f-cat').value = p.category || '';
+    document.getElementById('bmap-f-color').value = (typeof p.color==='string'&&!p.color.startsWith('{')) ? p.color : '';
+    document.getElementById('bmap-f-sizes').value = '';
     document.getElementById('bmap-f-qty').value = '';
     document.getElementById('bmap-f-mrp').value = p.mrp || '';
     document.getElementById('bmap-f-cost').value = p.cost || '';
+    document.getElementById('bmap-f-min').value = p.minStock || '';
+    document.getElementById('bmap-f-exp').value = p.expiry || '';
+    document.getElementById('bmap-f-sup').value = p.supplier || '';
     if (bmapExtraOpen) toggleBmapExtra();
+    updateBmapBtn();
 }
 function bmapNext() {
     const barcode = sanitizeBarcode(document.getElementById('bc-bmap').value);
     const p = bmapQueue[bmapIndex];
-    if (barcode) {
-        bmapSaveInBackground(p, barcode,
-            document.getElementById('bmap-f-name').value.trim(),
+    const bmapName = document.getElementById('bmap-f-name').value.trim();
+    if (barcode || bmapName) {
+        // Parse "M:3, L:5" → {M:3, L:5}
+        const sizesRaw = document.getElementById('bmap-f-sizes').value.trim();
+        let sizesObj = null;
+        if (sizesRaw) {
+            sizesObj = {};
+            sizesRaw.split(',').forEach(part => {
+                const [k,v] = part.split(':').map(s=>s.trim());
+                if (k && v && !isNaN(parseInt(v))) sizesObj[k] = parseInt(v);
+            });
+            if (!Object.keys(sizesObj).length) sizesObj = null;
+        }
+        bmapSaveInBackground(p, barcode, bmapName,
             parseInt(document.getElementById('bmap-f-qty').value)||0,
             document.getElementById('bmap-f-mrp').value.trim(),
-            document.getElementById('bmap-f-cost').value.trim());
+            document.getElementById('bmap-f-cost').value.trim(),
+            document.getElementById('bmap-f-cat').value.trim(),
+            document.getElementById('bmap-f-color').value.trim(),
+            document.getElementById('bmap-f-min').value.trim(),
+            document.getElementById('bmap-f-exp').value,
+            document.getElementById('bmap-f-sup').value.trim(),
+            sizesObj);
         bmapSavedCount++;
     }
     bmapIndex++;
@@ -2503,14 +2554,14 @@ function bmapNext() {
     loadBmapProduct(bmapIndex);
     setTimeout(()=>document.getElementById('bc-bmap').focus(), 60);
 }
-async function bmapSaveInBackground(p, barcode, name, qty, mrp, cost) {
+async function bmapSaveInBackground(p, barcode, name, qty, mrp, cost, category, color, minStock, expiry, supplier, sizes) {
     const payload = {
         barcode, sku: p.sku||'', name: name||p.name||'',
-        category: p.category||'', color: p.color||'',
+        category: category||p.category||'', color: color||p.color||'',
         mrp: mrp||p.mrp||'', cost: cost||p.cost||'',
-        quantity: qty, minStock: p.minStock||10,
-        expiry: p.expiry||'', supplier: p.supplier||'',
-        sizes: null, sizesOverride: null, colorsOverride: null,
+        quantity: qty, minStock: minStock||p.minStock||10,
+        expiry: expiry||p.expiry||'', supplier: supplier||p.supplier||'',
+        sizes: sizes||null, sizesOverride: null, colorsOverride: null,
         timestamp: new Date().toISOString()
     };
     try {
@@ -2518,11 +2569,18 @@ async function bmapSaveInBackground(p, barcode, name, qty, mrp, cost) {
         invalidateCache();
     } catch(_) { showToast('Save failed for '+(p.sku||p.name||'product'),'error'); }
 }
+function updateBmapBtn() {
+    if (bmapIndex >= bmapQueue.length) return; // done state — don't touch the button
+    const hasData = document.getElementById('bc-bmap').value.trim() || document.getElementById('bmap-f-name').value.trim();
+    const btn = document.getElementById('bmap-next-btn');
+    btn.style.background = hasData ? 'var(--success)' : 'var(--primary)';
+    btn.textContent = hasData ? '✓ Next' : 'Next →';
+}
 function toggleBmapExtra() {
     bmapExtraOpen = !bmapExtraOpen;
     document.getElementById('bmap-extra').style.display = bmapExtraOpen ? 'block' : 'none';
-    document.getElementById('bmap-extra-toggle').textContent = bmapExtraOpen ? '− Hide details' : '+ Edit name & details';
-    if (bmapExtraOpen) setTimeout(()=>document.getElementById('bmap-f-name').focus(), 60);
+    document.getElementById('bmap-extra-toggle').textContent = bmapExtraOpen ? '− Hide details' : '+ Edit details';
+    if (bmapExtraOpen) setTimeout(()=>document.getElementById('bmap-f-qty').focus(), 60);
 }
 function exitBarcodeMapping() {
     const cur = document.getElementById('screen-barcodescan');
@@ -2533,6 +2591,42 @@ function exitBarcodeMapping() {
     invExpandedSku = null; renderInventory();
     if (bmapSavedCount > 0) { invalidateCache(); loadProductCache(); }
 }
+// Swipe-left on bmap screen — follows finger, commits or snaps back
+(function(){
+    const scr = document.getElementById('screen-barcodescan');
+    let tx=0, ty=0, swiping=false;
+    scr.addEventListener('touchstart', e=>{
+        tx=e.touches[0].clientX; ty=e.touches[0].clientY; swiping=false;
+        scr.style.transition='none';
+    },{passive:true});
+    scr.addEventListener('touchmove', e=>{
+        const dx=e.touches[0].clientX-tx, dy=e.touches[0].clientY-ty;
+        if (!swiping && Math.abs(dy)>Math.abs(dx)) return; // vertical scroll wins
+        if (dx<0){
+            swiping=true; e.preventDefault();
+            scr.style.transform=`translateX(${dx}px)`;
+            scr.style.opacity=String(Math.max(0.4, 1+dx/window.innerWidth));
+        }
+    },{passive:false});
+    scr.addEventListener('touchend', e=>{
+        const dx=e.changedTouches[0].clientX-tx;
+        if (swiping && dx<-60){
+            scr.style.transition='opacity 0.15s ease, transform 0.15s ease';
+            scr.style.transform='translateX(-100%)'; scr.style.opacity='0';
+            setTimeout(()=>{
+                bmapNext();
+                scr.style.transition='none';
+                scr.style.transform='translateX(30px)'; scr.style.opacity='0';
+                requestAnimationFrame(()=>requestAnimationFrame(()=>{
+                    scr.style.transition=''; scr.style.transform=''; scr.style.opacity='';
+                }));
+            },160);
+        } else {
+            scr.style.transition=''; scr.style.transform=''; scr.style.opacity='';
+        }
+        swiping=false;
+    },{passive:true});
+}());
 
 // ── CAMERA ────────────────────────────────────────────────────────────
 async function openCamera(ctx){camCtx=ctx;document.getElementById('camera-modal').classList.add('active');try{camStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1280}}});const v=document.getElementById('camera-video');v.srcObject=camStream;await v.play();if('BarcodeDetector'in window){camDetector=new BarcodeDetector({formats:['ean_13','ean_8','code_128','qr_code','upc_a','upc_e']});scanFrame();}else{showToast('Camera scan unsupported — enter manually','error');closeCamera();}}catch(_){showToast('Camera access denied','error');closeCamera();}}
