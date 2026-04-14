@@ -280,6 +280,8 @@
         .inv-size-chip { background:var(--bg-card); border:1.5px solid var(--border); border-radius:20px; padding:3px 10px; font-size:12px; font-weight:600; color:var(--text-mid); }
         .inv-edit-btn { width:100%; padding:11px; border:1.5px solid var(--primary); background:none; color:var(--primary); border-radius:var(--radius-sm); font-family:'DM Sans'; font-size:13px; font-weight:600; cursor:pointer; transition:background 0.15s; }
         .inv-edit-btn:active { background:var(--primary-light); }
+        .inv-actions-row { padding:8px 16px; display:flex; gap:8px; flex-wrap:wrap; background:var(--bg); border-bottom:1px solid var(--border); flex-shrink:0; }
+        .inv-action-btn { padding:6px 12px; border:1.5px solid var(--border); background:none; border-radius:var(--radius-sm); font-family:'DM Sans'; font-size:11px; font-weight:600; color:var(--text-light); cursor:pointer; white-space:nowrap; }
         /* ── ENTRY REVIEW BADGE ── */
         .entry-review-badge { background:var(--danger) !important; color:#fff !important; }
         /* ── INVOICE REVIEW SCREEN ── */
@@ -753,11 +755,11 @@
     <div class="screen-header">
         <button class="back-btn" onclick="goBack()">←</button>
         <div class="screen-title"><h2>Inventory</h2><div class="hindi-title">सूची</div></div>
-        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
-            <button onclick="startBarcodeMapping()" id="bmap-inv-btn" style="padding:6px 12px;border:1.5px solid var(--primary);background:none;border-radius:var(--radius-sm);font-family:'DM Sans';font-size:11px;font-weight:600;color:var(--primary);cursor:pointer">⬛ Add barcodes</button>
-            <button onclick="startInvoiceReview()" id="irev-inv-btn" style="padding:6px 12px;border:1.5px solid var(--border);background:none;border-radius:var(--radius-sm);font-family:'DM Sans';font-size:11px;font-weight:600;color:var(--text-light);cursor:pointer;display:none">⚠ Review <span id="irev-inv-count"></span></button>
-            <button id="inv-sort-btn" onclick="toggleInvSort()" style="padding:6px 12px;border:1.5px solid var(--border);background:none;border-radius:var(--radius-sm);font-family:'DM Sans';font-size:11px;font-weight:600;color:var(--text-light);cursor:pointer">⚠ Low stock first</button>
-        </div>
+    </div>
+    <div class="inv-actions-row">
+        <button onclick="startBarcodeMapping()" id="bmap-inv-btn" class="inv-action-btn" style="border-color:var(--primary);color:var(--primary)">⬛ Add barcodes</button>
+        <button onclick="startInvoiceReview()" id="irev-inv-btn" class="inv-action-btn" style="display:none;border-color:var(--danger);color:var(--danger)">⚠ Review <span id="irev-inv-count"></span></button>
+        <button id="inv-sort-btn" onclick="toggleInvSort()" class="inv-action-btn">⇅ Low stock first</button>
     </div>
     <div style="padding:12px 22px;background:var(--bg-card);border-bottom:1px solid var(--border);flex-shrink:0">
         <div class="barcode-field" style="margin:0" onclick="document.getElementById('inv-search').focus()">
@@ -919,6 +921,18 @@
         <button class="irev-trash-btn" id="irev-trash-btn" onclick="reviewTrash()" title="Remove fabricated entry">🗑</button>
         <button class="irev-skip-btn" onclick="reviewSkip()">← Skip</button>
         <button class="irev-save-btn" onclick="reviewSave()">Save ✓</button>
+    </div>
+</div>
+
+<!-- REVIEW NOTIFICATION POPUP -->
+<div class="bc-modal-overlay" id="review-notify-modal">
+    <div class="bc-modal-card">
+        <div class="bc-modal-title" id="review-notify-title">Items pending review</div>
+        <div class="bc-modal-body">Invoice items are waiting for confirmation before stock is updated.</div>
+        <div class="bc-modal-actions">
+            <button class="bc-modal-btn reassign" onclick="reviewNotifyGo()">Review now</button>
+            <button class="bc-modal-btn cancel" onclick="reviewNotifyDismiss()">Continue</button>
+        </div>
     </div>
 </div>
 
@@ -2587,19 +2601,39 @@ function saveCurrentColorStock() {
 
 // ── INVENTORY ─────────────────────────────────────────────────────────
 let invSortLowFirst=false,invExpandedSku=null,invProductMap={};
-function toggleInvSort(){invSortLowFirst=!invSortLowFirst;const btn=document.getElementById('inv-sort-btn');btn.textContent=invSortLowFirst?'↑ A–Z':'⚠ Low stock first';btn.style.color=invSortLowFirst?'var(--primary)':'var(--text-light)';renderInventory();}
+function toggleInvSort(){invSortLowFirst=!invSortLowFirst;const btn=document.getElementById('inv-sort-btn');btn.textContent=invSortLowFirst?'↑ A–Z':'⇅ Low stock first';btn.style.color=invSortLowFirst?'var(--primary)':'var(--text-light)';btn.style.borderColor=invSortLowFirst?'var(--primary)':'var(--border)';renderInventory();}
 // ── INVOICE REVIEW ────────────────────────────────────────────────────
 let irevIndex = 0, irevSavedCount = 0, irevTouchStartX = 0, irevTouchStartY = 0;
-let irevTrashArmed = false, irevTrashTimer = null;
+let irevTrashArmed = false, irevTrashTimer = null, irevPollTimer = null;
+let reviewNotifyShown = false;
+function showReviewNotify() {
+    if (reviewNotifyShown || !pendingReviews || !pendingReviews.length) return;
+    if (currentScreen !== 'entry') return;
+    reviewNotifyShown = true;
+    const n = pendingReviews.length;
+    document.getElementById('review-notify-title').textContent =
+        n + ' item' + (n !== 1 ? 's' : '') + ' pending review';
+    document.getElementById('review-notify-modal').style.display = 'flex';
+}
+function reviewNotifyGo() {
+    document.getElementById('review-notify-modal').style.display = 'none';
+    goTo('inventory');
+    setTimeout(() => startInvoiceReview(), 380);
+}
+function reviewNotifyDismiss() {
+    document.getElementById('review-notify-modal').style.display = 'none';
+}
 
 async function loadPendingReviews() {
     try {
         const r = await fetch(CONFIG.N8N_INVOICE_REVIEW);
         if (!r.ok) throw new Error();
         const data = await r.json();
-        pendingReviews = Array.isArray(data) ? data : (data.items || []);
+        const raw = Array.isArray(data) ? data : (data.items || []);
+        pendingReviews = raw.filter(r => !r._empty);
     } catch(e) { pendingReviews = pendingReviews || []; }
     updateReviewBadge();
+    showReviewNotify();
 }
 function updateReviewBadge() {
     const n = pendingReviews ? pendingReviews.length : 0;
@@ -2607,7 +2641,7 @@ function updateReviewBadge() {
     const invBtn = document.getElementById('irev-inv-btn');
     const invCount = document.getElementById('irev-inv-count');
     if (entryBadge) { entryBadge.style.display = n > 0 ? '' : 'none'; }
-    if (invBtn) { invBtn.style.display = n > 0 ? '' : 'none'; invBtn.style.borderColor = 'var(--danger)'; invBtn.style.color = 'var(--danger)'; }
+    if (invBtn) { invBtn.style.display = n > 0 ? '' : 'none'; }
     if (invCount) invCount.textContent = n > 0 ? '('+n+')' : '';
 }
 function startInvoiceReview() {
@@ -2621,6 +2655,9 @@ function startInvoiceReview() {
     document.getElementById('irev-done').style.display = 'none';
     document.getElementById('irev-footer').style.display = '';
     loadReviewItem(0);
+    // Poll for new items every 60s while reviewing
+    clearInterval(irevPollTimer);
+    irevPollTimer = setInterval(irevPollForNew, 60000);
     // Swipe gesture
     const card = document.getElementById('irev-card');
     card.addEventListener('touchstart', e => { irevTouchStartX = e.touches[0].clientX; irevTouchStartY = e.touches[0].clientY; }, {passive:true});
@@ -2797,13 +2834,60 @@ function reviewTrash() {
         }).catch(()=>{});
     }
 }
-function showIrevDone() {
+async function irevPollForNew() {
+    if (currentScreen !== 'invoicereview') return;
+    try {
+        const r = await fetch(CONFIG.N8N_INVOICE_REVIEW);
+        if (!r.ok) return;
+        const data = await r.json();
+        const raw = Array.isArray(data) ? data : (data.items || []);
+        const fresh = raw.filter(r => !r._empty);
+        const existingIds = new Set((pendingReviews || []).map(r => r.row_id));
+        const newItems = fresh.filter(r => !existingIds.has(r.row_id));
+        if (!newItems.length) return;
+        pendingReviews = [...(pendingReviews || []), ...newItems];
+        updateReviewBadge();
+        showToast(newItems.length + ' new item' + (newItems.length !== 1 ? 's' : '') + ' added to queue', '');
+        // Refresh progress counter
+        if (currentScreen === 'invoicereview') {
+            document.getElementById('irev-progress').textContent = (irevIndex+1)+' / '+pendingReviews.length;
+            document.getElementById('irev-prev-btn').style.display = pendingReviews.length > 1 ? '' : 'none';
+        }
+    } catch(_) {}
+}
+async function showIrevDone() {
+    // Check for newly arrived items before declaring done
+    clearInterval(irevPollTimer);
+    try {
+        const r = await fetch(CONFIG.N8N_INVOICE_REVIEW);
+        if (r.ok) {
+            const data = await r.json();
+            const raw = Array.isArray(data) ? data : (data.items || []);
+            const fresh = raw.filter(r => !r._empty);
+            const existingIds = new Set((pendingReviews || []).map(r => r.row_id));
+            const newItems = fresh.filter(r => !existingIds.has(r.row_id));
+            if (newItems.length) {
+                pendingReviews = [...newItems];
+                irevIndex = 0;
+                updateReviewBadge();
+                showToast(newItems.length + ' more item' + (newItems.length !== 1 ? 's' : '') + ' to review', '');
+                document.getElementById('irev-content').style.display = '';
+                document.getElementById('irev-footer').style.display = '';
+                document.getElementById('irev-done').style.display = 'none';
+                loadReviewItem(0);
+                irevPollTimer = setInterval(irevPollForNew, 60000);
+                return;
+            }
+        }
+    } catch(_) {}
+    // Truly done
     document.getElementById('irev-content').style.display = 'none';
     document.getElementById('irev-footer').style.display = 'none';
     document.getElementById('irev-done').style.display = 'flex';
     document.getElementById('irev-done-summary').textContent = irevSavedCount+' item'+(irevSavedCount!==1?'s':'')+' confirmed';
 }
 function exitInvoiceReview() {
+    clearInterval(irevPollTimer);
     const cur = document.getElementById('screen-invoicereview');
     cur.classList.remove('active'); cur.style.cssText='transform:translateX(30px);opacity:0';
     setTimeout(()=>cur.style.cssText='',300);
