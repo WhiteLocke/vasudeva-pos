@@ -280,6 +280,64 @@
         .inv-size-chip { background:var(--bg-card); border:1.5px solid var(--border); border-radius:20px; padding:3px 10px; font-size:12px; font-weight:600; color:var(--text-mid); }
         .inv-edit-btn { width:100%; padding:11px; border:1.5px solid var(--primary); background:none; color:var(--primary); border-radius:var(--radius-sm); font-family:'DM Sans'; font-size:13px; font-weight:600; cursor:pointer; transition:background 0.15s; }
         .inv-edit-btn:active { background:var(--primary-light); }
+        /* ── ENTRY REVIEW BADGE ── */
+        .entry-review-badge { background:var(--danger) !important; color:#fff !important; }
+        /* ── INVOICE REVIEW SCREEN ── */
+        .review-flag { display:inline-block; background:rgba(181,49,27,0.10); color:var(--danger); font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px; text-transform:uppercase; letter-spacing:0.04em; }
+        .review-flag.gemini { background:rgba(45,106,79,0.10); color:var(--success); }
+        .review-flag.duplicate { background:rgba(212,147,10,0.13); color:var(--accent); }
+        .review-flag.ok { background:rgba(45,106,79,0.10); color:var(--success); }
+        .irev-card { display:flex; flex-direction:column; gap:14px; transition:transform 0.18s ease, opacity 0.18s ease; }
+        .irev-card.swiping { transition:none; }
+        .irev-card .bmap-sku-card.is-duplicate { border:2px solid var(--accent); background:rgba(212,147,10,0.06); }
+        .irev-card .bmap-sku-card.has-errors { border:2px solid var(--danger); background:rgba(181,49,27,0.06); }
+        .irev-fields { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+        .irev-field-group { display:flex; flex-direction:column; gap:4px; background:var(--bg-card); border-radius:var(--radius-sm); padding:10px 12px; }
+        .irev-field-label { font-size:10px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--text-light); }
+        .irev-field-input { background:transparent; border:none; border-bottom:1.5px solid var(--border); padding:4px 0; font-family:'DM Sans',sans-serif; font-size:18px; font-weight:600; color:var(--text); width:100%; outline:none; }
+        .irev-field-input:focus { border-bottom-color:var(--primary); }
+        .irev-field-input.flagged { border-bottom-color:var(--danger); color:var(--danger); }
+        .irev-swipe-hint { text-align:center; font-size:12px; color:var(--text-light); letter-spacing:0.05em; padding:4px 0 2px; }
+        .irev-skip-btn { flex:1; padding:13px; background:none; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-family:'DM Sans',sans-serif; font-size:15px; font-weight:600; color:var(--text-light); cursor:pointer; }
+        .irev-save-btn { flex:2; padding:13px; background:var(--success); color:#fff; border:none; border-radius:var(--radius-sm); font-family:'DM Sans',sans-serif; font-size:15px; font-weight:600; cursor:pointer; }
+        .irev-trash-btn { padding:13px 15px; background:none; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-family:'DM Sans',sans-serif; font-size:15px; font-weight:600; color:var(--text-light); cursor:pointer; transition:background 0.15s,border-color 0.15s,color 0.15s; }
+        .irev-trash-btn.armed { background:var(--danger); border-color:var(--danger); color:#fff; }
+        .irev-supplier { font-size:11px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-light); margin-top:5px; }
+        .irev-name-sub { font-size:13px; color:var(--text-light); margin-top:3px; font-style:italic; }
+        .irev-sizes-wrap { background:var(--bg-card); border-radius:var(--radius-sm); padding:12px 14px; }
+        .irev-sizes-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+        .irev-sizes-title { font-size:10px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--text-light); }
+        .irev-sizes-sum { font-size:11px; font-weight:700; }
+        .irev-sizes-sum.ok { color:var(--success); }
+        .irev-sizes-sum.bad { color:var(--danger); }
+        .irev-sizes-grid { display:flex; flex-wrap:wrap; gap:6px; }
+        .irev-size-chip { display:flex; flex-direction:column; align-items:center; background:var(--bg); border:1.5px solid var(--border); border-radius:var(--radius-sm); padding:5px 8px; min-width:48px; }
+        .irev-size-chip-label { font-size:10px; color:var(--text-light); font-weight:700; text-transform:uppercase; margin-bottom:2px; }
+        .irev-size-chip-input { width:40px; font-size:17px; font-weight:700; color:var(--text); background:transparent; border:none; outline:none; text-align:center; font-family:'DM Sans',sans-serif; padding:0; }
+        .irev-prev-btn { background:none; border:none; font-size:18px; color:var(--text-light); cursor:pointer; padding:4px 6px; line-height:1; border-radius:var(--radius-sm); }
+        /* ── BARCODE CONFLICT / PICKER MODALS ── */
+        @keyframes bcModalSlideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to   { transform: translateY(0);    opacity: 1; }
+        }
+        .bc-modal-overlay { display:none; position:fixed; inset:0; background:rgba(27,58,75,0.45); z-index:900; align-items:flex-end; justify-content:center; }
+        .bc-modal-card { background:var(--bg); border-radius:var(--radius) var(--radius) 0 0; width:100%; max-width:500px; padding:22px 22px 32px; display:flex; flex-direction:column; gap:14px; max-height:88vh; animation:bcModalSlideUp 0.32s cubic-bezier(0.34,1.4,0.64,1) both; }
+        .bc-modal-title { font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:700; color:var(--text); flex-shrink:0; }
+        .bc-modal-body { font-size:14px; color:var(--text-light); line-height:1.5; flex-shrink:0; }
+        .bc-modal-conflict { background:var(--bg-card); border-radius:var(--radius-sm); padding:12px 14px; flex-shrink:0; }
+        .bc-modal-conflict-sku { font-size:20px; font-weight:700; font-family:'DM Sans',sans-serif; color:var(--text); }
+        .bc-modal-conflict-name { font-size:13px; color:var(--text-light); margin-top:2px; font-style:italic; }
+        .bc-modal-actions { display:flex; gap:8px; flex-direction:column; flex-shrink:0; }
+        .bc-modal-btn { padding:13px; border-radius:var(--radius-sm); font-family:'DM Sans',sans-serif; font-size:15px; font-weight:600; cursor:pointer; border:none; text-align:center; flex-shrink:0; }
+        .bc-modal-btn.cancel { background:none; border:1.5px solid var(--border); color:var(--text-light); }
+        .bc-modal-btn.reassign { background:var(--accent); color:#fff; }
+        .bc-modal-btn.share { background:var(--primary); color:#fff; }
+        .bc-picker-list { display:flex; flex-direction:column; gap:8px; overflow-y:auto; flex:1; min-height:0; }
+        .bc-picker-item { background:var(--bg-card); border:1.5px solid var(--border); border-radius:var(--radius-sm); padding:12px 14px; text-align:left; cursor:pointer; font-family:'DM Sans',sans-serif; display:flex; flex-direction:column; gap:3px; flex-shrink:0; }
+        .bc-picker-item:active { border-color:var(--primary); background:var(--primary-light); }
+        .bc-picker-sku { font-size:18px; font-weight:700; color:var(--text); }
+        .bc-picker-name { font-size:13px; color:var(--text-light); font-style:italic; }
+        .bc-picker-stock { font-size:11px; font-weight:700; color:var(--text-light); letter-spacing:0.04em; text-transform:uppercase; }
 
         /* ── ADD STOCK SIZE TAB GRID ── */
         .stock-size-tab-row { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
@@ -387,7 +445,7 @@
     <div class="entry-buttons">
         <button class="entry-btn btn-sell" onclick="goTo('sell')"><span class="entry-btn-icon">🛍️</span><div><div class="entry-btn-label">Sell</div><div class="entry-btn-hindi">बेचें</div></div></button>
         <button class="entry-btn btn-stock" onclick="goTo('addstock')"><span class="entry-btn-icon">📦</span><div><div class="entry-btn-label">Add Stock</div><div class="entry-btn-hindi">स्टॉक जोड़ें</div></div></button>
-        <button class="entry-btn btn-stock" onclick="goTo('inventory')"><span class="entry-btn-icon">📋</span><div><div class="entry-btn-label">Inventory</div><div class="entry-btn-hindi">सूची</div></div></button>
+        <button class="entry-btn btn-stock" onclick="goTo('inventory')"><span class="entry-btn-icon">📋</span><div><div class="entry-btn-label">Inventory</div><div class="entry-btn-hindi">सूची</div></div><span class="entry-btn-badge entry-review-badge" id="inv-review-badge" style="display:none">!</span></button>
         <button class="entry-btn btn-adjust" disabled><span class="entry-btn-icon">⚖️</span><div><div class="entry-btn-label">Adjust Stock</div><div class="entry-btn-hindi">स्टॉक समायोजित करें</div></div><span class="entry-btn-badge">Soon</span></button>
     </div>
 </div>
@@ -697,6 +755,7 @@
         <div class="screen-title"><h2>Inventory</h2><div class="hindi-title">सूची</div></div>
         <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
             <button onclick="startBarcodeMapping()" id="bmap-inv-btn" style="padding:6px 12px;border:1.5px solid var(--primary);background:none;border-radius:var(--radius-sm);font-family:'DM Sans';font-size:11px;font-weight:600;color:var(--primary);cursor:pointer">⬛ Add barcodes</button>
+            <button onclick="startInvoiceReview()" id="irev-inv-btn" style="padding:6px 12px;border:1.5px solid var(--border);background:none;border-radius:var(--radius-sm);font-family:'DM Sans';font-size:11px;font-weight:600;color:var(--text-light);cursor:pointer;display:none">⚠ Review <span id="irev-inv-count"></span></button>
             <button id="inv-sort-btn" onclick="toggleInvSort()" style="padding:6px 12px;border:1.5px solid var(--border);background:none;border-radius:var(--radius-sm);font-family:'DM Sans';font-size:11px;font-weight:600;color:var(--text-light);cursor:pointer">⚠ Low stock first</button>
         </div>
     </div>
@@ -719,7 +778,7 @@
     </div>
     <div class="screen-content" id="bmap-content">
         <div class="bmap-sku-card">
-            <div class="bmap-sku-label">SKU / कोड</div>
+            <div class="bmap-sku-label" id="bmap-sku-label">SKU / कोड</div>
             <div class="bmap-sku-val" id="bmap-sku">—</div>
         </div>
         <div class="bmap-name-row" id="bmap-name-row"></div>
@@ -791,6 +850,105 @@
     </div>
 </div>
 
+<!-- INVOICE REVIEW -->
+<div id="screen-invoicereview" class="screen">
+    <div class="screen-header">
+        <button class="back-btn" onclick="exitInvoiceReview()">←</button>
+        <div class="screen-title"><h2>Review</h2><div class="hindi-title">समीक्षा</div></div>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:6px;padding-right:4px">
+            <button class="irev-prev-btn" id="irev-prev-btn" onclick="reviewPrev()" title="Previous item">‹</button>
+            <span style="font-size:12px;color:var(--text-light);font-weight:600" id="irev-progress"></span>
+        </div>
+    </div>
+    <div class="screen-content" id="irev-content">
+        <div id="irev-card" class="irev-card">
+            <div class="bmap-sku-card" style="margin-bottom:0">
+                <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:6px">
+                    <div class="bmap-sku-label" style="margin-bottom:0" id="irev-sku-label">SKU</div>
+                    <div id="irev-row-badge" style="display:none;font-size:10px;font-weight:700;color:var(--text-light);background:var(--bg);border:1.5px solid var(--border);border-radius:20px;padding:2px 8px;letter-spacing:0.05em">ROW —</div>
+                </div>
+                <div class="bmap-sku-val" id="irev-sku">—</div>
+                <div id="irev-name-sub" class="irev-name-sub" style="display:none"></div>
+                <div id="irev-supplier" class="irev-supplier" style="display:none"></div>
+                <div id="irev-flags" style="display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin-top:10px"></div>
+            </div>
+            <div id="irev-sizes" style="display:none">
+                <div class="irev-sizes-wrap">
+                    <div class="irev-sizes-header">
+                        <div class="irev-sizes-title">Sizes / आकार</div>
+                        <div class="irev-sizes-sum" id="irev-sizes-sum"></div>
+                    </div>
+                    <div class="irev-sizes-grid" id="irev-sizes-grid"></div>
+                </div>
+            </div>
+            <div class="irev-fields">
+                <div class="irev-field-group">
+                    <div class="irev-field-label">Qty / मात्रा</div>
+                    <input class="irev-field-input" id="irev-qty" type="number" inputmode="numeric" placeholder="0" oninput="irevSizesChanged()">
+                </div>
+                <div class="irev-field-group">
+                    <div class="irev-field-label">Unit Price / मूल्य</div>
+                    <input class="irev-field-input" id="irev-price" type="number" inputmode="decimal" placeholder="0.00">
+                </div>
+                <div class="irev-field-group">
+                    <div class="irev-field-label">MRP</div>
+                    <input class="irev-field-input" id="irev-mrp" type="number" inputmode="decimal" placeholder="0.00">
+                </div>
+                <div class="irev-field-group">
+                    <div class="irev-field-label">HSN Code</div>
+                    <input class="irev-field-input" id="irev-hsn" type="text" inputmode="numeric" placeholder="—" readonly style="opacity:0.6">
+                </div>
+                <div class="irev-field-group">
+                    <div class="irev-field-label">Tax Rate</div>
+                    <input class="irev-field-input" id="irev-taxrate" type="text" placeholder="—" readonly style="opacity:0.6">
+                </div>
+                <div class="irev-field-group">
+                    <div class="irev-field-label">Total Amount</div>
+                    <input class="irev-field-input" id="irev-total" type="text" placeholder="—" readonly style="opacity:0.6">
+                </div>
+            </div>
+            <div class="irev-swipe-hint">← Skip &nbsp;&nbsp; Save →</div>
+        </div>
+    </div>
+    <div id="irev-done" style="display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center">
+        <div style="font-size:56px;margin-bottom:14px">✓</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:700;color:var(--success);margin-bottom:8px">All reviewed!</div>
+        <div style="font-size:14px;color:var(--text-light)" id="irev-done-summary"></div>
+    </div>
+    <div style="flex-shrink:0;padding:12px 22px 20px;background:var(--bg);border-top:1px solid var(--border);display:flex;gap:10px" id="irev-footer">
+        <button class="irev-trash-btn" id="irev-trash-btn" onclick="reviewTrash()" title="Remove fabricated entry">🗑</button>
+        <button class="irev-skip-btn" onclick="reviewSkip()">← Skip</button>
+        <button class="irev-save-btn" onclick="reviewSave()">Save ✓</button>
+    </div>
+</div>
+
+<!-- BARCODE CONFLICT MODAL (bmap duplicate) -->
+<div class="bc-modal-overlay" id="bmap-dup-modal">
+    <div class="bc-modal-card">
+        <div class="bc-modal-title">Reassign barcode?</div>
+        <div class="bc-modal-body">This barcode is already assigned to:</div>
+        <div class="bc-modal-conflict">
+            <div class="bc-modal-conflict-sku" id="bmap-dup-conflict-sku">—</div>
+            <div class="bc-modal-conflict-name" id="bmap-dup-conflict-name"></div>
+        </div>
+        <div class="bc-modal-actions">
+            <button class="bc-modal-btn reassign" onclick="bmapDupReassign()">Assign to this product only</button>
+            <button class="bc-modal-btn share" onclick="bmapDupShare()">Share between products</button>
+            <button class="bc-modal-btn cancel" onclick="bmapDupCancel()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- BARCODE PICKER MODAL (multi-match on scan) -->
+<div class="bc-modal-overlay" id="bc-picker-overlay" style="align-items:flex-end">
+    <div class="bc-modal-card">
+        <div class="bc-modal-title">Multiple products</div>
+        <div class="bc-modal-body" id="bc-picker-subtitle"></div>
+        <div class="bc-picker-list" id="bc-picker-list"></div>
+        <button class="bc-modal-btn cancel" onclick="bcPickerCancel()">Cancel</button>
+    </div>
+</div>
+
 <!-- CAMERA -->
 <div class="camera-modal" id="camera-modal">
     <video id="camera-video" autoplay playsinline muted></video>
@@ -846,7 +1004,9 @@ const CONFIG = {
     N8N_LOOKUP:    'https://n8n.whitelockemedia.com/webhook/vasudeva-lookup',
     N8N_ALL:       'https://n8n.whitelockemedia.com/webhook/vasudeva-all',
     N8N_SELL:      'https://n8n.whitelockemedia.com/webhook/vasudeva-sell',
-    N8N_ADD_STOCK: 'https://n8n.whitelockemedia.com/webhook/vasudeva-addstock',
+    N8N_ADD_STOCK:       'https://n8n.whitelockemedia.com/webhook/vasudeva-addstock',
+    N8N_INVOICE_REVIEW:  'https://n8n.whitelockemedia.com/webhook/vasudeva-invoice-review',
+    N8N_INVOICE_CONFIRM: 'https://n8n.whitelockemedia.com/webhook/vasudeva-invoice-confirm',
     OWNER_PIN: '1234',
     CURRENCY: '₹'
 };
@@ -901,6 +1061,7 @@ let stockProductFound = false, camCtx = null, camStream = null, camDetector = nu
 let bmapQueue = [], bmapIndex = 0, bmapExtraOpen = false, bmapSavedCount = 0, bmapSavedIndices = new Set(), bmapData = {};
 let lastFailedBarcode = '', sellNameTimer = null, productCache = null, cacheLoading = false;
 let cqpPickerHex = null;
+let pendingReviews = null;
 
 // Healed stock: use max(sizeTotal, sheetStock) to reconcile drift between Quantity cell and sizes.
 function computeHealedStock(p) {
@@ -952,7 +1113,7 @@ function entryPinPress(k) {
             setTimeout(() => ps.classList.remove('active','exit'), 280);
             document.getElementById('screen-entry').classList.add('active');
             currentScreen = 'entry'; entryPinVal = ''; updateEntryPinDots();
-            loadProductCache();
+            loadProductCache(); loadPendingReviews();
         } else {
             entryPinVal = ''; updateEntryPinDots();
             document.getElementById('pin-screen-dots').classList.add('pin-shake');
@@ -971,7 +1132,7 @@ function goTo(screen) {
     nxt.classList.add('active'); currentScreen = screen;
     if (screen==='sell') { setTimeout(()=>document.getElementById('bc-sell').focus(),350); resetSell(); }
     if (screen==='addstock') { setTimeout(()=>document.getElementById('bc-stock').focus(),350); renderCqpChips(); }
-    if (screen==='inventory') { invExpandedSku=null; renderInventory(); }
+    if (screen==='inventory') { invExpandedSku=null; renderInventory(); loadPendingReviews(); }
     if (screen==='barcodescan') { loadBmapProduct(bmapIndex); setTimeout(()=>document.getElementById('bc-bmap').focus(),350); }
 }
 function goBack() {
@@ -1006,9 +1167,70 @@ function handleBarcodeKey(e,ctx) {
 async function handleBarcodeScan(barcode,ctx) {
     if (!barcode) return;
     if (ctx==='bmap') { document.getElementById('bc-bmap').value = barcode; return; }
+    // Check for shared-barcode multi-match before single lookup
+    if (productCache) {
+        const matches = searchCacheMultiBarcode(barcode);
+        if (matches.length > 1) { showBarcodePicker(matches, barcode, ctx); return; }
+        if (matches.length === 1) {
+            const p = matches[0];
+            if (ctx==='sell') displayProduct(p); else displayRestock(p, barcode);
+            return;
+        }
+        // Not in cache — fall through to API lookup
+    }
     showToast('Looking up product…');
     try { const p=await lookupProduct(barcode); if(ctx==='sell') displayProduct(p); else displayRestock(p,barcode); }
     catch(_) { if(ctx==='sell') showNotFound(barcode); showToast('Not found: '+barcode,'error'); }
+}
+let bcPickerCtx = '', bcPickerBarcode = '', bcPickerMatches = [];
+function showBarcodePicker(matches, barcode, ctx) {
+    bcPickerCtx = ctx; bcPickerBarcode = barcode; bcPickerMatches = matches;
+    document.getElementById('bc-picker-subtitle').textContent =
+        matches.length + ' products share barcode ' + barcode + ' — select one:';
+    document.getElementById('bc-picker-list').innerHTML = matches.map((p, i) => {
+        const stock = computeHealedStock(p);
+        const stockColor = stock <= 0 ? 'var(--danger)' : stock <= (p.minStock||10) ? 'var(--accent)' : 'var(--success)';
+        return `<button class="bc-picker-item" onclick="bcPickerSelect(${i})">
+            <div class="bc-picker-sku">${p.sku || p.name || '—'}</div>
+            ${p.sku && p.name ? `<div class="bc-picker-name">${p.name}</div>` : ''}
+            <div class="bc-picker-stock" style="color:${stockColor}">Stock: ${stock}</div>
+        </button>`;
+    }).join('');
+    document.getElementById('bc-picker-overlay').style.display = 'flex';
+}
+function bcPickerSelect(idx) {
+    document.getElementById('bc-picker-overlay').style.display = 'none';
+    const p = bcPickerMatches[idx];
+    if (!p) return;
+    if (bcPickerCtx === 'sell') displayProduct(p);
+    else displayRestock(p, bcPickerBarcode);
+}
+function bcPickerCancel() {
+    document.getElementById('bc-picker-overlay').style.display = 'none';
+}
+
+// ── FIELD NORMALISATION ───────────────────────────────────────────────
+// Sheet headers use "Caps and Spaces". n8n may return them as-is or already mapped.
+// normalizeProduct ensures the frontend always uses consistent camelCase keys.
+function normalizeProduct(p) {
+    const g = (...keys) => { for (const k of keys) if (p[k]!==undefined&&p[k]!==null&&p[k]!=='') return p[k]; return undefined; };
+    return {
+        ...p,
+        sku:          g('sku','SKU'),
+        barcode:      sanitizeBarcode(g('barcode','Barcode')||''),
+        name:         g('name','Product Name'),
+        category:     g('category','Category'),
+        color:        g('color','Color'),
+        mrp:          g('mrp','MRP'),
+        cost:         g('cost','Unit Price','Cost'),
+        stock:        g('stock','Quantity'),
+        minStock:     g('minStock','Min Stock'),
+        expiry:       g('expiry','Expiry','Expiry Date'),
+        supplier:     g('supplier','Supplier'),
+        sizes:        g('sizes','Sizes'),
+        slowMover:    g('slowMover','Slow Mover','slow_mover'),
+        lastSaleDate: g('lastSaleDate','Last Sale Date','last_sale_date'),
+    };
 }
 
 // ── CACHE ─────────────────────────────────────────────────────────────
@@ -1020,7 +1242,7 @@ async function loadProductCache(force) {
         const r=await fetch(CONFIG.N8N_ALL); if(!r.ok) throw new Error();
         const data=await r.json();
         const rows=(Array.isArray(data)&&data[0]&&data[0].products)?data[0].products:(data.products||(Array.isArray(data)?data:[]));
-        productCache=rows.map(p=>({...p,barcode:sanitizeBarcode(p.barcode)}));
+        productCache=rows.map(normalizeProduct);
     } catch(e) { productCache=[]; }
     cacheLoading=false;
 }
@@ -1034,6 +1256,12 @@ function searchCache(field,value) {
         if(field==='name'){const n=(p.name||'').toLowerCase();return n&&(n.includes(v)||v.includes(n));}
         return false;
     })||null;
+}
+function searchCacheMultiBarcode(barcode) {
+    if (!productCache) return [];
+    const bc = sanitizeBarcode(barcode);
+    if (!bc) return [];
+    return productCache.filter(p => sanitizeBarcode(p.barcode) === bc);
 }
 
 // ── LOOKUP ────────────────────────────────────────────────────────────
@@ -1790,7 +2018,7 @@ function updateBasketUI() {
     document.getElementById('sum-total').textContent=CONFIG.CURRENCY+total;
 }
 function removeFromBasket(i){basket.splice(i,1);updateBasketUI();}
-async function finalizeOrder() {
+function finalizeOrder() {
     if(!basket.length) return; showToast('Processing order…');
 
     // Group basket items by barcode — one payload item per unique product.
@@ -1819,12 +2047,12 @@ async function finalizeOrder() {
         colors: Object.keys(g.colors).length ? JSON.stringify(g.colors) : null
     }));
 
-    try{
-        await fetch(CONFIG.N8N_SELL,{method:'POST',headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({items, timestamp:new Date().toISOString()})});
-        invalidateCache();loadProductCache();basket=[];updateBasketUI();switchTab('product');
-        showToast('Order complete! स्टॉक अपडेट हो गया','success');
-    }catch(_){showToast('Failed — try again','error');}
+    // Optimistic — clear UI immediately, sync in background
+    const payload = {items, timestamp:new Date().toISOString()};
+    invalidateCache(); loadProductCache(); basket=[]; updateBasketUI(); switchTab('product');
+    showToast('Order complete! स्टॉक अपडेट हो गया','success');
+    fetch(CONFIG.N8N_SELL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+        .catch(()=>showToast('Sync failed — order may not have saved','error'));
 }
 
 // ── ADD STOCK ─────────────────────────────────────────────────────────
@@ -1839,7 +2067,7 @@ function clearStockForm() {
     clearCurrentStockSection();clearSizeBreakdown();clearColorBreakdown();showToast('Form cleared','');
 }
 function displayRestock(p,barcode){if(p)autofillStock(p);}
-async function submitStock() {
+function submitStock() {
     const barcode=sanitizeBarcode(document.getElementById('bc-stock').value);
     const qty=document.getElementById('f-qty').value.trim();
     const name=document.getElementById('f-name').value.trim();
@@ -1917,17 +2145,16 @@ async function submitStock() {
         colorsOverride:colorsOverride,
         timestamp:new Date().toISOString()
     };
-    showToast('Saving…');
-    try{
-        await fetch(CONFIG.N8N_ADD_STOCK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-        invalidateCache();loadProductCache();
-        ['bc-stock','f-sku','f-name','f-cat','f-color','f-mrp','f-cost','f-qty','f-min','f-exp','f-sup'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
-        clearSizeBreakdown();clearColorBreakdown();clearCurrentStockSection();stockProductFound=false;clearGhosts();
-        document.getElementById('restock-banner').style.display='none';
-        document.getElementById('f-qty-current').style.display='none';
-        showToast('Saved! उत्पाद सहेजा गया','success');
-        document.getElementById('bc-stock').focus();
-    }catch(_){showToast('Failed — try again','error');}
+    // Optimistic — clear form immediately, sync in background
+    invalidateCache(); loadProductCache();
+    ['bc-stock','f-sku','f-name','f-cat','f-color','f-mrp','f-cost','f-qty','f-min','f-exp','f-sup'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+    clearSizeBreakdown(); clearColorBreakdown(); clearCurrentStockSection(); stockProductFound=false; clearGhosts();
+    document.getElementById('restock-banner').style.display='none';
+    document.getElementById('f-qty-current').style.display='none';
+    showToast('Saved! उत्पाद सहेजा गया','success');
+    document.getElementById('bc-stock').focus();
+    fetch(CONFIG.N8N_ADD_STOCK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+        .catch(()=>showToast('Sync failed — stock may not have saved','error'));
 }
 
 // ── GLOBAL COLOR QUICK-PICK (ADD STOCK) ───────────────────────────────
@@ -2361,6 +2588,227 @@ function saveCurrentColorStock() {
 // ── INVENTORY ─────────────────────────────────────────────────────────
 let invSortLowFirst=false,invExpandedSku=null,invProductMap={};
 function toggleInvSort(){invSortLowFirst=!invSortLowFirst;const btn=document.getElementById('inv-sort-btn');btn.textContent=invSortLowFirst?'↑ A–Z':'⚠ Low stock first';btn.style.color=invSortLowFirst?'var(--primary)':'var(--text-light)';renderInventory();}
+// ── INVOICE REVIEW ────────────────────────────────────────────────────
+let irevIndex = 0, irevSavedCount = 0, irevTouchStartX = 0, irevTouchStartY = 0;
+let irevTrashArmed = false, irevTrashTimer = null;
+
+async function loadPendingReviews() {
+    try {
+        const r = await fetch(CONFIG.N8N_INVOICE_REVIEW);
+        if (!r.ok) throw new Error();
+        const data = await r.json();
+        pendingReviews = Array.isArray(data) ? data : (data.items || []);
+    } catch(e) { pendingReviews = pendingReviews || []; }
+    updateReviewBadge();
+}
+function updateReviewBadge() {
+    const n = pendingReviews ? pendingReviews.length : 0;
+    const entryBadge = document.getElementById('inv-review-badge');
+    const invBtn = document.getElementById('irev-inv-btn');
+    const invCount = document.getElementById('irev-inv-count');
+    if (entryBadge) { entryBadge.style.display = n > 0 ? '' : 'none'; }
+    if (invBtn) { invBtn.style.display = n > 0 ? '' : 'none'; invBtn.style.borderColor = 'var(--danger)'; invBtn.style.color = 'var(--danger)'; }
+    if (invCount) invCount.textContent = n > 0 ? '('+n+')' : '';
+}
+function startInvoiceReview() {
+    if (!pendingReviews || !pendingReviews.length) { showToast('No items to review', ''); return; }
+    irevIndex = 0; irevSavedCount = 0;
+    const cur = document.getElementById('screen-'+currentScreen);
+    const nxt = document.getElementById('screen-invoicereview');
+    cur.classList.add('exit'); setTimeout(()=>cur.classList.remove('active','exit'),280);
+    nxt.classList.add('active'); currentScreen = 'invoicereview';
+    document.getElementById('irev-content').style.display = '';
+    document.getElementById('irev-done').style.display = 'none';
+    document.getElementById('irev-footer').style.display = '';
+    loadReviewItem(0);
+    // Swipe gesture
+    const card = document.getElementById('irev-card');
+    card.addEventListener('touchstart', e => { irevTouchStartX = e.touches[0].clientX; irevTouchStartY = e.touches[0].clientY; }, {passive:true});
+    card.addEventListener('touchmove', e => {
+        const dx = e.touches[0].clientX - irevTouchStartX;
+        const dy = e.touches[0].clientY - irevTouchStartY;
+        if (Math.abs(dx) > Math.abs(dy)) { card.classList.add('swiping'); card.style.transform = `translateX(${dx}px)`; card.style.opacity = String(1 - Math.abs(dx)/400); }
+    }, {passive:true});
+    card.addEventListener('touchend', e => {
+        const dx = e.changedTouches[0].clientX - irevTouchStartX;
+        card.classList.remove('swiping'); card.style.transform = ''; card.style.opacity = '';
+        if (dx > 60) reviewSave();
+        else if (dx < -60) reviewSkip();
+    }, {passive:true});
+}
+function loadReviewItem(idx) {
+    if (!pendingReviews || idx >= pendingReviews.length) { showIrevDone(); return; }
+    const item = pendingReviews[idx];
+    const flags = (item.invoice_flag || '').split(',').filter(Boolean);
+    const isDuplicate = flags.includes('DUPLICATE');
+    const errorFlags = ['missing_sku','missing_price','missing_qty','possible_hsn_as_sku','size_qty_mismatch','sizes_parse_error'];
+    const hasErrors = flags.some(f => errorFlags.includes(f));
+
+    // Reset trash arm state
+    irevTrashArmed = false;
+    clearTimeout(irevTrashTimer);
+    const trashBtn = document.getElementById('irev-trash-btn');
+    if (trashBtn) { trashBtn.classList.remove('armed'); trashBtn.textContent = '🗑'; }
+
+    // Card header tinting
+    const skuCard = document.querySelector('#irev-card .bmap-sku-card');
+    skuCard.classList.toggle('is-duplicate', isDuplicate);
+    skuCard.classList.toggle('has-errors', !isDuplicate && hasErrors);
+
+    // SKU or name
+    const isNamePrimary = !item.sku && item.product_name;
+    document.getElementById('irev-sku-label').textContent = isNamePrimary ? 'Name / नाम' : 'SKU / कोड';
+    document.getElementById('irev-sku').textContent = isNamePrimary ? item.product_name : (item.sku || '—');
+
+    // Subtitle: product name when SKU is shown
+    const nameSub = document.getElementById('irev-name-sub');
+    if (!isNamePrimary && item.product_name) { nameSub.textContent = item.product_name; nameSub.style.display = ''; }
+    else nameSub.style.display = 'none';
+
+    // Supplier
+    const supplierEl = document.getElementById('irev-supplier');
+    if (item.supplier) { supplierEl.textContent = '📦 ' + item.supplier; supplierEl.style.display = ''; }
+    else supplierEl.style.display = 'none';
+
+    const rowBadge = document.getElementById('irev-row-badge');
+    if (item.invoice_row) { rowBadge.textContent = 'ROW '+item.invoice_row; rowBadge.style.display = ''; }
+    else rowBadge.style.display = 'none';
+
+    // Flag pills
+    const flagClass = f => {
+        if (f === 'DUPLICATE') return 'duplicate';
+        if (f === 'OK') return 'ok';
+        if (f === 'gemini_corrected') return 'gemini';
+        return '';
+    };
+    document.getElementById('irev-flags').innerHTML = flags.map(f =>
+        `<span class="review-flag ${flagClass(f)}">${f.replace(/_/g,' ')}</span>`).join('');
+
+    const setField = (id, val, flagged) => {
+        const el = document.getElementById(id);
+        el.value = val || '';
+        el.classList.toggle('flagged', !!flagged);
+    };
+    setField('irev-qty',   item.quantity,   flags.includes('missing_qty'));
+    setField('irev-price', item.unit_price, flags.includes('missing_price') || flags.includes('amount_mismatch'));
+    setField('irev-mrp',   item.mrp,        false);
+    setField('irev-hsn',   item.hsn_code,   false);
+    setField('irev-taxrate', item.tax_rate, false);
+    setField('irev-total', item.total_amount, false);
+
+    // Sizes
+    renderIrevSizes(item.sizes, parseInt(item.quantity) || 0);
+
+    // Prev button: show when queue has more than one item
+    const prevBtn = document.getElementById('irev-prev-btn');
+    if (prevBtn) prevBtn.style.display = pendingReviews.length > 1 ? '' : 'none';
+
+    document.getElementById('irev-progress').textContent = (idx+1)+' / '+pendingReviews.length;
+}
+function renderIrevSizes(sizesRaw, qty) {
+    const container = document.getElementById('irev-sizes');
+    const grid = document.getElementById('irev-sizes-grid');
+    if (!sizesRaw) { container.style.display = 'none'; return; }
+    let sizesObj;
+    try { sizesObj = typeof sizesRaw === 'string' ? JSON.parse(sizesRaw) : sizesRaw; }
+    catch(e) { container.style.display = 'none'; return; }
+    const entries = Object.entries(sizesObj);
+    if (!entries.length) { container.style.display = 'none'; return; }
+    container.style.display = '';
+    grid.innerHTML = entries.map(([size, q]) =>
+        `<div class="irev-size-chip">
+            <div class="irev-size-chip-label">${size}</div>
+            <input class="irev-size-chip-input" type="number" inputmode="numeric" value="${parseInt(q)||0}" data-size="${size}" oninput="irevSizesChanged()">
+        </div>`
+    ).join('');
+    irevSizesChanged();
+}
+function irevSizesChanged() {
+    const inputs = document.querySelectorAll('#irev-sizes-grid .irev-size-chip-input');
+    if (!inputs.length) return;
+    const total = Array.from(inputs).reduce((s, inp) => s + (parseInt(inp.value)||0), 0);
+    const qty = parseInt(document.getElementById('irev-qty').value) || 0;
+    const sumEl = document.getElementById('irev-sizes-sum');
+    const ok = qty > 0 && total === qty;
+    sumEl.textContent = `Σ ${total}` + (qty ? (ok ? ' ✓' : ` ≠ ${qty} ⚠`) : '');
+    sumEl.className = 'irev-sizes-sum ' + (ok ? 'ok' : 'bad');
+}
+function getIrevSizes() {
+    const inputs = document.querySelectorAll('#irev-sizes-grid .irev-size-chip-input');
+    if (!inputs.length) return null;
+    const obj = {};
+    inputs.forEach(inp => { obj[inp.dataset.size] = parseInt(inp.value)||0; });
+    return obj;
+}
+function reviewSave() {
+    if (!pendingReviews || irevIndex >= pendingReviews.length) return;
+    const item = pendingReviews[irevIndex];
+    const qty   = parseFloat(document.getElementById('irev-qty').value) || 0;
+    const price = parseFloat(document.getElementById('irev-price').value) || 0;
+    const mrp   = parseFloat(document.getElementById('irev-mrp').value) || 0;
+    const sizes = getIrevSizes();
+    // Reset trash arm
+    irevTrashArmed = false; clearTimeout(irevTrashTimer);
+    // Optimistic — remove from list immediately, sync in background
+    pendingReviews.splice(irevIndex, 1);
+    if (irevIndex >= pendingReviews.length && irevIndex > 0) irevIndex--;
+    irevSavedCount++;
+    updateReviewBadge();
+    loadReviewItem(irevIndex);
+    showToast('Saved', 'success');
+    fetch(CONFIG.N8N_INVOICE_CONFIRM, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({row_id: item.row_id, quantity: qty, unit_price: price, mrp, sizes})
+    }).catch(()=>showToast('Sync failed — check connection','error'));
+}
+function reviewSkip() {
+    if (!pendingReviews || irevIndex >= pendingReviews.length) return;
+    irevIndex = (irevIndex + 1) % pendingReviews.length;
+    loadReviewItem(irevIndex);
+}
+function reviewPrev() {
+    if (!pendingReviews || pendingReviews.length <= 1) return;
+    irevIndex = (irevIndex - 1 + pendingReviews.length) % pendingReviews.length;
+    loadReviewItem(irevIndex);
+}
+function reviewTrash() {
+    if (!pendingReviews || irevIndex >= pendingReviews.length) return;
+    const btn = document.getElementById('irev-trash-btn');
+    if (!irevTrashArmed) {
+        irevTrashArmed = true;
+        btn.classList.add('armed'); btn.textContent = 'Trash?';
+        irevTrashTimer = setTimeout(() => {
+            irevTrashArmed = false;
+            btn.classList.remove('armed'); btn.textContent = '🗑';
+        }, 1500);
+    } else {
+        clearTimeout(irevTrashTimer);
+        irevTrashArmed = false;
+        btn.classList.remove('armed'); btn.textContent = '🗑';
+        const item = pendingReviews[irevIndex];
+        pendingReviews.splice(irevIndex, 1);
+        if (irevIndex >= pendingReviews.length && irevIndex > 0) irevIndex--;
+        updateReviewBadge();
+        loadReviewItem(irevIndex);
+        showToast('Entry removed', '');
+        fetch(CONFIG.N8N_INVOICE_CONFIRM, {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({row_id: item.row_id, action: 'trash'})
+        }).catch(()=>{});
+    }
+}
+function showIrevDone() {
+    document.getElementById('irev-content').style.display = 'none';
+    document.getElementById('irev-footer').style.display = 'none';
+    document.getElementById('irev-done').style.display = 'flex';
+    document.getElementById('irev-done-summary').textContent = irevSavedCount+' item'+(irevSavedCount!==1?'s':'')+' confirmed';
+}
+function exitInvoiceReview() {
+    const cur = document.getElementById('screen-invoicereview');
+    cur.classList.remove('active'); cur.style.cssText='transform:translateX(30px);opacity:0';
+    setTimeout(()=>cur.style.cssText='',300);
+    document.getElementById('screen-inventory').classList.add('active'); currentScreen='inventory';
+}
 function renderInventory(){
     const query=(document.getElementById('inv-search').value||'').toLowerCase().trim();
     const list=document.getElementById('inv-list');
@@ -2382,23 +2830,43 @@ function renderInventory(){
         const colorDisplay=parseColors(p.color||'')?Object.keys(parseColors(p.color)).join(', '):(p.color||'');
         const subLine=[p.category,colorDisplay,sizeSummary].filter(Boolean).join(' · ')||p.sku||'';
         const isOpen=invExpandedSku===p.sku;
+        // Expiry
+        const expiryObj=parseExpiry(p.expiry);
+        const nearExp=nearestExpiry(expiryObj);
+        const expStatus=expiryStatus(nearExp);
+        const expColor={expired:'var(--danger)',critical:'var(--danger)',warning:'var(--accent)',ok:'var(--success)'}[expStatus]||'';
+        const expLabel=nearExp?formatExpiryShort(nearExp):'';
+        // Expiry detail: each batch with qty
+        const expiryDetail=expiryObj?Object.entries(expiryObj).sort(([a],[b])=>a.localeCompare(b)).map(([date,qty])=>{
+            const st=expiryStatus(date);
+            const c={expired:'var(--danger)',critical:'var(--danger)',warning:'var(--accent)',ok:'var(--text)'}[st]||'var(--text)';
+            return `<span class="inv-size-chip" style="color:${c};border-color:${c}">${qty!==null?qty+' × ':''}`+date+`</span>`;
+        }).join(''):'';
+        // Slow mover
+        const isSlow=p.slowMover==='TRUE'||p.slowMover===true||p.slowMover==='1';
         return `<div class="inv-item" id="invitem-${idx}">
             <div class="inv-item-row" onclick="toggleInvItem(${idx})">
                 <div class="inv-status-dot" style="background:${dotColor}"></div>
                 <div class="inv-item-main"><div class="inv-item-name">${p.name||p.sku}</div><div class="inv-item-sub">${subLine}</div></div>
-                <div class="inv-item-right"><div class="inv-item-qty">${stock}</div><div class="inv-item-mrp">${p.mrp?'₹'+p.mrp:''}</div></div>
+                <div class="inv-item-right">
+                    <div class="inv-item-qty">${stock}</div>
+                    <div class="inv-item-mrp">${p.mrp?'₹'+p.mrp:''}</div>
+                    ${expLabel?`<div style="font-size:10px;font-weight:700;color:${expColor};margin-top:3px;text-align:right">${expStatus==='expired'?'EXPIRED':expLabel}</div>`:''}
+                    ${isSlow?`<div style="font-size:10px;font-weight:700;color:var(--accent);margin-top:2px;text-align:right">SLOW</div>`:''}
+                </div>
             </div>
             <div class="inv-expand ${isOpen?'open':''}" id="invexp-${idx}">
                 <div class="inv-expand-inner">
                     ${displaySizes?`<div style="margin-bottom:10px"><div class="inv-detail-label" style="margin-bottom:6px">Sizes</div><div class="inv-sizes">${Object.entries(displaySizes).map(([s,q])=>`<span class="inv-size-chip">${q} × ${s}</span>`).join('')}</div></div>`:''}
+                    ${expiryDetail?`<div style="margin-bottom:10px"><div class="inv-detail-label" style="margin-bottom:6px">Expiry Batches</div><div class="inv-sizes">${expiryDetail}</div></div>`:''}
                     <div class="inv-detail-grid">
                         <div><div class="inv-detail-label">SKU</div><div class="inv-detail-val">${p.sku||'—'}</div></div>
                         <div><div class="inv-detail-label">Barcode</div><div class="inv-detail-val">${p.barcode||'—'}</div></div>
                         <div><div class="inv-detail-label">Category</div><div class="inv-detail-val">${p.category||'—'}</div></div>
                         ${p.color?`<div><div class="inv-detail-label">Color</div><div class="inv-detail-val">${parseColors(p.color)?Object.keys(parseColors(p.color)).join(', '):p.color}</div></div>`:''}
                         <div><div class="inv-detail-label">Min Stock</div><div class="inv-detail-val">${min}</div></div>
-                        ${p.expiry?`<div><div class="inv-detail-label">Expiry</div><div class="inv-detail-val">${p.expiry}</div></div>`:''}
                         ${p.supplier?`<div><div class="inv-detail-label">Supplier</div><div class="inv-detail-val">${p.supplier}</div></div>`:''}
+                        ${p.lastSaleDate?`<div><div class="inv-detail-label">Last Sale</div><div class="inv-detail-val">${p.lastSaleDate}</div></div>`:''}
                     </div>
                     <button class="inv-edit-btn" onclick="invEdit(${idx})">✏️ Edit Product</button>
                 </div>
@@ -2410,6 +2878,23 @@ function renderInventory(){
 function toggleInvItem(idx){const p=window._invProducts&&window._invProducts[idx];const sku=p?p.sku:null;const prev=invExpandedSku;invExpandedSku=prev===sku?null:sku;document.querySelectorAll('.inv-expand.open').forEach(el=>el.classList.remove('open'));if(invExpandedSku){const el=document.getElementById('invexp-'+idx);if(el)el.classList.add('open');}}
 function invEdit(idx){const p=window._invProducts&&window._invProducts[idx];if(p)editProductFromInventory(p.sku);}
 function parseSizes(val){if(!val||val==='')return null;if(typeof val==='object')return val;try{return JSON.parse(val);}catch(_){return null;}}
+function parseExpiry(val){
+    if(!val||!String(val).trim())return null;
+    const s=String(val).trim();
+    if(s.startsWith('{')){try{return JSON.parse(s);}catch(_){return null;}}
+    return {[s]:null}; // plain date string — qty unknown
+}
+function nearestExpiry(obj){if(!obj)return null;return Object.keys(obj).sort()[0]||null;}
+function expiryStatus(dateStr){
+    if(!dateStr)return null;
+    const days=Math.ceil((new Date(dateStr)-new Date())/86400000);
+    if(days<0)return'expired';if(days<=30)return'critical';if(days<=90)return'warning';return'ok';
+}
+function formatExpiryShort(dateStr){
+    if(!dateStr)return'';
+    const d=new Date(dateStr);
+    return d.toLocaleDateString('en-IN',{month:'short',year:'2-digit'});
+}
 function editProductFromInventory(sku){
     const p=invProductMap[sku];if(!p)return;
     goTo('addstock');
@@ -2508,8 +2993,10 @@ function saveBmapToCache() {
 function loadBmapProduct(idx) {
     const p = bmapQueue[idx];
     document.getElementById('bmap-progress').textContent = (idx+1)+' of '+bmapQueue.length;
-    document.getElementById('bmap-sku').textContent = p.sku || '—';
-    document.getElementById('bmap-name-row').textContent = p.name || '';
+    const isNamePrimary = !p.sku && p.name;
+    document.getElementById('bmap-sku-label').textContent = isNamePrimary ? 'Name / नाम' : 'SKU / कोड';
+    document.getElementById('bmap-sku').textContent = isNamePrimary ? p.name : (p.sku || '—');
+    document.getElementById('bmap-name-row').textContent = isNamePrimary ? '' : (p.name || '');
     const meta = [];
     if (p.category) meta.push(p.category);
     const stock = parseInt(p.stock)||0;
@@ -2533,6 +3020,16 @@ function loadBmapProduct(idx) {
 }
 function bmapNext() {
     saveBmapToCache();
+    const barcode = sanitizeBarcode(document.getElementById('bc-bmap').value);
+    // Gate: duplicate check applies whether button or swipe
+    if (barcode && productCache) {
+        const currentSku = (bmapQueue[bmapIndex] || {}).sku || '';
+        const conflict = productCache.find(q => sanitizeBarcode(q.barcode) === barcode && (q.sku||'') !== currentSku);
+        if (conflict) { bmapShowDuplicateModal(barcode, conflict); return; }
+    }
+    bmapProceed();
+}
+function bmapProceed() {
     const barcode = sanitizeBarcode(document.getElementById('bc-bmap').value);
     const p = bmapQueue[bmapIndex];
     const bmapName = document.getElementById('bmap-f-name').value.trim();
@@ -2600,6 +3097,47 @@ function toggleBmapExtra() {
     document.getElementById('bmap-extra').style.display = bmapExtraOpen ? 'block' : 'none';
     document.getElementById('bmap-extra-toggle').textContent = bmapExtraOpen ? '− Hide details' : '+ Edit details';
     if (bmapExtraOpen) setTimeout(()=>document.getElementById('bmap-f-qty').focus(), 60);
+}
+let bmapDupBarcode = '', bmapDupConflict = null;
+function bmapShowDuplicateModal(barcode, conflictProduct) {
+    bmapDupBarcode = barcode; bmapDupConflict = conflictProduct;
+    document.getElementById('bmap-dup-conflict-sku').textContent = conflictProduct.sku || conflictProduct.name || '—';
+    document.getElementById('bmap-dup-conflict-name').textContent = conflictProduct.sku ? (conflictProduct.name || '') : '';
+    // Bounce the bmap screen back to center (it may be mid-swipe or already off-screen)
+    const scr = document.getElementById('screen-barcodescan');
+    scr.style.transition = 'transform 0.4s cubic-bezier(0.34,1.56,0.64,1), opacity 0.25s ease';
+    scr.style.transform = '';
+    scr.style.opacity = '';
+    // Slide modal up
+    document.getElementById('bmap-dup-modal').style.display = 'flex';
+}
+function bmapDupCancel() {
+    document.getElementById('bmap-dup-modal').style.display = 'none';
+    const field = document.getElementById('bc-bmap');
+    field.value = '';
+    updateBmapBtn();
+    setTimeout(() => field.focus(), 60);
+}
+function bmapDupReassign() {
+    document.getElementById('bmap-dup-modal').style.display = 'none';
+    // Clear barcode from old product in background (qty:0 so stock is unchanged)
+    if (bmapDupConflict) {
+        fetch(CONFIG.N8N_ADD_STOCK, {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({
+                sku: bmapDupConflict.sku || '', barcode: '',
+                name: bmapDupConflict.name || '', quantity: 0,
+                sizesOverride: null, colorsOverride: null,
+                timestamp: new Date().toISOString()
+            })
+        }).catch(()=>{});
+    }
+    bmapProceed(); // Continue to next product
+}
+function bmapDupShare() {
+    document.getElementById('bmap-dup-modal').style.display = 'none';
+    // Leave old product unchanged — both products keep this barcode
+    bmapProceed(); // Continue to next product
 }
 function exitBarcodeMapping() {
     const cur = document.getElementById('screen-barcodescan');
