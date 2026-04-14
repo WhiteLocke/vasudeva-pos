@@ -312,10 +312,6 @@
         .irev-sizes-sum { font-size:11px; font-weight:700; }
         .irev-sizes-sum.ok { color:var(--success); }
         .irev-sizes-sum.bad { color:var(--danger); }
-        .irev-sizes-grid { display:flex; flex-wrap:wrap; gap:6px; }
-        .irev-size-chip { display:flex; flex-direction:column; align-items:center; background:var(--bg); border:1.5px solid var(--border); border-radius:var(--radius-sm); padding:5px 8px; min-width:48px; }
-        .irev-size-chip-label { font-size:10px; color:var(--text-light); font-weight:700; text-transform:uppercase; margin-bottom:2px; }
-        .irev-size-chip-input { width:40px; font-size:17px; font-weight:700; color:var(--text); background:transparent; border:none; outline:none; text-align:center; font-family:'DM Sans',sans-serif; padding:0; }
         .irev-prev-btn { background:none; border:none; font-size:18px; color:var(--text-light); cursor:pointer; padding:4px 6px; line-height:1; border-radius:var(--radius-sm); }
         /* ── BARCODE CONFLICT / PICKER MODALS ── */
         @keyframes bcModalSlideUp {
@@ -878,9 +874,21 @@
                 <div class="irev-sizes-wrap">
                     <div class="irev-sizes-header">
                         <div class="irev-sizes-title">Sizes / आकार</div>
-                        <div class="irev-sizes-sum" id="irev-sizes-sum"></div>
+                        <div style="display:flex;align-items:center;gap:8px">
+                            <div class="irev-sizes-sum" id="irev-sizes-sum"></div>
+                            <button id="irev-size-edit-btn" onclick="toggleIrevSizesEdit()" style="padding:3px 10px;border:1.5px solid var(--primary);background:none;color:var(--primary);border-radius:20px;font-family:'DM Sans';font-size:11px;font-weight:700;cursor:pointer">Edit</button>
+                        </div>
                     </div>
-                    <div class="irev-sizes-grid" id="irev-sizes-grid"></div>
+                    <div id="irev-size-readonly" class="inv-sizes" style="margin-bottom:0;gap:6px"></div>
+                    <div id="irev-size-editable" style="display:none;margin-top:8px">
+                        <div class="stock-size-tab-row" id="irev-size-tab-row">
+                            <button class="stock-size-tab active" data-irevtab="letter" onclick="switchIrevSizeTab('letter')">Letter</button>
+                            <button class="stock-size-tab" data-irevtab="numeric" onclick="switchIrevSizeTab('numeric')">Numeric</button>
+                            <button class="stock-size-tab" data-irevtab="bra" onclick="switchIrevSizeTab('bra')">Bra</button>
+                            <button class="stock-size-tab" data-irevtab="other" onclick="switchIrevSizeTab('other')">Other</button>
+                        </div>
+                        <div class="stock-size-grid" id="irev-size-grid"></div>
+                    </div>
                 </div>
             </div>
             <div class="irev-fields">
@@ -2714,12 +2722,14 @@ function loadReviewItem(idx) {
     // Flag pills
     const flagClass = f => {
         if (f === 'DUPLICATE') return 'duplicate';
-        if (f === 'OK') return 'ok';
         if (f === 'gemini_corrected') return 'gemini';
         return '';
     };
-    document.getElementById('irev-flags').innerHTML = flags.map(f =>
-        `<span class="review-flag ${flagClass(f)}">${f.replace(/_/g,' ')}</span>`).join('');
+    const nonOkFlags = flags.filter(f => f !== 'OK');
+    const flagPrefix = `<span style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-light)">Flags:</span> `;
+    document.getElementById('irev-flags').innerHTML = nonOkFlags.length
+        ? flagPrefix + nonOkFlags.map(f => `<span class="review-flag ${flagClass(f)}">${f.replace(/_/g,' ')}</span>`).join('')
+        : flagPrefix + `<span style="font-size:10px;font-weight:600;color:var(--success)">None</span>`;
 
     const setField = (id, val, flagged) => {
         const el = document.getElementById(id);
@@ -2742,9 +2752,10 @@ function loadReviewItem(idx) {
 
     document.getElementById('irev-progress').textContent = (idx+1)+' / '+pendingReviews.length;
 }
+let irevSizeValues = {}, irevSizeTab = 'letter', irevSizeEditing = false;
+
 function renderIrevSizes(sizesRaw, qty) {
     const container = document.getElementById('irev-sizes');
-    const grid = document.getElementById('irev-sizes-grid');
     if (!sizesRaw) { container.style.display = 'none'; return; }
     let sizesObj;
     try { sizesObj = typeof sizesRaw === 'string' ? JSON.parse(sizesRaw) : sizesRaw; }
@@ -2752,18 +2763,59 @@ function renderIrevSizes(sizesRaw, qty) {
     const entries = Object.entries(sizesObj);
     if (!entries.length) { container.style.display = 'none'; return; }
     container.style.display = '';
-    grid.innerHTML = entries.map(([size, q]) =>
-        `<div class="irev-size-chip">
-            <div class="irev-size-chip-label">${size}</div>
-            <input class="irev-size-chip-input" type="number" inputmode="numeric" value="${parseInt(q)||0}" data-size="${size}" oninput="irevSizesChanged()">
-        </div>`
-    ).join('');
+    // Reset edit state
+    irevSizeEditing = false;
+    document.getElementById('irev-size-editable').style.display = 'none';
+    document.getElementById('irev-size-readonly').style.display = 'flex';
+    document.getElementById('irev-size-edit-btn').textContent = 'Edit';
+    // Populate irevSizeValues from all known sizes (zero by default)
+    irevSizeValues = {};
+    Object.values(STOCK_SIZE_TABS).flat().forEach(s => irevSizeValues[s] = 0);
+    entries.forEach(([s, q]) => { irevSizeValues[s] = parseInt(q) || 0; });
+    renderIrevSizeReadonly();
     irevSizesChanged();
 }
+function renderIrevSizeReadonly() {
+    const ro = document.getElementById('irev-size-readonly');
+    const nonZero = Object.entries(irevSizeValues).filter(([,q]) => q > 0);
+    ro.innerHTML = nonZero.map(([s, q]) =>
+        `<span class="inv-size-chip">${q} × ${s}</span>`
+    ).join('');
+}
+function toggleIrevSizesEdit() {
+    irevSizeEditing = !irevSizeEditing;
+    const ro = document.getElementById('irev-size-readonly');
+    const ed = document.getElementById('irev-size-editable');
+    const btn = document.getElementById('irev-size-edit-btn');
+    if (irevSizeEditing) {
+        ro.style.display = 'none'; ed.style.display = 'block'; btn.textContent = 'Done';
+        switchIrevSizeTab(irevSizeTab);
+    } else {
+        renderIrevSizeReadonly();
+        ro.style.display = 'flex'; ed.style.display = 'none'; btn.textContent = 'Edit';
+        irevSizesChanged();
+    }
+}
+function switchIrevSizeTab(tab) {
+    irevSizeTab = tab;
+    document.querySelectorAll('#irev-size-tab-row .stock-size-tab').forEach(b =>
+        b.classList.toggle('active', b.dataset.irevtab === tab));
+    renderIrevSizeGrid();
+}
+function renderIrevSizeGrid() {
+    const grid = document.getElementById('irev-size-grid');
+    grid.innerHTML = STOCK_SIZE_TABS[irevSizeTab].map(s => {
+        const v = irevSizeValues[s] || 0;
+        const safeS = s.replace(/\s/g, '_');
+        return `<div class="stock-size-cell">
+            <div class="stock-size-cell-label">${s}</div>
+            <input class="stock-size-cell-input" type="number" inputmode="numeric" min="0" value="${v||''}" placeholder="0"
+                id="irev-sz-${safeS}" oninput="irevSizeValues['${s}']=parseInt(this.value)||0;irevSizesChanged()">
+        </div>`;
+    }).join('');
+}
 function irevSizesChanged() {
-    const inputs = document.querySelectorAll('#irev-sizes-grid .irev-size-chip-input');
-    if (!inputs.length) return;
-    const total = Array.from(inputs).reduce((s, inp) => s + (parseInt(inp.value)||0), 0);
+    const total = Object.values(irevSizeValues).reduce((s, q) => s + q, 0);
     const qty = parseInt(document.getElementById('irev-qty').value) || 0;
     const sumEl = document.getElementById('irev-sizes-sum');
     const ok = qty > 0 && total === qty;
@@ -2771,11 +2823,9 @@ function irevSizesChanged() {
     sumEl.className = 'irev-sizes-sum ' + (ok ? 'ok' : 'bad');
 }
 function getIrevSizes() {
-    const inputs = document.querySelectorAll('#irev-sizes-grid .irev-size-chip-input');
-    if (!inputs.length) return null;
-    const obj = {};
-    inputs.forEach(inp => { obj[inp.dataset.size] = parseInt(inp.value)||0; });
-    return obj;
+    const nonZero = Object.entries(irevSizeValues).filter(([,q]) => q > 0);
+    if (!nonZero.length) return null;
+    return Object.fromEntries(nonZero);
 }
 function reviewSave() {
     if (!pendingReviews || irevIndex >= pendingReviews.length) return;
