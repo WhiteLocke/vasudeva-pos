@@ -2659,6 +2659,7 @@ function toggleInvSort(){invSortLowFirst=!invSortLowFirst;const btn=document.get
 let irevIndex = 0, irevSavedCount = 0;
 let irevTrashArmed = false, irevTrashTimer = null, irevPollTimer = null;
 let irevFieldCache = {};
+let irevConfirmedIds = new Set();
 let reviewNotifyShown = false;
 function showReviewNotify() {
     if (reviewNotifyShown || !pendingReviews || !pendingReviews.length) return;
@@ -2690,7 +2691,7 @@ async function loadPendingReviews() {
     showReviewNotify();
 }
 function updateReviewBadge() {
-    const n = pendingReviews ? pendingReviews.length : 0;
+    const n = pendingReviews ? pendingReviews.filter(i => !irevConfirmedIds.has(i.row_id)).length : 0;
     const entryBadge = document.getElementById('inv-review-badge');
     const invBtn = document.getElementById('irev-inv-btn');
     const invCount = document.getElementById('irev-inv-count');
@@ -2700,7 +2701,7 @@ function updateReviewBadge() {
 }
 function startInvoiceReview() {
     if (!pendingReviews || !pendingReviews.length) { showToast('No items to review', ''); return; }
-    irevIndex = 0; irevSavedCount = 0; irevFieldCache = {};
+    irevIndex = 0; irevSavedCount = 0; irevFieldCache = {}; irevConfirmedIds = new Set();
     const cur = document.getElementById('screen-'+currentScreen);
     const nxt = document.getElementById('screen-invoicereview');
     cur.classList.add('exit'); setTimeout(()=>cur.classList.remove('active','exit'),280);
@@ -2950,7 +2951,8 @@ function reviewSave() {
     const qty      = parseFloat(g('irev-qty'))   || 0;
     const price    = parseFloat(g('irev-price')) || 0;
     const mrp      = parseFloat(g('irev-mrp'))   || 0;
-    const sizes    = getIrevSizes();
+    const sizesObj = getIrevSizes();
+    const sizes    = sizesObj ? JSON.stringify(sizesObj) : '';
     const taxRate  = parseFloat(g('irev-tax')) || 0;
     const lineTotal = qty * price * (1 + taxRate / 100);
     const payload = {
@@ -2971,23 +2973,35 @@ function reviewSave() {
     };
     // Reset trash arm
     irevTrashArmed = false; clearTimeout(irevTrashTimer);
-    // Optimistic — remove from list immediately, sync in background
-    pendingReviews.splice(irevIndex, 1);
-    if (irevIndex >= pendingReviews.length && irevIndex > 0) irevIndex--;
+    // Mark confirmed in-session (don't splice — preserves backward navigation)
+    irevConfirmedIds.add(item.row_id);
     irevSavedCount++;
     updateReviewBadge();
-    loadReviewItem(irevIndex);
-    showToast('Saved', 'success');
+    // Advance to next unconfirmed
+    irevAdvanceToNext();
+    showToast('Saved ✓', 'success');
     fetch(CONFIG.N8N_INVOICE_CONFIRM, {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify(payload)
     }).catch(()=>showToast('Sync failed — check connection','error'));
 }
+function irevAdvanceToNext() {
+    if (!pendingReviews || !pendingReviews.length) { showIrevDone(); return; }
+    const unconfirmed = pendingReviews.filter(i => !irevConfirmedIds.has(i.row_id));
+    if (!unconfirmed.length) { showIrevDone(); return; }
+    // Find next unconfirmed after current index
+    let next = irevIndex;
+    for (let i = 1; i <= pendingReviews.length; i++) {
+        const idx = (irevIndex + i) % pendingReviews.length;
+        if (!irevConfirmedIds.has(pendingReviews[idx].row_id)) { next = idx; break; }
+    }
+    irevIndex = next;
+    loadReviewItem(irevIndex);
+}
 function reviewSkip() {
     if (!pendingReviews || irevIndex >= pendingReviews.length) return;
     irevSaveToCache();
-    irevIndex = (irevIndex + 1) % pendingReviews.length;
-    loadReviewItem(irevIndex);
+    irevAdvanceToNext();
 }
 function reviewPrev() {
     if (!pendingReviews || pendingReviews.length <= 1 || irevIndex <= 0) return;
@@ -3010,10 +3024,9 @@ function reviewTrash() {
         irevTrashArmed = false;
         btn.classList.remove('armed'); btn.textContent = '🗑';
         const item = pendingReviews[irevIndex];
-        pendingReviews.splice(irevIndex, 1);
-        if (irevIndex >= pendingReviews.length && irevIndex > 0) irevIndex--;
+        irevConfirmedIds.add(item.row_id);
         updateReviewBadge();
-        loadReviewItem(irevIndex);
+        irevAdvanceToNext();
         showToast('Entry removed', '');
         fetch(CONFIG.N8N_INVOICE_CONFIRM, {
             method:'POST', headers:{'Content-Type':'application/json'},
