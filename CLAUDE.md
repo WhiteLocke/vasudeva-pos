@@ -315,6 +315,18 @@ return $input.all().map(item => {
     }
   }
 
+  if (p.line_total && p.unit_price && p.quantity) {
+    const lt = parseFloat(p.line_total);
+    const preTax = p.unit_price * p.quantity;
+    const withTax = p.tax_rate != null
+      ? p.unit_price * p.quantity * (1 + p.tax_rate / 100)
+      : null;
+    const tol = n => Math.max(1, n * 0.02); // 2% or ₹1, whichever larger
+    const okPreTax  = Math.abs(lt - preTax) <= tol(preTax);
+    const okWithTax = withTax !== null && Math.abs(lt - withTax) <= tol(withTax);
+    if (!okPreTax && !okWithTax) issues.push('total_mismatch');
+  }
+
   return { json: {
     ...p,
     supplier: p.sender || null,
@@ -415,7 +427,7 @@ Note: "Never Error" must be ON — addstock returns plain text, not JSON.
 - **Error** (Error Trigger → hardcoded owner number): `❌ Could not process invoice. Please enter manually.`
 
 ### invoice_flag values:
-`OK`, `missing_sku`, `missing_price`, `missing_qty`, `possible_hsn_as_sku`, `size_qty_mismatch`, `sizes_parse_error`, `CONFIRMED`, `DUPLICATE`
+`OK`, `missing_sku`, `missing_price`, `missing_qty`, `possible_hsn_as_sku`, `size_qty_mismatch`, `sizes_parse_error`, `total_mismatch`, `CONFIRMED`, `DUPLICATE`, `TRASHED`
 
 ### Known issues (as of 2026-04-13):
 1. **Gemini accuracy** — sizes still occasionally wrong; I/slash confusion in product names; category sometimes missed. Prompt updated to address these. May need further tuning.

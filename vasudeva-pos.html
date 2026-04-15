@@ -2727,7 +2727,7 @@ function loadReviewItem(idx) {
     const item = pendingReviews[idx];
     const flags = (item.invoice_flag || '').split(',').filter(Boolean);
     const isDuplicate = flags.includes('DUPLICATE');
-    const errorFlags = ['missing_sku','missing_price','missing_qty','possible_hsn_as_sku','size_qty_mismatch','sizes_parse_error'];
+    const errorFlags = ['missing_sku','missing_price','missing_qty','possible_hsn_as_sku','size_qty_mismatch','sizes_parse_error','total_mismatch'];
     const hasErrors = flags.some(f => errorFlags.includes(f));
 
     // Reset trash arm state
@@ -2942,10 +2942,12 @@ function reviewSave() {
     if (!pendingReviews || irevIndex >= pendingReviews.length) return;
     const item = pendingReviews[irevIndex];
     const g = id => (document.getElementById(id) || {}).value || '';
-    const qty   = parseFloat(g('irev-qty'))   || 0;
-    const price = parseFloat(g('irev-price')) || 0;
-    const mrp   = parseFloat(g('irev-mrp'))   || 0;
-    const sizes = getIrevSizes();
+    const qty      = parseFloat(g('irev-qty'))   || 0;
+    const price    = parseFloat(g('irev-price')) || 0;
+    const mrp      = parseFloat(g('irev-mrp'))   || 0;
+    const sizes    = getIrevSizes();
+    const taxRate  = parseFloat(item.tax_rate)   || 0;
+    const lineTotal = qty * price * (1 + taxRate / 100);
     const payload = {
         row_id:      item.row_id,
         sku:         g('irev-sku'),
@@ -2958,7 +2960,9 @@ function reviewSave() {
         unit_price:  price,
         mrp,
         min_stock:   parseInt(g('irev-min')) || 10,
-        sizes
+        sizes,
+        tax_rate:    item.tax_rate ?? null,
+        line_total:  lineTotal
     };
     // Reset trash arm
     irevTrashArmed = false; clearTimeout(irevTrashTimer);
