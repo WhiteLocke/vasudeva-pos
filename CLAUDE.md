@@ -415,7 +415,7 @@ Note: "Never Error" must be ON — addstock returns plain text, not JSON.
 ### Known issues (as of 2026-04-13):
 1. **Gemini accuracy** — sizes still occasionally wrong; I/slash confusion in product names; category sometimes missed. Prompt updated to address these. May need further tuning.
 2. **Flask preprocessing** — Flask image preprocessing node (`/opt/invoice_preprocess.py`, port 5050) exists on the Hetzner VPS but is **no longer used in the active invoice scanning workflow** (removed to simplify the n8n pipeline). The script and its service file (`/tmp/invoice-preprocess.service` on Steam Deck) are preserved in case a future workflow needs preprocessing.
-3. **vasudeva-invoice-review and vasudeva-invoice-confirm webhooks** — not yet built. Next priority. See Upcoming Features below.
+3. **vasudeva-invoice-confirm body expanded (2026-04-15)** — frontend now POSTs `{row_id, sku, barcode, name, category, expiry, colors, quantity, unit_price, mrp, min_stock, sizes}`. The n8n confirm workflow needs updating to pass the new fields through to the vasudeva-addstock call.
 4. **addstock JSON body** — numeric fields need `|| 0` fallbacks or they produce invalid JSON when null. Current fixed body is in the addstock HTTP Request JSON body section above.
 
 ## Upcoming Features (planned, not yet built)
