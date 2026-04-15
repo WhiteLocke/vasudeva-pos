@@ -300,12 +300,18 @@
         .irev-field-input:focus { border-bottom-color:var(--primary); }
         .irev-field-input.flagged { border-bottom-color:var(--danger); color:var(--danger); }
         .irev-swipe-hint { text-align:center; font-size:12px; color:var(--text-light); letter-spacing:0.05em; padding:4px 0 2px; }
+        .irev-lookup-results { border:1.5px solid var(--primary); border-radius:var(--radius-sm); overflow-y:auto; max-height:220px; background:var(--bg-card); box-shadow:0 4px 16px rgba(28,14,8,0.12); }
+        .irev-lookup-item { display:flex; align-items:center; gap:10px; padding:10px 14px; border-bottom:1px solid var(--border); cursor:pointer; transition:background 0.12s; }
+        .irev-lookup-item:last-child { border-bottom:none; }
+        .irev-lookup-item:active { background:var(--primary-light); }
+        .irev-lookup-sku { font-size:10px; font-weight:700; color:var(--text-light); letter-spacing:0.06em; text-transform:uppercase; white-space:nowrap; flex-shrink:0; }
+        .irev-lookup-name { font-size:13px; font-weight:600; color:var(--text); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .irev-lookup-stock { font-size:11px; color:var(--text-light); white-space:nowrap; flex-shrink:0; }
         .irev-skip-btn { flex:1; padding:13px; background:none; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-family:'DM Sans',sans-serif; font-size:15px; font-weight:600; color:var(--text-light); cursor:pointer; }
         .irev-save-btn { flex:2; padding:13px; background:var(--success); color:#fff; border:none; border-radius:var(--radius-sm); font-family:'DM Sans',sans-serif; font-size:15px; font-weight:600; cursor:pointer; }
         .irev-trash-btn { padding:13px 15px; background:none; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-family:'DM Sans',sans-serif; font-size:15px; font-weight:600; color:var(--text-light); cursor:pointer; transition:background 0.15s,border-color 0.15s,color 0.15s; }
         .irev-trash-btn.armed { background:var(--danger); border-color:var(--danger); color:#fff; }
         .irev-supplier { font-size:11px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-light); margin-top:5px; }
-        .irev-name-sub { font-size:13px; color:var(--text-light); margin-top:3px; font-style:italic; }
         .irev-sizes-wrap { background:var(--bg-card); border-radius:var(--radius-sm); padding:12px 14px; }
         .irev-sizes-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
         .irev-sizes-title { font-size:10px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--text-light); }
@@ -860,16 +866,65 @@
     </div>
     <div class="screen-content" id="irev-content">
         <div id="irev-card" class="irev-card">
-            <div class="bmap-sku-card" style="margin-bottom:0">
-                <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:6px">
-                    <div class="bmap-sku-label" style="margin-bottom:0" id="irev-sku-label">SKU</div>
+            <!-- Context band: supplier + flags -->
+            <div class="bmap-sku-card" style="margin-bottom:0;padding:10px 16px">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                    <div id="irev-supplier" class="irev-supplier" style="display:none;margin-top:0"></div>
                     <div id="irev-row-badge" style="display:none;font-size:10px;font-weight:700;color:var(--text-light);background:var(--bg);border:1.5px solid var(--border);border-radius:20px;padding:2px 8px;letter-spacing:0.05em">ROW —</div>
                 </div>
-                <div class="bmap-sku-val" id="irev-sku">—</div>
-                <div id="irev-name-sub" class="irev-name-sub" style="display:none"></div>
-                <div id="irev-supplier" class="irev-supplier" style="display:none"></div>
-                <div id="irev-flags" style="display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin-top:10px"></div>
+                <div id="irev-flags" style="display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:6px"></div>
             </div>
+            <!-- Barcode scan -->
+            <div class="barcode-field" style="border-radius:0;border-left:none;border-right:none;border-top:none" onclick="document.getElementById('irev-barcode').focus()">
+                <span class="barcode-field-icon">▦</span>
+                <div class="barcode-field-input-wrap">
+                    <div class="barcode-label">Barcode <span class="barcode-label-hindi">/ बारकोड</span></div>
+                    <input id="irev-barcode" class="barcode-input" type="text" inputmode="text" placeholder="Scan or type…" autocomplete="off" oninput="irevLookup(this,'barcode')">
+                </div>
+                <button class="camera-btn" onclick="openCamera('irev-barcode');event.stopPropagation()" title="Scan barcode">📷</button>
+            </div>
+            <!-- Lookup results (populated when SKU/name/barcode matches inventory) -->
+            <div id="irev-lookup-results" class="irev-lookup-results" style="display:none"></div>
+            <!-- Editable fields -->
+            <div class="irev-fields">
+                <div class="irev-field-group" style="grid-column:span 2">
+                    <div class="irev-field-label">SKU / कोड</div>
+                    <input class="irev-field-input" id="irev-sku" type="text" placeholder="Supplier article code" autocomplete="off" oninput="irevLookup(this,'sku')">
+                </div>
+                <div class="irev-field-group" style="grid-column:span 2">
+                    <div class="irev-field-label">Name / नाम</div>
+                    <input class="irev-field-input" id="irev-name" type="text" placeholder="Product name" autocomplete="off" oninput="irevLookup(this,'name')">
+                </div>
+                <div class="irev-field-group">
+                    <div class="irev-field-label">Category</div>
+                    <input class="irev-field-input" id="irev-cat" type="text" placeholder="e.g. T-Shirt" autocomplete="off">
+                </div>
+                <div class="irev-field-group">
+                    <div class="irev-field-label">Expiry</div>
+                    <input class="irev-field-input" id="irev-expiry" type="text" placeholder="YYYY-MM-DD" autocomplete="off">
+                </div>
+                <div class="irev-field-group">
+                    <div class="irev-field-label">Qty / मात्रा</div>
+                    <input class="irev-field-input" id="irev-qty" type="number" inputmode="numeric" placeholder="0" oninput="irevSizesChanged()">
+                </div>
+                <div class="irev-field-group">
+                    <div class="irev-field-label">Cost / लागत</div>
+                    <input class="irev-field-input" id="irev-price" type="number" inputmode="decimal" placeholder="0.00">
+                </div>
+                <div class="irev-field-group">
+                    <div class="irev-field-label">MRP</div>
+                    <input class="irev-field-input" id="irev-mrp" type="number" inputmode="decimal" placeholder="0.00">
+                </div>
+                <div class="irev-field-group">
+                    <div class="irev-field-label">Min Stock</div>
+                    <input class="irev-field-input" id="irev-min" type="number" inputmode="numeric" placeholder="10">
+                </div>
+                <div class="irev-field-group" style="grid-column:span 2">
+                    <div class="irev-field-label">Total (ref)</div>
+                    <input class="irev-field-input" id="irev-total" type="text" placeholder="—" readonly style="opacity:0.6">
+                </div>
+            </div>
+            <!-- Sizes -->
             <div id="irev-sizes" style="display:none">
                 <div class="irev-sizes-wrap">
                     <div class="irev-sizes-header">
@@ -891,30 +946,11 @@
                     </div>
                 </div>
             </div>
-            <div class="irev-fields">
-                <div class="irev-field-group">
-                    <div class="irev-field-label">Qty / मात्रा</div>
-                    <input class="irev-field-input" id="irev-qty" type="number" inputmode="numeric" placeholder="0" oninput="irevSizesChanged()">
-                </div>
-                <div class="irev-field-group">
-                    <div class="irev-field-label">Unit Price / मूल्य</div>
-                    <input class="irev-field-input" id="irev-price" type="number" inputmode="decimal" placeholder="0.00">
-                </div>
-                <div class="irev-field-group">
-                    <div class="irev-field-label">MRP</div>
-                    <input class="irev-field-input" id="irev-mrp" type="number" inputmode="decimal" placeholder="0.00">
-                </div>
-                <div class="irev-field-group">
-                    <div class="irev-field-label">HSN Code</div>
-                    <input class="irev-field-input" id="irev-hsn" type="text" inputmode="numeric" placeholder="—" readonly style="opacity:0.6">
-                </div>
-                <div class="irev-field-group">
-                    <div class="irev-field-label">Tax Rate</div>
-                    <input class="irev-field-input" id="irev-taxrate" type="text" placeholder="—" readonly style="opacity:0.6">
-                </div>
-                <div class="irev-field-group">
-                    <div class="irev-field-label">Total Amount</div>
-                    <input class="irev-field-input" id="irev-total" type="text" placeholder="—" readonly style="opacity:0.6">
+            <!-- Colors -->
+            <div class="irev-fields" style="margin-top:0">
+                <div class="irev-field-group" style="grid-column:span 2">
+                    <div class="irev-field-label">Colors / रंग</div>
+                    <input class="irev-field-input" id="irev-colors" type="text" placeholder='Red, Blue or {"Red":3,"Blue":2}' autocomplete="off">
                 </div>
             </div>
             <div class="irev-swipe-hint">← Skip &nbsp;&nbsp; Save →</div>
@@ -2700,17 +2736,7 @@ function loadReviewItem(idx) {
     skuCard.classList.toggle('is-duplicate', isDuplicate);
     skuCard.classList.toggle('has-errors', !isDuplicate && hasErrors);
 
-    // SKU or name
-    const isNamePrimary = !item.sku && item.product_name;
-    document.getElementById('irev-sku-label').textContent = isNamePrimary ? 'Name / नाम' : 'SKU / कोड';
-    document.getElementById('irev-sku').textContent = isNamePrimary ? item.product_name : (item.sku || '—');
-
-    // Subtitle: product name when SKU is shown
-    const nameSub = document.getElementById('irev-name-sub');
-    if (!isNamePrimary && item.product_name) { nameSub.textContent = item.product_name; nameSub.style.display = ''; }
-    else nameSub.style.display = 'none';
-
-    // Supplier
+    // Supplier + row badge
     const supplierEl = document.getElementById('irev-supplier');
     if (item.supplier) { supplierEl.textContent = '📦 ' + item.supplier; supplierEl.style.display = ''; }
     else supplierEl.style.display = 'none';
@@ -2733,15 +2759,22 @@ function loadReviewItem(idx) {
 
     const setField = (id, val, flagged) => {
         const el = document.getElementById(id);
+        if (!el) return;
         el.value = val || '';
         el.classList.toggle('flagged', !!flagged);
     };
-    setField('irev-qty',   item.quantity,   flags.includes('missing_qty'));
-    setField('irev-price', item.unit_price, flags.includes('missing_price') || flags.includes('amount_mismatch'));
-    setField('irev-mrp',   item.mrp,        false);
-    setField('irev-hsn',   item.hsn_code,   false);
-    setField('irev-taxrate', item.tax_rate, false);
-    setField('irev-total', item.total_amount, false);
+    setField('irev-sku',    item.sku,          flags.includes('possible_hsn_as_sku'));
+    setField('irev-name',   item.product_name, flags.includes('missing_sku') && !item.sku);
+    setField('irev-barcode',item.barcode,      false);
+    setField('irev-cat',    item.category,     false);
+    setField('irev-expiry', item.expiry_date,  false);
+    setField('irev-qty',    item.quantity,     flags.includes('missing_qty'));
+    setField('irev-price',  item.unit_price,   flags.includes('missing_price') || flags.includes('amount_mismatch'));
+    setField('irev-mrp',    item.mrp,          false);
+    setField('irev-min',    item.min_stock,    false);
+    setField('irev-total',  item.total_amount, false);
+    setField('irev-colors', item.colors || '', false);
+    irevHideLookupResults();
 
     // Sizes
     renderIrevSizes(item.sizes, parseInt(item.quantity) || 0);
@@ -2827,13 +2860,86 @@ function getIrevSizes() {
     if (!nonZero.length) return null;
     return Object.fromEntries(nonZero);
 }
+// ── INVOICE REVIEW — INVENTORY LOOKUP ────────────────────────────────
+let irevLookupTimer = null, irevLookupMatches = [];
+function irevLookup(el, field) {
+    clearTimeout(irevLookupTimer);
+    const v = el.value.trim();
+    if (v.length < 2) { irevHideLookupResults(); return; }
+    irevLookupTimer = setTimeout(() => {
+        if (!productCache) return;
+        let matches;
+        if (field === 'barcode') {
+            matches = searchCacheMultiBarcode(v);
+        } else {
+            // searchCacheMulti searches SKU + name
+            matches = searchCacheMulti(v);
+        }
+        if (!matches.length) { irevHideLookupResults(); return; }
+        irevLookupMatches = matches;
+        irevShowLookupResults(matches);
+    }, 350);
+}
+function irevShowLookupResults(matches) {
+    const panel = document.getElementById('irev-lookup-results');
+    panel.innerHTML = matches.slice(0, 7).map((p, i) => {
+        const stock = computeHealedStock(p);
+        return `<div class="irev-lookup-item" onclick="irevApplyProduct(${i})">
+            <div class="irev-lookup-sku">${esc(p.sku || '—')}</div>
+            <div class="irev-lookup-name">${esc(p.name || '')}</div>
+            <div class="irev-lookup-stock">${stock} units</div>
+        </div>`;
+    }).join('');
+    panel.style.display = 'block';
+}
+function irevHideLookupResults() {
+    const panel = document.getElementById('irev-lookup-results');
+    if (panel) panel.style.display = 'none';
+    irevLookupMatches = [];
+}
+function irevApplyProduct(idx) {
+    const p = irevLookupMatches[idx];
+    if (!p) return;
+    const set = (id, val) => { const el = document.getElementById(id); if (el && val != null && val !== '') el.value = val; };
+    set('irev-sku',     p.sku);
+    set('irev-name',    p.name);
+    set('irev-barcode', sanitizeBarcode(p.barcode));
+    set('irev-cat',     p.category);
+    set('irev-mrp',     p.mrp);
+    set('irev-min',     p.minStock);
+    // Colors: normalise to string
+    const colorStr = (() => {
+        const c = parseColors(p.color);
+        if (!c) return p.color || '';
+        return Object.keys(c).join(', ');
+    })();
+    set('irev-colors', colorStr);
+    irevHideLookupResults();
+    showToast((p.name || p.sku) + ' filled from inventory', '');
+}
+
 function reviewSave() {
     if (!pendingReviews || irevIndex >= pendingReviews.length) return;
     const item = pendingReviews[irevIndex];
-    const qty   = parseFloat(document.getElementById('irev-qty').value) || 0;
-    const price = parseFloat(document.getElementById('irev-price').value) || 0;
-    const mrp   = parseFloat(document.getElementById('irev-mrp').value) || 0;
+    const g = id => (document.getElementById(id) || {}).value || '';
+    const qty   = parseFloat(g('irev-qty'))   || 0;
+    const price = parseFloat(g('irev-price')) || 0;
+    const mrp   = parseFloat(g('irev-mrp'))   || 0;
     const sizes = getIrevSizes();
+    const payload = {
+        row_id:      item.row_id,
+        sku:         g('irev-sku'),
+        barcode:     g('irev-barcode'),
+        name:        g('irev-name'),
+        category:    g('irev-cat'),
+        expiry:      g('irev-expiry'),
+        colors:      g('irev-colors'),
+        quantity:    qty,
+        unit_price:  price,
+        mrp,
+        min_stock:   parseInt(g('irev-min')) || 10,
+        sizes
+    };
     // Reset trash arm
     irevTrashArmed = false; clearTimeout(irevTrashTimer);
     // Optimistic — remove from list immediately, sync in background
@@ -2845,7 +2951,7 @@ function reviewSave() {
     showToast('Saved', 'success');
     fetch(CONFIG.N8N_INVOICE_CONFIRM, {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({row_id: item.row_id, quantity: qty, unit_price: price, mrp, sizes})
+        body: JSON.stringify(payload)
     }).catch(()=>showToast('Sync failed — check connection','error'));
 }
 function reviewSkip() {

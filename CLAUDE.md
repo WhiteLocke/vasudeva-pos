@@ -189,8 +189,8 @@ Launched from Inventory via "⚠ Review (n)" button (only visible when `pendingR
 - Name-only products (no SKU): label shows "Name / नाम", displays `product_name` in SKU spot
 
 **n8n webhooks needed (not yet created):**
-- `vasudeva-invoice-review` GET → returns all rows where `invoice_flag` != `CONFIRMED`. Shape: `[{row_id, sku, product_name, supplier, quantity, unit_price, mrp, sizes, colors, invoice_flag}]`
-- `vasudeva-invoice-confirm` POST `{row_id, quantity, unit_price, mrp}` → updates row, sets `invoice_flag = CONFIRMED`, calls vasudeva-addstock
+- `vasudeva-invoice-review` GET → returns all rows where `invoice_flag` != `CONFIRMED`. Shape: `[{row_id, sku, product_name, barcode, supplier, category, quantity, unit_price, mrp, sizes, colors, expiry_date, invoice_flag}]`
+- `vasudeva-invoice-confirm` POST `{row_id, sku, barcode, name, category, expiry, colors, quantity, unit_price, mrp, sizes}` → updates row, sets `invoice_flag = CONFIRMED`, calls vasudeva-addstock
 
 ## Invoice Scanning Pipeline (n8n)
 
@@ -420,8 +420,8 @@ Note: "Never Error" must be ON — addstock returns plain text, not JSON.
 
 ## Upcoming Features (planned, not yet built)
 
-1. **vasudeva-invoice-review webhook** (GET) — returns all rows from Restock Archive where `invoice_flag` is not `CONFIRMED` or `TRASHED`. Response shape: `[{row_id, sku, product_name, supplier, quantity, unit_price, mrp, sizes, colors, invoice_flag}]`. Frontend calls this on PIN entry and on `goTo('inventory')`.
-2. **vasudeva-invoice-confirm webhook** (POST) — body: `{row_id, quantity, unit_price, mrp, sizes}` OR `{row_id, action:'trash'}`. For confirm: updates Restock Archive row to `invoice_flag = CONFIRMED`, calls vasudeva-addstock with confirmed values including sizes. For trash: sets `invoice_flag = TRASHED`, no addstock call.
+1. **vasudeva-invoice-review webhook** (GET) — returns all rows from Restock Archive where `invoice_flag` is not `CONFIRMED` or `TRASHED`. Response shape: `[{row_id, sku, product_name, barcode, supplier, category, quantity, unit_price, mrp, sizes, colors, expiry_date, invoice_flag}]`. Frontend calls this on PIN entry and on `goTo('inventory')`.
+2. **vasudeva-invoice-confirm webhook** (POST) — body: `{row_id, sku, barcode, name, category, expiry, colors, quantity, unit_price, mrp, sizes}` OR `{row_id, action:'trash'}`. For confirm: updates Restock Archive row to `invoice_flag = CONFIRMED`, calls vasudeva-addstock with all confirmed values. For trash: sets `invoice_flag = TRASHED`, no addstock call.
 
 ## Core Validation Rules — DO NOT BREAK
 
