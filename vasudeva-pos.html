@@ -290,8 +290,8 @@
         .review-flag.duplicate { background:rgba(212,147,10,0.13); color:var(--accent); }
         .review-flag.ok { background:rgba(45,106,79,0.10); color:var(--success); }
         .irev-card { display:flex; flex-direction:column; gap:14px; }
-        .irev-card .bmap-sku-card.is-duplicate { border:2px solid var(--accent); background:rgba(212,147,10,0.06); }
-        .irev-card .bmap-sku-card.has-errors { border:2px solid var(--danger); background:rgba(181,49,27,0.06); }
+        #irev-identity .bmap-sku-card.is-duplicate { border:2px solid var(--accent); background:rgba(212,147,10,0.06); }
+        #irev-identity .bmap-sku-card.has-errors { border:2px solid var(--danger); background:rgba(181,49,27,0.06); }
         .irev-fields { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
         .irev-field-group { display:flex; flex-direction:column; gap:4px; background:var(--bg-card); border-radius:var(--radius-sm); padding:10px 12px; }
         .irev-field-label { font-size:10px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--text-light); }
@@ -955,7 +955,7 @@
             <div class="irev-fields" style="margin-top:0">
                 <div class="irev-field-group" style="grid-column:span 2">
                     <div class="irev-field-label">Colors / रंग</div>
-                    <input class="irev-field-input" id="irev-colors" type="text" placeholder='Red, Blue or {"Red":3,"Blue":2}' autocomplete="off">
+                    <input class="irev-field-input" id="irev-colors" type="text" placeholder="e.g. Red, Blue" autocomplete="off">
                 </div>
             </div>
             <div class="irev-swipe-hint">← Back &nbsp;&nbsp; Forward →</div>
@@ -2737,7 +2737,7 @@ function loadReviewItem(idx) {
     if (trashBtn) { trashBtn.classList.remove('armed'); trashBtn.textContent = '🗑'; }
 
     // Card header tinting
-    const skuCard = document.querySelector('#irev-card .bmap-sku-card');
+    const skuCard = document.querySelector('#irev-identity .bmap-sku-card');
     skuCard.classList.toggle('is-duplicate', isDuplicate);
     skuCard.classList.toggle('has-errors', !isDuplicate && hasErrors);
 
