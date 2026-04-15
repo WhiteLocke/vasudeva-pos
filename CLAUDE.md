@@ -256,6 +256,8 @@ Extract all product line items from this supplier invoice. Only extract line ite
 - "unit_price": supplier cost price per unit (rate column)
 - "mrp": maximum retail price if visible, otherwise null
 - "expiry_date": expiry date if visible, otherwise null
+- "tax_rate": the GST/tax percentage for this line (e.g. 12 for 12%). Read from the tax rate column if present, otherwise null.
+- "line_total": the actual printed total/amount value for this line item as it appears in the invoice — this is typically unit_price × qty × (1 + tax_rate/100) and represents what the supplier billed including tax. Do not compute it yourself; read the printed value. Null if no total column is visible.
 - "sizes": read each size column header and its corresponding cell value for this row independently. Do not skip columns. Do not borrow values from adjacent rows or columns. Size labels must be read in full. Use the sequence of column headers as context — if columns read S, M, L, XL then the fourth column is XL not L. Common sequences: XS/S/M/L/XL/2XL/3XL or numeric 28/30/32/34/36/38/40. Never assign the same label twice in one row. After reading, verify your size quantities sum to the total Qty — if they don't, re-read the row. Return as object e.g. {"32":2,"34":1,"36":2}. Return null if no size columns visible.
 - "colors": if color breakdown with quantities return {"Red":2,"Blue":3}; if colors listed without quantities return "Red, Blue"; otherwise null
 - "barcode": EAN/UPC barcode if visible, otherwise null
@@ -281,7 +283,9 @@ return products.map(product => ({
     barcode: product.barcode ? String(product.barcode) : '',
     colors: product.colors
       ? (typeof product.colors === 'object' ? JSON.stringify(product.colors) : product.colors)
-      : ''
+      : '',
+    tax_rate: product.tax_rate ?? null,
+    line_total: product.line_total ?? null
   }
 }));
 ```
@@ -380,7 +384,8 @@ return items.map(item => ({ json: {
 | Quantity | `{{ $json.quantity }}` |
 | Unit Price | `{{ $json.unit_price }}` |
 | MRP | `{{ $json.mrp }}` |
-| Total Amount | `{{ $json.unit_price * $json.quantity }}` |
+| Tax Rate | `{{ $json.tax_rate }}` |
+| Line Total (incl. tax) | `{{ $json.line_total ?? ($json.unit_price * $json.quantity) }}` |
 | Expiry Date | `{{ $json.expiry_date }}` |
 | Invoice Flag | `{{ $json.invoice_flag }}` |
 

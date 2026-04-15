@@ -289,8 +289,7 @@
         .review-flag.gemini { background:rgba(45,106,79,0.10); color:var(--success); }
         .review-flag.duplicate { background:rgba(212,147,10,0.13); color:var(--accent); }
         .review-flag.ok { background:rgba(45,106,79,0.10); color:var(--success); }
-        .irev-card { display:flex; flex-direction:column; gap:14px; transition:transform 0.18s ease, opacity 0.18s ease; }
-        .irev-card.swiping { transition:none; }
+        .irev-card { display:flex; flex-direction:column; gap:14px; }
         .irev-card .bmap-sku-card.is-duplicate { border:2px solid var(--accent); background:rgba(212,147,10,0.06); }
         .irev-card .bmap-sku-card.has-errors { border:2px solid var(--danger); background:rgba(181,49,27,0.06); }
         .irev-fields { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
@@ -864,37 +863,43 @@
             <span style="font-size:12px;color:var(--text-light);font-weight:600" id="irev-progress"></span>
         </div>
     </div>
+    <!-- Fixed identity: always visible, doesn't scroll -->
+    <div id="irev-identity" style="flex-shrink:0;background:var(--bg-card);border-bottom:1px solid var(--border)">
+        <!-- Supplier + flags context band -->
+        <div class="bmap-sku-card" style="border-radius:0;box-shadow:none;padding:8px 16px 6px">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <div id="irev-supplier" class="irev-supplier" style="display:none;margin-top:0"></div>
+                <div id="irev-row-badge" style="display:none;font-size:10px;font-weight:700;color:var(--text-light);background:var(--bg);border:1.5px solid var(--border);border-radius:20px;padding:2px 8px;letter-spacing:0.05em">ROW —</div>
+            </div>
+            <div id="irev-flags" style="display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:4px"></div>
+        </div>
+        <!-- Barcode scan -->
+        <div class="barcode-field" style="border-radius:0;border-left:none;border-right:none;border-top:none" onclick="document.getElementById('irev-barcode').focus()">
+            <span class="barcode-field-icon">▦</span>
+            <div class="barcode-field-input-wrap">
+                <div class="barcode-label">Barcode <span class="barcode-label-hindi">/ बारकोड</span></div>
+                <input id="irev-barcode" class="barcode-input" type="text" inputmode="text" placeholder="Scan or type…" autocomplete="off" oninput="irevLookup(this,'barcode')">
+            </div>
+            <button class="camera-btn" onclick="openCamera('irev-barcode');event.stopPropagation()" title="Scan barcode">📷</button>
+        </div>
+        <!-- SKU + Name — always visible -->
+        <div style="padding:10px 16px 12px;display:flex;flex-direction:column;gap:10px">
+            <div>
+                <div class="irev-field-label">SKU / कोड</div>
+                <input class="irev-field-input" id="irev-sku" type="text" placeholder="Supplier article code" autocomplete="off" oninput="irevLookup(this,'sku')">
+            </div>
+            <div>
+                <div class="irev-field-label">Name / नाम</div>
+                <input class="irev-field-input" id="irev-name" type="text" placeholder="Product name" autocomplete="off" oninput="irevLookup(this,'name')">
+            </div>
+        </div>
+        <!-- Lookup results drop down within identity section -->
+        <div id="irev-lookup-results" class="irev-lookup-results" style="display:none;border-radius:0;border-left:none;border-right:none;border-top:none"></div>
+    </div>
+    <!-- Scrollable details -->
     <div class="screen-content" id="irev-content">
         <div id="irev-card" class="irev-card">
-            <!-- Context band: supplier + flags -->
-            <div class="bmap-sku-card" style="margin-bottom:0;padding:10px 16px">
-                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-                    <div id="irev-supplier" class="irev-supplier" style="display:none;margin-top:0"></div>
-                    <div id="irev-row-badge" style="display:none;font-size:10px;font-weight:700;color:var(--text-light);background:var(--bg);border:1.5px solid var(--border);border-radius:20px;padding:2px 8px;letter-spacing:0.05em">ROW —</div>
-                </div>
-                <div id="irev-flags" style="display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:6px"></div>
-            </div>
-            <!-- Barcode scan -->
-            <div class="barcode-field" style="border-radius:0;border-left:none;border-right:none;border-top:none" onclick="document.getElementById('irev-barcode').focus()">
-                <span class="barcode-field-icon">▦</span>
-                <div class="barcode-field-input-wrap">
-                    <div class="barcode-label">Barcode <span class="barcode-label-hindi">/ बारकोड</span></div>
-                    <input id="irev-barcode" class="barcode-input" type="text" inputmode="text" placeholder="Scan or type…" autocomplete="off" oninput="irevLookup(this,'barcode')">
-                </div>
-                <button class="camera-btn" onclick="openCamera('irev-barcode');event.stopPropagation()" title="Scan barcode">📷</button>
-            </div>
-            <!-- Lookup results (populated when SKU/name/barcode matches inventory) -->
-            <div id="irev-lookup-results" class="irev-lookup-results" style="display:none"></div>
-            <!-- Editable fields -->
             <div class="irev-fields">
-                <div class="irev-field-group" style="grid-column:span 2">
-                    <div class="irev-field-label">SKU / कोड</div>
-                    <input class="irev-field-input" id="irev-sku" type="text" placeholder="Supplier article code" autocomplete="off" oninput="irevLookup(this,'sku')">
-                </div>
-                <div class="irev-field-group" style="grid-column:span 2">
-                    <div class="irev-field-label">Name / नाम</div>
-                    <input class="irev-field-input" id="irev-name" type="text" placeholder="Product name" autocomplete="off" oninput="irevLookup(this,'name')">
-                </div>
                 <div class="irev-field-group">
                     <div class="irev-field-label">Category</div>
                     <input class="irev-field-input" id="irev-cat" type="text" placeholder="e.g. T-Shirt" autocomplete="off">
@@ -920,7 +925,7 @@
                     <input class="irev-field-input" id="irev-min" type="number" inputmode="numeric" placeholder="10">
                 </div>
                 <div class="irev-field-group" style="grid-column:span 2">
-                    <div class="irev-field-label">Total (ref)</div>
+                    <div class="irev-field-label">Invoice Total</div>
                     <input class="irev-field-input" id="irev-total" type="text" placeholder="—" readonly style="opacity:0.6">
                 </div>
             </div>
@@ -963,7 +968,7 @@
     </div>
     <div style="flex-shrink:0;padding:12px 22px 20px;background:var(--bg);border-top:1px solid var(--border);display:flex;gap:10px" id="irev-footer">
         <button class="irev-trash-btn" id="irev-trash-btn" onclick="reviewTrash()" title="Remove fabricated entry">🗑</button>
-        <button class="irev-skip-btn" onclick="reviewSkip()">← Skip</button>
+        <button class="irev-skip-btn" onclick="reviewSkip()">Skip →</button>
         <button class="irev-save-btn" onclick="reviewSave()">Save ✓</button>
     </div>
 </div>
@@ -2696,6 +2701,7 @@ function startInvoiceReview() {
     const nxt = document.getElementById('screen-invoicereview');
     cur.classList.add('exit'); setTimeout(()=>cur.classList.remove('active','exit'),280);
     nxt.classList.add('active'); currentScreen = 'invoicereview';
+    document.getElementById('irev-identity').style.display = '';
     document.getElementById('irev-content').style.display = '';
     document.getElementById('irev-done').style.display = 'none';
     document.getElementById('irev-footer').style.display = '';
@@ -2716,6 +2722,8 @@ function irevSaveToCache() {
 }
 function loadReviewItem(idx) {
     if (!pendingReviews || idx >= pendingReviews.length) { showIrevDone(); return; }
+    const contentEl = document.getElementById('irev-content');
+    if (contentEl) contentEl.scrollTop = 0;
     const item = pendingReviews[idx];
     const flags = (item.invoice_flag || '').split(',').filter(Boolean);
     const isDuplicate = flags.includes('DUPLICATE');
@@ -2769,7 +2777,7 @@ function loadReviewItem(idx) {
     setField('irev-price',  item.unit_price,   flags.includes('missing_price') || flags.includes('amount_mismatch'));
     setField('irev-mrp',    item.mrp,          false);
     setField('irev-min',    item.min_stock,    false);
-    setField('irev-total',  item.total_amount, false);
+    setField('irev-total',  item.line_total ?? item.total_amount, false);
     setField('irev-colors', item.colors || '', false);
     irevHideLookupResults();
 
@@ -3041,6 +3049,7 @@ async function showIrevDone() {
                 irevIndex = 0;
                 updateReviewBadge();
                 showToast(newItems.length + ' more item' + (newItems.length !== 1 ? 's' : '') + ' to review', '');
+                document.getElementById('irev-identity').style.display = '';
                 document.getElementById('irev-content').style.display = '';
                 document.getElementById('irev-footer').style.display = '';
                 document.getElementById('irev-done').style.display = 'none';
@@ -3051,6 +3060,7 @@ async function showIrevDone() {
         }
     } catch(_) {}
     // Truly done
+    document.getElementById('irev-identity').style.display = 'none';
     document.getElementById('irev-content').style.display = 'none';
     document.getElementById('irev-footer').style.display = 'none';
     document.getElementById('irev-done').style.display = 'flex';
