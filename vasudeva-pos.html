@@ -924,7 +924,11 @@
                     <div class="irev-field-label">Min Stock</div>
                     <input class="irev-field-input" id="irev-min" type="number" inputmode="numeric" placeholder="10">
                 </div>
-                <div class="irev-field-group" style="grid-column:span 2">
+                <div class="irev-field-group">
+                    <div class="irev-field-label">Tax Rate %</div>
+                    <input class="irev-field-input" id="irev-tax" type="number" inputmode="decimal" placeholder="0">
+                </div>
+                <div class="irev-field-group">
                     <div class="irev-field-label">Invoice Total</div>
                     <input class="irev-field-input" id="irev-total" type="text" placeholder="—" readonly style="opacity:0.6">
                 </div>
@@ -2714,7 +2718,7 @@ function irevSaveToCache() {
     if (!pendingReviews || irevIndex >= pendingReviews.length) return;
     const item = pendingReviews[irevIndex];
     const ids = ['irev-sku','irev-barcode','irev-name','irev-cat','irev-expiry',
-                 'irev-qty','irev-price','irev-mrp','irev-min','irev-total','irev-colors'];
+                 'irev-qty','irev-price','irev-mrp','irev-min','irev-tax','irev-total','irev-colors'];
     const cache = {};
     ids.forEach(id => { const el = document.getElementById(id); if (el) cache[id] = el.value; });
     cache._sizeValues = {...irevSizeValues};
@@ -2777,6 +2781,7 @@ function loadReviewItem(idx) {
     setField('irev-price',  item.unit_price,   flags.includes('missing_price') || flags.includes('amount_mismatch'));
     setField('irev-mrp',    item.mrp,          false);
     setField('irev-min',    item.min_stock,    false);
+    setField('irev-tax',    item.tax_rate,     false);
     setField('irev-total',  item.line_total ?? item.total_amount, false);
     setField('irev-colors', item.colors || '', false);
     irevHideLookupResults();
@@ -2788,7 +2793,7 @@ function loadReviewItem(idx) {
     const cached = irevFieldCache[item.row_id];
     if (cached) {
         ['irev-sku','irev-barcode','irev-name','irev-cat','irev-expiry',
-         'irev-qty','irev-price','irev-mrp','irev-min','irev-total','irev-colors'].forEach(id => {
+         'irev-qty','irev-price','irev-mrp','irev-min','irev-tax','irev-total','irev-colors'].forEach(id => {
             const el = document.getElementById(id);
             if (el && cached[id] !== undefined) el.value = cached[id];
         });
@@ -2946,7 +2951,7 @@ function reviewSave() {
     const price    = parseFloat(g('irev-price')) || 0;
     const mrp      = parseFloat(g('irev-mrp'))   || 0;
     const sizes    = getIrevSizes();
-    const taxRate  = parseFloat(item.tax_rate)   || 0;
+    const taxRate  = parseFloat(g('irev-tax')) || 0;
     const lineTotal = qty * price * (1 + taxRate / 100);
     const payload = {
         row_id:      item.row_id,
@@ -2961,7 +2966,7 @@ function reviewSave() {
         mrp,
         min_stock:   parseInt(g('irev-min')) || 10,
         sizes,
-        tax_rate:    item.tax_rate ?? null,
+        tax_rate:    taxRate || null,
         line_total:  lineTotal
     };
     // Reset trash arm
