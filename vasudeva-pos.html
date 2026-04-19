@@ -2951,7 +2951,8 @@ function reviewSave() {
     const qty      = parseFloat(g('irev-qty'))   || 0;
     const price    = parseFloat(g('irev-price')) || 0;
     const mrp      = parseFloat(g('irev-mrp'))   || 0;
-    const sizes = getIrevSizes(); // send as object; n8n serializes it
+    const sizesObj = getIrevSizes();
+    const sizes = sizesObj ? JSON.stringify(sizesObj) : '';
     const taxRate  = parseFloat(g('irev-tax')) || 0;
     const lineTotal = qty * price * (1 + taxRate / 100);
     const payload = {
