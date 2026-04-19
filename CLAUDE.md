@@ -170,51 +170,125 @@ Launched from Inventory via the "⬛ Add barcodes" button (`startBarcodeMapping(
 
 ## Invoice Review Screen (`screen-invoicereview`)
 
-Launched from Inventory via "⚠ Review (n)" button (only visible when `pendingReviews.length > 0`). Card-based, one item at a time — same UX pattern as barcode mapping.
+Launched from Inventory via "⚠ Review (n)" button (only visible when `pendingReviews.length > 0`). Card-based swipe UI, one item at a time — same screen-level swipe IIFE pattern as barcode mapping.
 
-- `loadPendingReviews()` — fetches from `N8N_INVOICE_REVIEW` webhook; called on PIN entry and on `goTo('inventory')`
-- `updateReviewBadge()` — shows/hides the Review button in inventory header and the `!` badge on the Inventory entry button
-- `startInvoiceReview()` — navigates to screen, attaches swipe gesture listeners on `#irev-card`
-- `loadReviewItem(idx)` — populates card fields; highlights flagged inputs in danger color
-- `reviewSave()` — POSTs to `N8N_INVOICE_CONFIRM`, splices item from `pendingReviews`, stays at same index (array shifted)
-- `reviewSkip()` — advances index, wraps around; no network call
-- Swipe right = save, swipe left = skip (threshold: 60px horizontal delta)
-- No auto-focus on any field — keyboard stays hidden until user taps a field
-- `exitInvoiceReview()` — returns to inventory screen
+### Key functions
+- `loadPendingReviews()` — async fetch from `N8N_INVOICE_REVIEW`; called on PIN entry and `goTo('inventory')`
+- `updateReviewBadge()` — shows/hides Review button + `!` badge; counts only unconfirmed items (`irevConfirmedIds` Set)
+- `startInvoiceReview()` — navigates to screen, resets `irevIndex`, `irevSavedCount`, `irevFieldCache`, `irevConfirmedIds`
+- `loadReviewItem(idx)` — populates all fields from `pendingReviews[idx]`; restores `irevFieldCache` if user was here before
+- `irevSaveToCache()` — snapshots all field values + `irevSizeValues` into `irevFieldCache[item.row_id]`
+- `reviewSave()` — POSTs to `N8N_INVOICE_CONFIRM`, adds `row_id` to `irevConfirmedIds` (does NOT splice array), calls `irevAdvanceToNext()`
+- `irevAdvanceToNext()` — finds next unconfirmed item; calls `showIrevDone()` if all confirmed
+- `reviewSkip()` — saves to cache, calls `irevAdvanceToNext()`
+- `reviewPrev()` — saves to cache, decrements `irevIndex`; blocked only at index 0
+- `reviewTrash()` — double-tap: marks confirmed + posts `{row_id, action:'trash'}`
+- `exitInvoiceReview()` — returns to inventory
 
-**Frontend flag highlighting (implemented 2026-04-13):**
-- `DUPLICATE` items: amber border + tinted card background, amber pill
-- Error flag items (`missing_qty`, `missing_price`, etc.): red border + tinted card background
-- `OK` items: green pill, no tinting
-- Name-only products (no SKU): label shows "Name / नाम", displays `product_name` in SKU spot
+### Layout
+- `#irev-identity` — fixed (non-scrolling): supplier, flags, barcode (scannable), SKU, Name, lookup results
+- `#irev-content` — scrollable: Category, Expiry, Qty, Cost, MRP, Min Stock, Tax Rate %, Invoice Total (readonly), Sizes (tab+grid), Colors
+- `#irev-footer` — Trash, Skip, Save buttons
 
-**n8n webhooks needed (not yet created):**
-- `vasudeva-invoice-review` GET → returns all rows where `invoice_flag` != `CONFIRMED`. Shape: `[{row_id, sku, product_name, barcode, supplier, category, quantity, unit_price, mrp, sizes, colors, expiry_date, invoice_flag}]`
-- `vasudeva-invoice-confirm` POST `{row_id, sku, barcode, name, category, expiry, colors, quantity, unit_price, mrp, sizes}` → updates row, sets `invoice_flag = CONFIRMED`, calls vasudeva-addstock
+### Swipe gesture (screen-level IIFE)
+- Left swipe → forward: `irevSaveToCache()`, then `reviewSave()` if qty/price filled, else `reviewSkip()`
+- Right swipe → backward: `reviewPrev()`
+- Boundary: wiggle at index 0 (right) or last unconfirmed (left)
+- Threshold: 60px horizontal delta
+
+### Field cache
+- `irevFieldCache` keyed by `row_id` — preserves edits when navigating backward
+- `irevConfirmedIds` (Set) — tracks confirmed row_ids in-session without splicing array; enables backward navigation
+
+### Inventory autofill
+- Barcode/SKU/Name inputs trigger `irevLookup()` (350ms debounce) → `irevShowLookupResults()` → `irevApplyProduct(idx)`
+- Autofill populates: SKU, Name, Barcode, Category, MRP, Min Stock, Colors from `productCache`
+- Does NOT fill Qty or Cost (those come from the invoice)
+
+### Flag highlighting
+- `DUPLICATE`: amber border + tinted card, amber pill
+- Error flags (`missing_qty`, `missing_price`, `possible_hsn_as_sku`, `size_qty_mismatch`, `total_mismatch`, etc.): red border + tinted card
+- `OK`: green "None" label, no tinting
+
+### reviewSave() POST body (vasudeva-invoice-confirm)
+```javascript
+{
+    row_id, sku, barcode, name, category, expiry, colors,
+    quantity, unit_price, mrp, min_stock,
+    sizes,      // object from getIrevSizes() — n8n receives as parsed object
+    tax_rate,   // from irev-tax field (editable)
+    line_total  // computed: qty * price * (1 + taxRate/100)
+}
+// OR for trash: { row_id, action: 'trash' }
+```
+
+### vasudeva-invoice-review webhook (GET)
+Returns all Restock Archive rows where `invoice_flag` not in `['CONFIRMED','TRASHED']`.
+Response shape: `[{row_id, sku, product_name, barcode, supplier, category, quantity, unit_price, mrp, tax_rate, line_total, sizes, colors, expiry_date, invoice_flag}]`
+
+### vasudeva-invoice-confirm webhook (POST)
+- Receives body above
+- Updates Restock Archive row (all editable fields + sets `invoice_flag = CONFIRMED`)
+- Calls vasudeva-addstock with: `{sku, barcode, name, category, quantity, mrp, cost (=unit_price), expiry, colors, minStock, sizes (JSON.stringify'd), timestamp}`
+- For trash: sets `invoice_flag = TRASHED`, no addstock call
+
+### n8n confirm workflow — sizes handling
+`body.sizes` arrives as a parsed JS object (n8n parses JSON bodies). In the addstock HTTP Request JSON body use:
+```
+"sizes": "{{ $('Webhook').item.json.body.sizes ? JSON.stringify($('Webhook').item.json.body.sizes) : '' }}",
+```
+In the Update Row (Restock Archive) use same expression.
+
+### vasudeva-addstock Code node — sizes fix needed
+Must handle both string and object input (invoice-confirm sends object, other callers may send string):
+```javascript
+const sizesStr = typeof p.sizes === 'object' && p.sizes ? JSON.stringify(p.sizes) : (p.sizes || '');
+```
 
 ## Invoice Scanning Pipeline (n8n)
 
 WhatsApp image → Gemini extraction → flagging → dedup check → Restock Archive (all items) → WhatsApp reply → shop owner reviews all items in app → invoice-confirm triggers addstock
 
-### Current n8n workflow state (as of 2026-04-13):
-Nodes in order:
-1. WhatsApp Trigger
-2. IF — image type filter: `$json.messages?.[0]?.type` is equal to `image` (optional chaining handles status update webhooks). "Convert types where required" ON.
-3. HTTP Request — downloads image binary from `{{ $json.messages[0].image.url }}`. Response Format: File.
-4. **Code in JavaScript** — generates invoiceId, extracts whatsapp sender number, converts binary to base64
-5. **HTTP Request (Flask)** — POST to `http://localhost:5050/preprocess`, body Using Fields: `imageBase64 = {{ $json.imageBase64 }}`. Preprocesses image (normalize, sharpen, optional perspective correction).
-6. **Code "Reconstruct Binary"** — converts Flask's returned imageBase64 back to binary for Gemini, carries sender/invoiceId forward
-7. **Analyze an image** (Gemini 2.5 Pro) — primary extraction, Simplify Output ON
-8. **Code in JavaScript1** — parses Gemini JSON array into individual items
-9. **Code in JavaScript2** — flagging: adds `invoice_flag`, `row_id`, `invoiceId`, `whatsapp_from`, `supplier`
-10. **Get Rows — Restock Archive** — fetches all rows for dedup
-11. **Code "Dedup Check"** — Run once for all items. Gets invoice items from `$('Code in JavaScript2')`, sheet rows from `$input`. Re-emits invoice items with `_isDuplicate` + `_dupScore`.
-12. **IF _isDuplicate** → TRUE: Code "Mark Duplicate" (sets invoice_flag = DUPLICATE) → Append to Restock Archive → WhatsApp text warning → stop. FALSE: continue.
-13. **Append to Restock Archive** — one row per item, no Execute Once
-14. **WhatsApp reply** (plain Send): `📋 Invoice received: {{ $('Code in JavaScript2').all().length }} items added to review queue.`
-15. **Error Trigger** (free-floating) → WhatsApp error reply to hardcoded owner number
+### Current n8n workflow state (as of 2026-04-15):
+Two parallel workflows exist — WhatsApp and Telegram. Node names below use the descriptive names applied 2026-04-15.
 
-**All items go to review queue — nothing routes directly to addstock from this workflow. Addstock is triggered by vasudeva-invoice-confirm webhook when shop owner confirms in app.**
+**WhatsApp workflow nodes:**
+1. WhatsApp Trigger
+2. IF — image filter: `$json.messages?.[0]?.type` equals `image`. "Convert types where required" ON.
+3. HTTP Request — downloads image binary from `{{ $json.messages[0].image.url }}`. Response Format: File.
+4. **Extract Image and Sender** (Code) — invoiceId, sender, base64
+5. **Reconstruct Binary for Gemini** (Code) — rebuilds binary with `image/jpeg` MIME type
+6–15. (same as Telegram from Gemini onward)
+
+**Telegram workflow nodes:**
+1. Telegram Trigger — "On message", "Download Images/Files" ON, Image Size: Large. Binary key: `data`.
+2. IF — `$json.message.photo` is not empty. "Convert types where required" ON.
+3. HTTP Request (getFile) — `https://api.telegram.org/bot<TOKEN>/getFile?file_id={{ $('Telegram Trigger').item.json.message.photo[3].file_id }}`
+4. HTTP Request (download) — `https://api.telegram.org/file/bot<TOKEN>/{{ $json.result.file_path }}`. Response Format: File.
+5. **Extract Image and Sender** (Code):
+```javascript
+const binaryData = await this.helpers.getBinaryDataBuffer(0, 'data');
+const invoiceId = `INV_${Date.now()}_${Math.random().toString(36).slice(2,6).toUpperCase()}`;
+const sender = String($('Telegram Trigger').item.json.message.from.id);
+const imageBase64 = binaryData.toString('base64');
+return [{ json: { sender, invoiceId, imageBase64 }, binary: { data: await this.helpers.prepareBinaryData(binaryData, 'invoice.jpg', 'image/jpeg') } }];
+```
+6. **Reconstruct Binary for Gemini** (Code) — same as WhatsApp version, references `$('Extract Image and Sender')`
+7. **Analyze an image** (Gemini 2.5 Pro) — Simplify Output ON
+8. **Parse Gemini Response** (Code) — parses Gemini JSON array into individual items
+9. **Flag Invoice Items** (Code) — adds `invoice_flag`, `row_id`, `invoiceId`, `whatsapp_from`, `supplier`
+10. **Get Rows — Restock Archive** — fetches all rows for dedup
+11. **Dedup Check** (Code) — Run once for all items. Gets items from `$('Flag Invoice Items')`, sheet rows from `$input`.
+12. **IF _isDuplicate** → TRUE: **Mark Duplicate** → Append to Restock Archive → Telegram/WhatsApp warning → stop. FALSE: continue.
+13. **Append to Restock Archive** — one row per item, no Execute Once
+14. Reply node: `📋 Invoice received: {{ $('Parse Gemini Response').all().length }} items added to review queue.` Run once for all items.
+15. **Error Trigger** → hardcoded owner chat/number
+
+**Reply nodes:** Telegram uses "Send a text message" (Resource: Message, Operation: Send Message). Chat ID: `{{ $('Telegram Trigger').item.json.message.chat.id }}`. Append n8n Attribution: OFF.
+
+**Caption password (optional):** Add IF node after image filter checking `$json.message.caption` contains secret word.
+
+**All items go to review queue — nothing routes directly to addstock. Addstock is triggered by vasudeva-invoice-confirm when shop owner confirms in app.**
 
 ### Code in JavaScript (prep node):
 ```javascript
@@ -429,16 +503,19 @@ Note: "Never Error" must be ON — addstock returns plain text, not JSON.
 ### invoice_flag values:
 `OK`, `missing_sku`, `missing_price`, `missing_qty`, `possible_hsn_as_sku`, `size_qty_mismatch`, `sizes_parse_error`, `total_mismatch`, `CONFIRMED`, `DUPLICATE`, `TRASHED`
 
-### Known issues (as of 2026-04-13):
-1. **Gemini accuracy** — sizes still occasionally wrong; I/slash confusion in product names; category sometimes missed. Prompt updated to address these. May need further tuning.
-2. **Flask preprocessing** — Flask image preprocessing node (`/opt/invoice_preprocess.py`, port 5050) exists on the Hetzner VPS but is **no longer used in the active invoice scanning workflow** (removed to simplify the n8n pipeline). The script and its service file (`/tmp/invoice-preprocess.service` on Steam Deck) are preserved in case a future workflow needs preprocessing.
-3. **vasudeva-invoice-confirm body expanded (2026-04-15)** — frontend now POSTs `{row_id, sku, barcode, name, category, expiry, colors, quantity, unit_price, mrp, min_stock, sizes}`. The n8n confirm workflow needs updating to pass the new fields through to the vasudeva-addstock call.
-4. **addstock JSON body** — numeric fields need `|| 0` fallbacks or they produce invalid JSON when null. Current fixed body is in the addstock HTTP Request JSON body section above.
+### Known issues (as of 2026-04-15):
+1. **Gemini accuracy** — sizes still occasionally wrong; I/slash confusion in product names; category sometimes missed. Prompt tuned but may need further work.
+2. **Flask preprocessing** — script at `/opt/invoice_preprocess.py` (port 5050) on Hetzner VPS preserved but not used. Removed from active workflow to simplify pipeline.
+3. **vasudeva-addstock Code node — sizes handling** — must handle both object and string for `sizes` field. Fix: `const sizesStr = typeof p.sizes === 'object' && p.sizes ? JSON.stringify(p.sizes) : (p.sizes || '');`. Not yet applied.
+4. **addstock HTTP Request JSON body** — numeric fields need `|| 0` fallbacks. Do NOT use `={{ }}` syntax in JSON body — use `{{ }}` only. String fields: `"{{ expr }}"`. Numeric: `{{ expr }}`. Sizes: `"{{ $('Webhook').item.json.body.sizes ? JSON.stringify($('Webhook').item.json.body.sizes) : '' }}"`.
+5. **n8n expressions in HTTP Request JSON body** — line breaks inside `{{ }}` cause the expression to be written as literal text. Must be single-line. Copy-paste from this doc will mangle them — type manually.
 
 ## Upcoming Features (planned, not yet built)
 
-1. **vasudeva-invoice-review webhook** (GET) — returns all rows from Restock Archive where `invoice_flag` is not `CONFIRMED` or `TRASHED`. Response shape: `[{row_id, sku, product_name, barcode, supplier, category, quantity, unit_price, mrp, sizes, colors, expiry_date, invoice_flag}]`. Frontend calls this on PIN entry and on `goTo('inventory')`.
-2. **vasudeva-invoice-confirm webhook** (POST) — body: `{row_id, sku, barcode, name, category, expiry, colors, quantity, unit_price, mrp, sizes}` OR `{row_id, action:'trash'}`. For confirm: updates Restock Archive row to `invoice_flag = CONFIRMED`, calls vasudeva-addstock with all confirmed values. For trash: sets `invoice_flag = TRASHED`, no addstock call.
+1. **vasudeva-addstock Code node sizes fix** — handle both object and string `sizes` input (see Known Issues #3 above).
+2. **Stock Movements tab** — append logic needed in both vasudeva-addstock AND vasudeva-sell workflows.
+3. **Slow mover scheduled workflow** — not yet built.
+4. **Expiry batch deduction in vasudeva-sell** — not yet built.
 
 ## Core Validation Rules — DO NOT BREAK
 
