@@ -167,6 +167,7 @@ Launched from Inventory via the "⬛ Add barcodes" button (`startBarcodeMapping(
 1. **Color quantities not saving to sheet** — `incoming.colors` may not be reaching vasudeva-addstock Code JS1 correctly. Needs investigation.
 2. **Sell by color unconfirmed** — color deduction code exists in vasudeva-sell JS1, guarded by `colorsRaw.trim().startsWith('{')`. Won't run until color quantities are in JSON format in sheet.
 3. **Size/quantity drift** — when `sizeTotal > stock`, frontend trusts sizes as ground truth. Sheet Quantity cell not auto-corrected. Manual fix needed until reconciliation workflow is built.
+4. **Fast confirm swiping race condition** — rapidly confirming items in Invoice Review can cause addstock calls to race. The addstock match logic finds blank rows when two near-simultaneous requests both look for a product that doesn't exist yet. The `.trim()` + non-empty check fix (2026-04-19) prevents matching blank rows, but two new products arriving at the same instant can still collide on Google Sheets append (same as the invoice queue append race). Potential fix: add a staggered delay in `reviewSave()` or queue confirms client-side.
 
 ## Invoice Review Screen (`screen-invoicereview`)
 
@@ -247,75 +248,134 @@ const sizesStr = typeof p.sizes === 'object' && p.sizes ? JSON.stringify(p.sizes
 
 ## Invoice Scanning Pipeline (n8n)
 
-WhatsApp image → Gemini extraction → flagging → dedup check → Restock Archive (all items) → WhatsApp reply → shop owner reviews all items in app → invoice-confirm triggers addstock
+Telegram image → queue to Google Sheet → sequential Gemini extraction → flagging → dedup check → Restock Archive → Telegram reply → shop owner reviews in app → invoice-confirm triggers addstock
 
-### Current n8n workflow state (as of 2026-04-15):
-Two parallel workflows exist — WhatsApp and Telegram. Node names below use the descriptive names applied 2026-04-15.
+### Current n8n workflow state (as of 2026-04-19):
+Two workflows: **Invoice Scanner** (intake + queue) and **vasudeva-process-queue** (sequential processing). WhatsApp workflow abandoned — Telegram only.
 
-**WhatsApp workflow nodes:**
-1. WhatsApp Trigger
-2. IF — image filter: `$json.messages?.[0]?.type` equals `image`. "Convert types where required" ON.
-3. HTTP Request — downloads image binary from `{{ $json.messages[0].image.url }}`. Response Format: File.
-4. **Extract Image and Sender** (Code) — invoiceId, sender, base64
-5. **Reconstruct Binary for Gemini** (Code) — rebuilds binary with `image/jpeg` MIME type
-6–15. (same as Telegram from Gemini onward)
+**Why two workflows:** Gemini can only process one invoice at a time. When users batch-send multiple images (Telegram sends each as a separate message), the intake workflow queues them and the process-queue workflow handles them one at a time via a self-trigger loop.
 
-**Telegram workflow nodes:**
-1. Telegram Trigger — "On message", "Download Images/Files" ON, Image Size: Large. Binary key: `data`.
-2. IF — `$json.message.photo` is not empty. "Convert types where required" ON.
-3. HTTP Request (getFile) — `https://api.telegram.org/bot<TOKEN>/getFile?file_id={{ $('Telegram Trigger').item.json.message.photo[3].file_id }}`
-4. HTTP Request (download) — `https://api.telegram.org/file/bot<TOKEN>/{{ $json.result.file_path }}`. Response Format: File.
-5. **Extract Image and Sender** (Code):
+**Environment requirement:** `N8N_RESTRICT_FILE_ACCESS_TO=/tmp` must be set in Coolify env vars — n8n 2.0+ blocks all file system access by default.
+
+---
+
+### Workflow 1: Invoice Scanner (intake)
+
+**Node chain:** Telegram Trigger → IF (image filter) → HTTP Request (getFile) → HTTP Request (download) → Code - Queue Item → Write File → Code - Add Delay → Append Row (Invoice Queue) → Reply → Get Many (Invoice Queue) → Code - Check Busy → IF (busy) → FALSE: HTTP Request (trigger process-queue)
+
+1. **Telegram Trigger** — "On message", "Download Images/Files" ON, Image Size: Large. Binary key: `data`.
+2. **IF** — `$json.message.photo` is not empty. "Convert types where required" ON.
+3. **HTTP Request (getFile)** — `https://api.telegram.org/bot<TOKEN>/getFile?file_id={{ $('Telegram Trigger').item.json.message.photo[3].file_id }}`
+4. **HTTP Request (download)** — `https://api.telegram.org/file/bot<TOKEN>/{{ $json.result.file_path }}`. Response Format: File.
+5. **Code - Queue Item**:
 ```javascript
-const binaryData = await this.helpers.getBinaryDataBuffer(0, 'data');
-const invoiceId = `INV_${Date.now()}_${Math.random().toString(36).slice(2,6).toUpperCase()}`;
+const binary_data = await this.helpers.getBinaryDataBuffer(0, 'data');
+const queue_id = `INV_${Date.now()}_${Math.random().toString(36).slice(2,6).toUpperCase()}`;
+const file_path = `/tmp/invq_${Date.now()}_${Math.random().toString(36).slice(2,6)}.jpg`;
+const chat_id = String($('Telegram Trigger').item.json.message.chat.id);
 const sender = String($('Telegram Trigger').item.json.message.from.id);
-const imageBase64 = binaryData.toString('base64');
-return [{ json: { sender, invoiceId, imageBase64 }, binary: { data: await this.helpers.prepareBinaryData(binaryData, 'invoice.jpg', 'image/jpeg') } }];
+return [{
+  json: { queue_id, file_path, sender, chat_id, source: 'telegram' },
+  binary: { data: await this.helpers.prepareBinaryData(binary_data, 'invoice.jpg', 'image/jpeg') }
+}];
 ```
-6. **Reconstruct Binary for Gemini** (Code) — same as WhatsApp version, references `$('Extract Image and Sender')`
-7. **Analyze an image** (Gemini 2.5 Pro) — Simplify Output ON
-8. **Parse Gemini Response** (Code) — parses Gemini JSON array into individual items
-9. **Flag Invoice Items** (Code) — adds `invoice_flag`, `row_id`, `invoiceId`, `whatsapp_from`, `supplier`
-10. **Get Rows — Restock Archive** — fetches all rows for dedup
-11. **Dedup Check** (Code) — Run once for all items. Gets items from `$('Flag Invoice Items')`, sheet rows from `$input`.
-12. **IF _isDuplicate** → TRUE: **Mark Duplicate** → Append to Restock Archive → Telegram/WhatsApp warning → stop. FALSE: continue.
-13. **Append to Restock Archive** — one row per item, no Execute Once
-14. Reply node: `📋 Invoice received: {{ $('Parse Gemini Response').all().length }} items added to review queue.` Run once for all items.
-15. **Error Trigger** → hardcoded owner chat/number
+6. **Write File** — writes binary to `{{ $json.file_path }}` on disk (`/tmp/invq_*.jpg`)
+7. **Code - Add Delay** — staggered delay to prevent Google Sheets append race condition when batch-sending images:
+```javascript
+const msg_id = $('Telegram Trigger').item.json.message.message_id;
+await new Promise(r => setTimeout(r, (msg_id % 10) * 1500));
+return $input.all();
+```
+8. **Append Row (Invoice Queue sheet)** — columns: Queue ID, File Path, Sender, Chat ID, Source, Timestamp, Status (set to `PENDING`)
+9. **Reply** — Telegram "Send a text message": `📋 Invoice queued for processing.` Chat ID: `{{ $('Code - Queue Item').item.json.chat_id }}`. Append n8n Attribution: OFF.
+10. **Get Many (Invoice Queue)** — fetches all rows to check if processing is already running
+11. **Code - Check Busy**:
+```javascript
+const rows = $input.all();
+const processing = rows.find(r => r.json.Status === 'PROCESSING');
+return [{ json: { busy: !!processing } }];
+```
+12. **IF** — `{{ $json.busy }}` equals `true`. TRUE: stop (already processing). FALSE: trigger process-queue.
+13. **HTTP Request** — POST to `https://n8n.whitelockemedia.com/webhook/vasudeva-process-queue` (empty body, just kicks off processing)
 
-**Reply nodes:** Telegram uses "Send a text message" (Resource: Message, Operation: Send Message). Chat ID: `{{ $('Telegram Trigger').item.json.message.chat.id }}`. Append n8n Attribution: OFF.
+### Invoice Queue sheet columns:
+| Column | Value |
+|--------|-------|
+| Queue ID | `{{ $json.queue_id }}` |
+| File Path | `{{ $json.file_path }}` |
+| Sender | `{{ $json.sender }}` |
+| Chat ID | `{{ $json.chat_id }}` |
+| Source | `{{ $json.source }}` |
+| Timestamp | `{{ new Date().toISOString() }}` |
+| Status | `PENDING` |
 
-**Caption password (optional):** Add IF node after image filter checking `$json.message.caption` contains secret word.
+---
+
+### Workflow 2: vasudeva-process-queue
+
+**Node chain:** Webhook → Get Many (Invoice Queue) → Code - Route → IF (action=process) →
+- TRUE: Update Row (mark PROCESSING) → Read File → Code - Prep for Gemini → Gemini → Parse → Flag → Get Rows (Restock Archive) → Dedup → IF dup → Append to Archive → Reply → Update Row (mark DONE) → HTTP Request (self-trigger)
+- FALSE: IF (action=cleanup) → TRUE: Clear sheet (keep headers). FALSE: stop.
+
+**Self-trigger loop:** After marking DONE, the workflow POSTs to its own webhook URL. Code - Route picks the next PENDING item or runs cleanup if none remain.
+
+1. **Webhook** — POST `https://n8n.whitelockemedia.com/webhook/vasudeva-process-queue`
+2. **Get Many (Invoice Queue)** — all rows
+3. **Code - Route**:
+```javascript
+const rows = $input.all();
+const processing = rows.find(r => r.json.Status === 'PROCESSING');
+if (processing) return [{ json: { action: 'skip' } }];
+const pending = rows.filter(r => r.json.Status === 'PENDING')
+  .sort((a, b) => new Date(a.json.Timestamp) - new Date(b.json.Timestamp));
+if (!pending.length) return [{ json: { action: 'cleanup' } }];
+const next = pending[0].json;
+return [{ json: { action: 'process', ...next } }];
+```
+4. **IF** — `{{ $json.action }}` equals `process` (must be toggled to expression mode)
+5. **Update Row** — matches Queue ID = `{{ $json['Queue ID'] }}`, sets Status = `PROCESSING`
+6. **Read File** — reads from `{{ $('Code - Route').item.json['File Path'] }}`
+7. **Code - Prep for Gemini**:
+```javascript
+const route = $('Code - Route').item.json;
+const binaryData = await this.helpers.getBinaryDataBuffer(0, 'data');
+const imageBase64 = binaryData.toString('base64');
+const buffer = Buffer.from(imageBase64, 'base64');
+return [{
+  json: {
+    sender: route.Sender,
+    invoiceId: route['Queue ID'],
+    chatId: route['Chat ID'],
+    source: route.Source,
+    filePath: route['File Path'],
+    imageBase64
+  },
+  binary: { data: await this.helpers.prepareBinaryData(buffer, 'invoice.jpg', 'image/jpeg') }
+}];
+```
+8. **Analyze an image** (Gemini 2.5 Pro) — Simplify Output ON, binary input named `data`
+9. **Parse Gemini Response** (Code) — parses Gemini JSON array into individual items (same as below)
+10. **Flag Invoice Items** (Code) — references `$('Code - Prep for Gemini')` for sender, invoiceId, chatId, source, filePath
+11. **Get Rows — Restock Archive** — fetches all rows for dedup
+12. **Dedup Check** (Code) — Run once for all items. Gets items from `$('Flag Invoice Items')`, sheet rows from `$input`.
+13. **IF _isDuplicate** → TRUE: **Mark Duplicate** → Append to Restock Archive → Telegram duplicate warning → stop. FALSE: continue.
+14. **Append to Restock Archive** — one row per item, no Execute Once
+15. **Reply** — Telegram "Send a text message": `📋 Invoice received: {{ $('Parse Gemini Response').all().length }} items added to review queue.` Chat ID: `{{ $('Code - Prep for Gemini').item.json.chatId }}`. Run once for all items. Append n8n Attribution: OFF.
+16. **Update Row (mark DONE)** — matches Queue ID = `{{ $('Code - Prep for Gemini').item.json.invoiceId }}`, sets Status = `DONE`
+17. **HTTP Request (self-trigger)** — POST to `https://n8n.whitelockemedia.com/webhook/vasudeva-process-queue` (loops back to process next item)
+18. **Error Trigger** → hardcoded owner chat ID
+
+**FALSE branch of action=process IF:**
+- **IF (action=cleanup)** — `{{ $json.action }}` equals `cleanup`
+- TRUE: **Clear sheet** — clear operation on Invoice Queue sheet, keepFirstRow: true (preserves headers, deletes all DONE rows)
+- FALSE: stop (action was `skip`)
 
 **All items go to review queue — nothing routes directly to addstock. Addstock is triggered by vasudeva-invoice-confirm when shop owner confirms in app.**
 
-### Code in JavaScript (prep node):
-```javascript
-const binaryData = await this.helpers.getBinaryDataBuffer(0, 'data');
-const invoiceId = `INV_${Date.now()}_${Math.random().toString(36).slice(2,6).toUpperCase()}`;
-const sender = $('WhatsApp Trigger').item.json.messages[0].from;
-const imageBase64 = binaryData.toString('base64');
+### Temp file cleanup
+Queue images are saved to `/tmp/invq_*.jpg`. These are cleaned up when the queue sheet is cleared (action=cleanup). For additional safety, a cron job on the VPS can clean old files: `find /tmp -name 'invq_*' -mmin +1440 -delete` (not yet set up).
 
-return [{
-  json: { sender, invoiceId, imageBase64 },
-  binary: $input.item.binary
-}];
-```
-
-### Code "Reconstruct Binary":
-```javascript
-const preprocessed = $json.imageBase64;
-const { sender, invoiceId } = $('Code in JavaScript').first().json;
-const buffer = Buffer.from(preprocessed, 'base64');
-
-return [{
-  json: { sender, invoiceId, imageBase64: preprocessed },
-  binary: {
-    data: await this.helpers.prepareBinaryData(buffer, 'invoice.jpg', 'image/jpeg')
-  }
-}];
-```
+---
 
 ### Gemini prompt (Analyze an image node):
 Model: `gemini-2.5-pro`. Binary input named `data`. Simplify Output: ON.
@@ -336,7 +396,7 @@ Extract all product line items from this supplier invoice. Only extract line ite
 - "colors": if color breakdown with quantities return {"Red":2,"Blue":3}; if colors listed without quantities return "Red, Blue"; otherwise null
 - "barcode": EAN/UPC barcode if visible, otherwise null
 
-### Code in JavaScript1 (Gemini parser):
+### Parse Gemini Response (Code):
 ```javascript
 const text = $input.item.json.content.parts[0].text;
 const cleaned = text.replace(/```json|```/g, '').trim();
@@ -364,10 +424,10 @@ return products.map(product => ({
 }));
 ```
 
-### Code in JavaScript2 (flagging node):
+### Flag Invoice Items (Code):
 ```javascript
-const whatsapp_from = $('Code in JavaScript').first().json.sender;
-const invoiceId = $('Code in JavaScript').first().json.invoiceId;
+const whatsapp_from = $('Code - Prep for Gemini').first().json.sender;
+const invoiceId = $('Code - Prep for Gemini').first().json.invoiceId;
 
 return $input.all().map(item => {
   const p = item.json;
@@ -415,7 +475,7 @@ return $input.all().map(item => {
 
 ### Dedup Check code (Run once for all items):
 ```javascript
-const items = $('Code in JavaScript2').all().map(i => i.json);
+const items = $('Flag Invoice Items').all().map(i => i.json);
 
 const identifiers = [
   ...items.map(i => i.sku).filter(Boolean),
@@ -451,7 +511,7 @@ return items.map(item => ({ json: {
   _isDuplicate: bestMatch > 0.8
 }}));
 ```
-**Critical:** `items` comes from `$('Code in JavaScript2')` not `$input` — Get Rows replaces $input with sheet rows. This is intentional.
+**Critical:** `items` comes from `$('Flag Invoice Items')` not `$input` — Get Rows replaces $input with sheet rows. This is intentional.
 
 ### Restock Archive sheet columns:
 | Column | Expression |
@@ -495,27 +555,107 @@ return items.map(item => ({ json: {
 ```
 Note: "Never Error" must be ON — addstock returns plain text, not JSON.
 
-### WhatsApp reply nodes:
-- **Duplicate detected** (plain Send after Mark Duplicate): `⚠️ Duplicate invoice detected ({{ Math.round($json._dupScore * 100) }}% match). Items added to review queue in the app.`
-- **Success** (after Append to Restock Archive): `📋 Invoice received: {{ $('Code in JavaScript2').all().length }} items added to review queue.`
-- **Error** (Error Trigger → hardcoded owner number): `❌ Could not process invoice. Please enter manually.`
+### Reply messages:
+- **Intake (Invoice Scanner)**: `📋 Invoice queued for processing.`
+- **Success (process-queue)**: `📋 Invoice received: {{ $('Parse Gemini Response').all().length }} items added to review queue.`
+- **Duplicate detected** (after Mark Duplicate): `⚠️ Duplicate invoice detected ({{ Math.round($json._dupScore * 100) }}% match). Items added to review queue in the app.`
+- **Error** (Error Trigger → hardcoded owner chat ID): `❌ Could not process invoice. Please enter manually.`
 
 ### invoice_flag values:
 `OK`, `missing_sku`, `missing_price`, `missing_qty`, `possible_hsn_as_sku`, `size_qty_mismatch`, `sizes_parse_error`, `total_mismatch`, `CONFIRMED`, `DUPLICATE`, `TRASHED`
 
-### Known issues (as of 2026-04-15):
+### Known issues (as of 2026-04-19):
 1. **Gemini accuracy** — sizes still occasionally wrong; I/slash confusion in product names; category sometimes missed. Prompt tuned but may need further work.
 2. **Flask preprocessing** — script at `/opt/invoice_preprocess.py` (port 5050) on Hetzner VPS preserved but not used. Removed from active workflow to simplify pipeline.
-3. **vasudeva-addstock Code node — sizes handling** — must handle both object and string for `sizes` field. Fix: `const sizesStr = typeof p.sizes === 'object' && p.sizes ? JSON.stringify(p.sizes) : (p.sizes || '');`. Not yet applied.
-4. **addstock HTTP Request JSON body** — numeric fields need `|| 0` fallbacks. Do NOT use `={{ }}` syntax in JSON body — use `{{ }}` only. String fields: `"{{ expr }}"`. Numeric: `{{ expr }}`. Sizes: `"{{ $('Webhook').item.json.body.sizes ? JSON.stringify($('Webhook').item.json.body.sizes) : '' }}"`.
+3. ~~**vasudeva-addstock Code node — sizes handling**~~ — FIXED (2026-04-19). Parse body Code node now handles both object and string for `sizes` field.
+4. **addstock HTTP Request JSON body** — numeric fields need `|| 0` fallbacks. Do NOT use `={{ }}` syntax in JSON body — use `{{ }}` only. String fields: `"{{ expr }}"`. Numeric: `{{ expr }}`.
 5. **n8n expressions in HTTP Request JSON body** — line breaks inside `{{ }}` cause the expression to be written as literal text. Must be single-line. Copy-paste from this doc will mangle them — type manually.
+6. **Google Sheets append race condition** — batch-sent Telegram images arrive as separate messages processed concurrently. Two simultaneous Append Row calls target the same "next empty row". Fixed in Invoice Scanner with staggered delay based on `message_id % 10 * 1500ms`.
+7. **Temp file cleanup** — `/tmp/invq_*.jpg` files accumulate. Queue sheet cleared on cleanup action but files on disk not deleted by n8n. Suggested cron: `find /tmp -name 'invq_*' -mmin +1440 -delete` (not yet set up).
+
+## vasudeva-addstock Workflow Structure
+
+**Node chain:** Webhook → Code in JavaScript (parse body) → Get Rows (inventory sheet) → Code in JavaScript1 (match product) → IF (found) → Update Row / Append Row
+
+### Code in JavaScript (parse body)
+```javascript
+const b = $input.item.json.body;
+return [{
+  json: {
+    barcode: b.barcode,
+    sku: b.sku,
+    name: b.name,
+    category: b.category,
+    mrp: parseFloat(b.mrp) || 0,
+    cost: parseFloat(b.cost) || 0,
+    quantity: parseInt(b.quantity) || 0,
+    minStock: parseInt(b.minStock) || 10,
+    expiry: b.expiry || '',
+    supplier: b.supplier || '',
+    color: b.color || '',
+    colorsOverride: b.colorsOverride || null,
+    sizesOverride: b.sizesOverride || null,
+    sizes: typeof b.sizes === 'object' && b.sizes ? JSON.stringify(b.sizes) : (b.sizes || ''),
+    timestamp: b.timestamp
+  }
+}];
+```
+
+### Code in JavaScript1 (match product)
+Matches incoming product against inventory sheet rows by barcode, SKU, or name. All values are trimmed and lowercased before comparison. Both sides must be non-empty to match — prevents false matches against blank rows.
+```javascript
+const incoming = $('Code in JavaScript').item.json;
+const rows = $input.all();
+
+const match = rows.find((item, index) => {
+  const r = item.json;
+  const qname = (incoming.name || '').trim().toLowerCase();
+  const rname = (r['Product Name'] || '').trim().toLowerCase();
+  const qsku = (incoming.sku || '').trim().toLowerCase();
+  const rsku = (r.SKU || '').trim().toLowerCase();
+  const qbarcode = String(incoming.barcode || '').trim();
+  const rbarcode = String(r.Barcode || '').trim();
+  return (
+    (qbarcode.length > 0 && rbarcode.length > 0 && qbarcode === rbarcode) ||
+    (qsku.length > 0 && rsku.length > 0 && (rsku.includes(qsku) || qsku.includes(rsku))) ||
+    (qname.length > 2 && rname.length > 2 && (rname.includes(qname) || qname.includes(rname)))
+  );
+});
+
+if (!match) return [{ json: { found: false } }];
+
+const rowIndex = rows.indexOf(match);
+const r = match.json;
+return [{ json: { found: true, row_number: rowIndex + 2, ...r } }];
+```
+
+### Key behaviors
+- If found: updates existing row (by row_number)
+- If not found: appends new row
+- `sizes` field: Code in JavaScript handles both object and string input (invoice-confirm sends string, other callers may send either)
+- Race condition fix (2026-04-19): added `.trim()` and non-empty checks on both sides to prevent matching blank rows when two near-simultaneous requests both find the same empty row
+
+## vasudeva-invoice-confirm Workflow Structure
+
+**Node chain:** Webhook → IF (trash check) → Update Rows (Restock Archive) → Add Stock HTTP Request (calls vasudeva-addstock)
+
+### HTTP Request body (JSON — Using Fields mode)
+All fields reference `$('Webhook').item.json.body.*`. Key mapping:
+- `cost` ← `unit_price`
+- `minStock` ← `min_stock`
+- `sizes` arrives as a pre-stringified JSON string from the frontend (as of 2026-04-19)
+
+### n8n expression gotchas
+- `JSON.stringify()` inside HTTP Request JSON body mode causes "JSON parameter needs to be valid JSON" validation error — n8n validates the template before evaluating expressions
+- `toJsonString()` also rejected
+- Raw body mode makes the entire body arrive as a string at the target webhook
+- Solution: stringify sizes in the **frontend** before sending, so all downstream nodes just pass a plain string
 
 ## Upcoming Features (planned, not yet built)
 
-1. **vasudeva-addstock Code node sizes fix** — handle both object and string `sizes` input (see Known Issues #3 above).
-2. **Stock Movements tab** — append logic needed in both vasudeva-addstock AND vasudeva-sell workflows.
-3. **Slow mover scheduled workflow** — not yet built.
-4. **Expiry batch deduction in vasudeva-sell** — not yet built.
+1. **Stock Movements tab** — append logic needed in both vasudeva-addstock AND vasudeva-sell workflows.
+2. **Slow mover scheduled workflow** — not yet built.
+3. **Expiry batch deduction in vasudeva-sell** — not yet built.
 
 ## Core Validation Rules — DO NOT BREAK
 

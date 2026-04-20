@@ -2658,6 +2658,7 @@ function toggleInvSort(){invSortLowFirst=!invSortLowFirst;const btn=document.get
 // ── INVOICE REVIEW ────────────────────────────────────────────────────
 let irevIndex = 0, irevSavedCount = 0;
 let irevTrashArmed = false, irevTrashTimer = null, irevPollTimer = null;
+let irevConfirmQueue = [], irevQueueRunning = false;
 let irevFieldCache = {};
 let irevConfirmedIds = new Set();
 let reviewNotifyShown = false;
@@ -2944,6 +2945,25 @@ function irevApplyProduct(idx) {
     showToast((p.name || p.sku) + ' filled from inventory', '');
 }
 
+function irevEnqueue(payload) {
+    irevConfirmQueue.push(payload);
+    if (!irevQueueRunning) irevProcessQueue();
+}
+async function irevProcessQueue() {
+    irevQueueRunning = true;
+    while (irevConfirmQueue.length) {
+        const payload = irevConfirmQueue.shift();
+        try {
+            await fetch(CONFIG.N8N_INVOICE_CONFIRM, {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify(payload)
+            });
+        } catch(e) {
+            showToast('Sync failed — check connection','error');
+        }
+    }
+    irevQueueRunning = false;
+}
 function reviewSave() {
     if (!pendingReviews || irevIndex >= pendingReviews.length) return;
     const item = pendingReviews[irevIndex];
@@ -2980,10 +3000,7 @@ function reviewSave() {
     // Advance to next unconfirmed
     irevAdvanceToNext();
     showToast('Saved ✓', 'success');
-    fetch(CONFIG.N8N_INVOICE_CONFIRM, {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify(payload)
-    }).catch(()=>showToast('Sync failed — check connection','error'));
+    irevEnqueue(payload);
 }
 function irevAdvanceToNext() {
     if (!pendingReviews || !pendingReviews.length) { showIrevDone(); return; }
@@ -3028,10 +3045,7 @@ function reviewTrash() {
         updateReviewBadge();
         irevAdvanceToNext();
         showToast('Entry removed', '');
-        fetch(CONFIG.N8N_INVOICE_CONFIRM, {
-            method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({row_id: item.row_id, action: 'trash'})
-        }).catch(()=>{});
+        irevEnqueue({row_id: item.row_id, action: 'trash'});
     }
 }
 async function irevPollForNew() {
