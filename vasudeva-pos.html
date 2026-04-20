@@ -970,6 +970,7 @@
         <div style="font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:700;color:var(--success);margin-bottom:8px">All reviewed!</div>
         <div style="font-size:14px;color:var(--text-light)" id="irev-done-summary"></div>
     </div>
+    <div id="irev-sync-banner" style="display:none;flex-shrink:0;padding:10px 22px;background:var(--accent);color:#fff;font-size:12px;font-weight:600;text-align:center;line-height:1.4">Processing. <span id="irev-sync-count">0</span> items remaining.<br>Please do not close the browser or turn off the device.</div>
     <div style="flex-shrink:0;padding:12px 22px 20px;background:var(--bg);border-top:1px solid var(--border);display:flex;gap:10px" id="irev-footer">
         <button class="irev-trash-btn" id="irev-trash-btn" onclick="reviewTrash()" title="Remove fabricated entry">🗑</button>
         <button class="irev-skip-btn" onclick="reviewSkip()">Skip →</button>
@@ -2947,12 +2948,24 @@ function irevApplyProduct(idx) {
 
 function irevEnqueue(payload) {
     irevConfirmQueue.push(payload);
+    irevUpdateSyncBanner();
     if (!irevQueueRunning) irevProcessQueue();
+}
+function irevUpdateSyncBanner() {
+    const banner = document.getElementById('irev-sync-banner');
+    const count = document.getElementById('irev-sync-count');
+    if (irevConfirmQueue.length > 0) {
+        count.textContent = irevConfirmQueue.length;
+        banner.style.display = 'block';
+    } else {
+        banner.style.display = 'none';
+    }
 }
 async function irevProcessQueue() {
     irevQueueRunning = true;
     while (irevConfirmQueue.length) {
         const payload = irevConfirmQueue.shift();
+        irevUpdateSyncBanner();
         try {
             await fetch(CONFIG.N8N_INVOICE_CONFIRM, {
                 method:'POST', headers:{'Content-Type':'application/json'},
@@ -2961,8 +2974,8 @@ async function irevProcessQueue() {
         } catch(e) {
             showToast('Sync failed — check connection','error');
         }
-        if (irevConfirmQueue.length) await new Promise(r => setTimeout(r, 1500));
     }
+    irevUpdateSyncBanner();
     irevQueueRunning = false;
 }
 function reviewSave() {
@@ -3000,7 +3013,6 @@ function reviewSave() {
     updateReviewBadge();
     // Advance to next unconfirmed
     irevAdvanceToNext();
-    showToast('Saved ✓', 'success', 1000);
     irevEnqueue(payload);
 }
 function irevAdvanceToNext() {
