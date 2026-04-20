@@ -2967,13 +2967,19 @@ async function irevProcessQueue() {
         const payload = irevConfirmQueue.shift();
         irevUpdateSyncBanner();
         try {
-            await fetch(CONFIG.N8N_INVOICE_CONFIRM, {
+            const res = await fetch(CONFIG.N8N_INVOICE_CONFIRM, {
                 method:'POST', headers:{'Content-Type':'application/json'},
                 body: JSON.stringify(payload)
             });
+            if (res.status === 429) {
+                irevConfirmQueue.unshift(payload);
+                await new Promise(r => setTimeout(r, 5000));
+                continue;
+            }
         } catch(e) {
             showToast('Sync failed — check connection','error');
         }
+        if (irevConfirmQueue.length) await new Promise(r => setTimeout(r, 1000));
     }
     irevUpdateSyncBanner();
     irevQueueRunning = false;
