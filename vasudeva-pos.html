@@ -2963,23 +2963,27 @@ function irevUpdateSyncBanner() {
 }
 async function irevProcessQueue() {
     irevQueueRunning = true;
+    let retries = 0;
     while (irevConfirmQueue.length) {
         const payload = irevConfirmQueue.shift();
         irevUpdateSyncBanner();
+        let ok = false;
         try {
             const res = await fetch(CONFIG.N8N_INVOICE_CONFIRM, {
                 method:'POST', headers:{'Content-Type':'application/json'},
                 body: JSON.stringify(payload)
             });
-            if (res.status === 429) {
-                irevConfirmQueue.unshift(payload);
-                await new Promise(r => setTimeout(r, 5000));
-                continue;
-            }
-        } catch(e) {
-            showToast('Sync failed — check connection','error');
+            ok = res.ok;
+        } catch(e) { ok = false; }
+        if (!ok) {
+            retries++;
+            irevConfirmQueue.unshift(payload);
+            const wait = Math.min(retries * 5000, 30000);
+            irevUpdateSyncBanner();
+            await new Promise(r => setTimeout(r, wait));
+            continue;
         }
-        if (irevConfirmQueue.length) await new Promise(r => setTimeout(r, 1000));
+        retries = 0;
     }
     irevUpdateSyncBanner();
     irevQueueRunning = false;
