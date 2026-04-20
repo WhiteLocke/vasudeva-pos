@@ -410,7 +410,7 @@
         .pin-shake { animation: shake 0.4s ease; }
         @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(6px)} }
 
-        .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--text); color: #FBF4EB; padding: 12px 22px; border-radius: 100px; font-size: 13px; font-weight: 500; z-index: 300; transition: transform 0.28s cubic-bezier(0.34, 1.4, 0.64, 1); white-space: nowrap; max-width: 90vw; text-align: center; pointer-events: none; }
+        .toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--text); color: #FBF4EB; padding: 12px 22px; border-radius: 100px; font-size: 13px; font-weight: 500; z-index: 300; transition: transform 0.28s cubic-bezier(0.34, 1.4, 0.64, 1); white-space: nowrap; max-width: 90vw; text-align: center; pointer-events: none; }
         .toast.show { transform: translateX(-50%) translateY(0); }
         .toast.success { background: var(--success); }
         .toast.error   { background: var(--danger); }
@@ -2961,6 +2961,7 @@ async function irevProcessQueue() {
         } catch(e) {
             showToast('Sync failed — check connection','error');
         }
+        if (irevConfirmQueue.length) await new Promise(r => setTimeout(r, 800));
     }
     irevQueueRunning = false;
 }
@@ -3530,8 +3531,7 @@ function bmapPrev() {
         if (dx!==0){
             swiping=true; e.preventDefault();
             const atStart = dx>0 && irevIndex===0;
-            const atEnd   = dx<0 && pendingReviews && irevIndex>=pendingReviews.length-1;
-            const d = (atStart||atEnd) ? dx*0.25 : dx;
+            const d = atStart ? dx*0.25 : dx;
             scr.style.transform=`translateX(${d}px)`;
             scr.style.opacity=String(Math.max(0.7, 1-Math.abs(d)/window.innerWidth));
         }
@@ -3539,8 +3539,7 @@ function bmapPrev() {
     scr.addEventListener('touchend', e=>{
         const dx=e.changedTouches[0].clientX-tx;
         const atStart = dx>0 && irevIndex===0;
-        const atEnd   = dx<0 && pendingReviews && irevIndex>=pendingReviews.length-1;
-        const boundary = atStart || atEnd;
+        const boundary = atStart;
         const committed = swiping && Math.abs(dx)>60 && !boundary;
         if (committed){
             const goLeft=dx<0; // left = forward, right = backward
