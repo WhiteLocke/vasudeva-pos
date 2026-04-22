@@ -2984,6 +2984,8 @@ async function irevProcessQueue() {
             continue;
         }
         retries = 0;
+        // Pace requests so n8n isn't overwhelmed (addstock takes 3-4s)
+        if (irevConfirmQueue.length) await new Promise(r => setTimeout(r, 1500));
     }
     irevUpdateSyncBanner();
     irevQueueRunning = false;
