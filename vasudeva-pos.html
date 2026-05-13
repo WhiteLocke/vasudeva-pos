@@ -1049,11 +1049,7 @@
     <div class="modal-sheet">
         <div class="modal-handle"></div>
         <div class="modal-title">Apply Discount</div>
-        <div class="modal-subtitle" id="disc-subtitle">Enter owner PIN / मालिक का PIN दर्ज करें</div>
-        <div class="pin-dots" id="pin-dots">
-            <div class="pin-dot" id="pd0"></div><div class="pin-dot" id="pd1"></div><div class="pin-dot" id="pd2"></div><div class="pin-dot" id="pd3"></div>
-        </div>
-        <div id="disc-amount-wrap" style="display:none;margin-bottom:14px">
+        <div style="margin-bottom:14px">
             <div class="numpad-display" id="disc-display">0</div>
             <div class="disc-toggle-wrap">
                 <button id="disc-toggle-pct" class="disc-toggle-btn active" onclick="setDiscountMode('pct')">% Off</button>
@@ -1062,11 +1058,11 @@
             <div id="disc-mode-label" style="font-size:11px;color:var(--text-light);text-align:center;margin-top:6px">% discount off MRP</div>
         </div>
         <div class="numpad-grid">
-            <button class="numpad-key" onclick="pinPress('7')">7</button><button class="numpad-key" onclick="pinPress('8')">8</button><button class="numpad-key" onclick="pinPress('9')">9</button>
-            <button class="numpad-key" onclick="pinPress('4')">4</button><button class="numpad-key" onclick="pinPress('5')">5</button><button class="numpad-key" onclick="pinPress('6')">6</button>
-            <button class="numpad-key" onclick="pinPress('1')">1</button><button class="numpad-key" onclick="pinPress('2')">2</button><button class="numpad-key" onclick="pinPress('3')">3</button>
-            <button class="numpad-key action" onclick="pinPress('C')">C</button><button class="numpad-key" onclick="pinPress('0')">0</button><button class="numpad-key action" onclick="pinPress('⌫')">⌫</button>
-            <button class="numpad-key confirm" style="grid-column:span 3" onclick="pinConfirm()">Confirm ✓</button>
+            <button class="numpad-key" onclick="discPress('7')">7</button><button class="numpad-key" onclick="discPress('8')">8</button><button class="numpad-key" onclick="discPress('9')">9</button>
+            <button class="numpad-key" onclick="discPress('4')">4</button><button class="numpad-key" onclick="discPress('5')">5</button><button class="numpad-key" onclick="discPress('6')">6</button>
+            <button class="numpad-key" onclick="discPress('1')">1</button><button class="numpad-key" onclick="discPress('2')">2</button><button class="numpad-key" onclick="discPress('3')">3</button>
+            <button class="numpad-key action" onclick="discPress('C')">C</button><button class="numpad-key" onclick="discPress('0')">0</button><button class="numpad-key action" onclick="discPress('⌫')">⌫</button>
+            <button class="numpad-key confirm" style="grid-column:span 3" onclick="applyDiscount()">Apply ✓</button>
         </div>
         <button onclick="closeDiscount()" style="width:100%;margin-top:10px;padding:13px;border:none;background:none;color:var(--text-light);font-family:'DM Sans';font-size:13px;cursor:pointer">Cancel / रद्द करें</button>
     </div>
@@ -1131,7 +1127,7 @@ let sellSizeRows = [];   // [{size, qty, confirmed}]
 let sellSizeAvail = {};  // size → available qty
 let sellColorRows = [];  // [{color, qty, confirmed}]
 let sellColorAvail = {}; // color → available qty (null = old string format, qty unknown)
-let basket = [], npTarget = null, npVal = '', pinVal = '', pinUnlocked = false;
+let basket = [], npTarget = null, npVal = '';
 let stockProductFound = false, camCtx = null, camStream = null, camDetector = null, camFrame = null;
 let bmapQueue = [], bmapIndex = 0, bmapExtraOpen = false, bmapSavedCount = 0, bmapSavedIndices = new Set(), bmapData = {};
 let lastFailedBarcode = '', sellNameTimer = null, productCache = null, cacheLoading = false;
@@ -3272,27 +3268,19 @@ function closeNumpad(){document.getElementById('numpad-modal').classList.remove(
 function npPress(k){if(k==='⌫')npVal=npVal.slice(0,-1)||'0';else if(k==='.'&&npVal.includes('.'))return;else npVal=(npVal==='0'&&k!=='.')?k:npVal+k;document.getElementById('np-display').textContent=npVal;}
 function npConfirm(){const v=parseFloat(npVal)||0;if(npTarget==='qty'){currentQty=Math.max(1,Math.round(v));updateQtyDisplay();}else{currentPrice=v;document.getElementById('prod-price').textContent=CONFIG.CURRENCY+v;}closeNumpad();}
 
-// ── DISCOUNT / PIN ────────────────────────────────────────────────────
+// ── DISCOUNT ──────────────────────────────────────────────────────────
 let discountMode = 'pct'; // 'pct' or 'flat'
-function openDiscount(){if(!currentProduct)return;pinVal='';pinUnlocked=false;discountMode='pct';document.getElementById('disc-amount-wrap').style.display='none';document.getElementById('disc-subtitle').textContent='Enter owner PIN / मालिक का PIN दर्ज करें';updatePinDots();document.getElementById('disc-modal').classList.add('active');}
-function closeDiscount(){document.getElementById('disc-modal').classList.remove('active');pinVal='';pinUnlocked=false;}
+function openDiscount(){if(!currentProduct)return;discountMode='pct';document.getElementById('disc-display').textContent='0';document.getElementById('disc-toggle-pct').classList.add('active');document.getElementById('disc-toggle-flat').classList.remove('active');document.getElementById('disc-mode-label').textContent='% discount off MRP';document.getElementById('disc-modal').classList.add('active');}
+function closeDiscount(){document.getElementById('disc-modal').classList.remove('active');}
 function setDiscountMode(mode){
     discountMode=mode;
     document.getElementById('disc-toggle-pct').classList.toggle('active',mode==='pct');
     document.getElementById('disc-toggle-flat').classList.toggle('active',mode==='flat');
     document.getElementById('disc-display').textContent='0';
     document.getElementById('disc-mode-label').textContent=mode==='pct'?'% discount off MRP':'₹ flat discount off MRP';
-    document.getElementById('disc-subtitle').textContent=mode==='pct'?'Enter discount % / छूट % दर्ज करें':'Enter discount ₹ / छूट ₹ दर्ज करें';
 }
-function pinPress(k){
-    if(pinUnlocked){const d=document.getElementById('disc-display');if(k==='⌫')d.textContent=d.textContent.slice(0,-1)||'0';else if(k==='C')d.textContent='0';else if(/\d/.test(k))d.textContent=d.textContent==='0'?k:d.textContent+k;return;}
-    if(k==='⌫')pinVal=pinVal.slice(0,-1);else if(k==='C')pinVal='';else if(/\d/.test(k)&&pinVal.length<4)pinVal+=k;
-    updatePinDots();
-    if(pinVal.length===4){if(pinVal===CONFIG.OWNER_PIN){pinUnlocked=true;discountMode='pct';document.getElementById('disc-amount-wrap').style.display='block';document.getElementById('disc-display').textContent='0';document.getElementById('disc-toggle-pct').classList.add('active');document.getElementById('disc-toggle-flat').classList.remove('active');document.getElementById('disc-mode-label').textContent='% discount off MRP';document.getElementById('disc-subtitle').textContent='Enter discount % / छूट % दर्ज करें';showToast('PIN accepted ✓','success');}else{pinVal='';updatePinDots();document.getElementById('pin-dots').classList.add('pin-shake');setTimeout(()=>document.getElementById('pin-dots').classList.remove('pin-shake'),400);showToast('Incorrect PIN','error');}}
-}
-function updatePinDots(){for(let i=0;i<4;i++)document.getElementById('pd'+i).classList.toggle('filled',i<pinVal.length);}
-function pinConfirm(){
-    if(!pinUnlocked)return;
+function discPress(k){const d=document.getElementById('disc-display');if(k==='⌫')d.textContent=d.textContent.slice(0,-1)||'0';else if(k==='C')d.textContent='0';else if(/\d/.test(k))d.textContent=d.textContent==='0'?k:d.textContent+k;}
+function applyDiscount(){
     const val=parseFloat(document.getElementById('disc-display').textContent)||0;
     const orig=currentProduct.mrp;
     if(discountMode==='pct'){
