@@ -409,6 +409,9 @@
         .pin-dot.filled { background: var(--primary); border-color: var(--primary); transform: scale(1.1); }
         .pin-shake { animation: shake 0.4s ease; }
         @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(6px)} }
+        .disc-toggle-wrap { display: flex; align-items: center; justify-content: center; margin-top: 10px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+        .disc-toggle-btn { flex: 1; padding: 9px 0; border: none; background: var(--bg); font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; color: var(--text-light); cursor: pointer; transition: background 0.15s, color 0.15s; }
+        .disc-toggle-btn.active { background: var(--primary); color: white; }
 
         .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--text); color: #FBF4EB; padding: 12px 22px; border-radius: 100px; font-size: 13px; font-weight: 500; z-index: 300; transition: transform 0.28s cubic-bezier(0.34, 1.4, 0.64, 1); white-space: nowrap; max-width: 90vw; text-align: center; pointer-events: none; }
         .toast.show { transform: translateX(-50%) translateY(0); }
@@ -1052,7 +1055,11 @@
         </div>
         <div id="disc-amount-wrap" style="display:none;margin-bottom:14px">
             <div class="numpad-display" id="disc-display">0</div>
-            <div style="font-size:11px;color:var(--text-light);text-align:center;margin-top:6px">% discount off MRP</div>
+            <div class="disc-toggle-wrap">
+                <button id="disc-toggle-pct" class="disc-toggle-btn active" onclick="setDiscountMode('pct')">% Off</button>
+                <button id="disc-toggle-flat" class="disc-toggle-btn" onclick="setDiscountMode('flat')">₹ Off</button>
+            </div>
+            <div id="disc-mode-label" style="font-size:11px;color:var(--text-light);text-align:center;margin-top:6px">% discount off MRP</div>
         </div>
         <div class="numpad-grid">
             <button class="numpad-key" onclick="pinPress('7')">7</button><button class="numpad-key" onclick="pinPress('8')">8</button><button class="numpad-key" onclick="pinPress('9')">9</button>
@@ -3266,16 +3273,51 @@ function npPress(k){if(k==='⌫')npVal=npVal.slice(0,-1)||'0';else if(k==='.'&&n
 function npConfirm(){const v=parseFloat(npVal)||0;if(npTarget==='qty'){currentQty=Math.max(1,Math.round(v));updateQtyDisplay();}else{currentPrice=v;document.getElementById('prod-price').textContent=CONFIG.CURRENCY+v;}closeNumpad();}
 
 // ── DISCOUNT / PIN ────────────────────────────────────────────────────
-function openDiscount(){if(!currentProduct)return;pinVal='';pinUnlocked=false;document.getElementById('disc-amount-wrap').style.display='none';document.getElementById('disc-subtitle').textContent='Enter owner PIN / मालिक का PIN दर्ज करें';updatePinDots();document.getElementById('disc-modal').classList.add('active');}
+let discountMode = 'pct'; // 'pct' or 'flat'
+function openDiscount(){if(!currentProduct)return;pinVal='';pinUnlocked=false;discountMode='pct';document.getElementById('disc-amount-wrap').style.display='none';document.getElementById('disc-subtitle').textContent='Enter owner PIN / मालिक का PIN दर्ज करें';updatePinDots();document.getElementById('disc-modal').classList.add('active');}
 function closeDiscount(){document.getElementById('disc-modal').classList.remove('active');pinVal='';pinUnlocked=false;}
+function setDiscountMode(mode){
+    discountMode=mode;
+    document.getElementById('disc-toggle-pct').classList.toggle('active',mode==='pct');
+    document.getElementById('disc-toggle-flat').classList.toggle('active',mode==='flat');
+    document.getElementById('disc-display').textContent='0';
+    document.getElementById('disc-mode-label').textContent=mode==='pct'?'% discount off MRP':'₹ flat discount off MRP';
+    document.getElementById('disc-subtitle').textContent=mode==='pct'?'Enter discount % / छूट % दर्ज करें':'Enter discount ₹ / छूट ₹ दर्ज करें';
+}
 function pinPress(k){
     if(pinUnlocked){const d=document.getElementById('disc-display');if(k==='⌫')d.textContent=d.textContent.slice(0,-1)||'0';else if(k==='C')d.textContent='0';else if(/\d/.test(k))d.textContent=d.textContent==='0'?k:d.textContent+k;return;}
     if(k==='⌫')pinVal=pinVal.slice(0,-1);else if(k==='C')pinVal='';else if(/\d/.test(k)&&pinVal.length<4)pinVal+=k;
     updatePinDots();
-    if(pinVal.length===4){if(pinVal===CONFIG.OWNER_PIN){pinUnlocked=true;document.getElementById('disc-amount-wrap').style.display='block';document.getElementById('disc-display').textContent='0';document.getElementById('disc-subtitle').textContent='Enter discount % / छूट % दर्ज करें';showToast('PIN accepted ✓','success');}else{pinVal='';updatePinDots();document.getElementById('pin-dots').classList.add('pin-shake');setTimeout(()=>document.getElementById('pin-dots').classList.remove('pin-shake'),400);showToast('Incorrect PIN','error');}}
+    if(pinVal.length===4){if(pinVal===CONFIG.OWNER_PIN){pinUnlocked=true;discountMode='pct';document.getElementById('disc-amount-wrap').style.display='block';document.getElementById('disc-display').textContent='0';document.getElementById('disc-toggle-pct').classList.add('active');document.getElementById('disc-toggle-flat').classList.remove('active');document.getElementById('disc-mode-label').textContent='% discount off MRP';document.getElementById('disc-subtitle').textContent='Enter discount % / छूट % दर्ज करें';showToast('PIN accepted ✓','success');}else{pinVal='';updatePinDots();document.getElementById('pin-dots').classList.add('pin-shake');setTimeout(()=>document.getElementById('pin-dots').classList.remove('pin-shake'),400);showToast('Incorrect PIN','error');}}
 }
 function updatePinDots(){for(let i=0;i<4;i++)document.getElementById('pd'+i).classList.toggle('filled',i<pinVal.length);}
-function pinConfirm(){if(!pinUnlocked)return;const pct=parseFloat(document.getElementById('disc-display').textContent)||0;if(pct>0&&pct<100){const orig=currentProduct.mrp;currentPrice=Math.round(orig*(1-pct/100));document.getElementById('prod-price').textContent=CONFIG.CURRENCY+currentPrice;document.getElementById('orig-price').textContent=CONFIG.CURRENCY+orig;document.getElementById('orig-price').style.display='inline';document.getElementById('disc-badge').textContent='-'+pct+'%';document.getElementById('disc-badge').style.display='inline-flex';showToast(pct+'% discount applied','success');}closeDiscount();}
+function pinConfirm(){
+    if(!pinUnlocked)return;
+    const val=parseFloat(document.getElementById('disc-display').textContent)||0;
+    const orig=currentProduct.mrp;
+    if(discountMode==='pct'){
+        if(val>0&&val<100){
+            currentPrice=Math.round(orig*(1-val/100));
+            document.getElementById('prod-price').textContent=CONFIG.CURRENCY+currentPrice;
+            document.getElementById('orig-price').textContent=CONFIG.CURRENCY+orig;
+            document.getElementById('orig-price').style.display='inline';
+            document.getElementById('disc-badge').textContent='-'+val+'%';
+            document.getElementById('disc-badge').style.display='inline-flex';
+            showToast(val+'% discount applied','success');
+        }
+    }else{
+        if(val>0&&val<orig){
+            currentPrice=Math.round(orig-val);
+            document.getElementById('prod-price').textContent=CONFIG.CURRENCY+currentPrice;
+            document.getElementById('orig-price').textContent=CONFIG.CURRENCY+orig;
+            document.getElementById('orig-price').style.display='inline';
+            document.getElementById('disc-badge').textContent='-'+CONFIG.CURRENCY+val;
+            document.getElementById('disc-badge').style.display='inline-flex';
+            showToast(CONFIG.CURRENCY+val+' discount applied','success');
+        }
+    }
+    closeDiscount();
+}
 
 // ── BARCODE MAPPING ───────────────────────────────────────────────────
 function startBarcodeMapping() {
